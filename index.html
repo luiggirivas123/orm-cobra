@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
@@ -409,11 +412,6 @@ html {
 .tipo-tab.ret.on{background:#7B2D8B;border-color:#7B2D8B}
 .tipo-tab.prot.on{background:#1565C0;border-color:#1565C0}
 .tipo-tab.reub.on{background:#2E7D32;border-color:#2E7D32}
-.tipo-badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:800;margin-left:4px}
-.tb-ret{background:#F3E5F5;color:#7B2D8B}
-.tb-prot{background:#E3F2FD;color:#1565C0}
-.tb-reub{background:#E8F5E9;color:#2E7D32}
-.coord-ref-btn{display:flex;align-items:center;gap:6px;background:#E3F2FD;color:#1565C0;border:1.5px solid #90CAF9;border-radius:8px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;width:100%;margin-top:8px}
 /* MAPA */
 #mapa-container{width:100%;height:calc(100vh - 120px);position:relative}
 #mapa-leaflet{width:100%;height:100%;z-index:1}
@@ -431,23 +429,22 @@ html {
 .mapa-legend-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
 .mapa-loc-btn{position:absolute;bottom:20px;right:10px;z-index:1000;background:white;border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(0,0,0,0.2);cursor:pointer;font-size:22px;border:none}
 .mapa-contador{position:absolute;top:60px;right:10px;z-index:1000;background:white;border-radius:10px;padding:8px 12px;box-shadow:0 2px 8px rgba(0,0,0,0.15);font-size:11px;font-weight:700;color:var(--g7);text-align:center}
-/* DASHBOARD MEJORADO */
-.dash-det-row{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid var(--g2);font-size:13px}
-.dash-det-row:last-child{border-bottom:none}
-.dash-det-name{font-weight:700;color:var(--g8)}
-.dash-det-count{background:var(--or);color:white;border-radius:12px;padding:2px 10px;font-weight:700;font-size:13px}
-.dash-det-count-gr{background:var(--gr);color:white;border-radius:12px;padding:2px 10px;font-weight:700;font-size:13px}
-.dash-orm-row{padding:8px 12px;border-bottom:1px solid var(--g2);font-size:12px;cursor:pointer}
-.dash-orm-row:hover{background:var(--g1)}
-.dash-orm-code{font-weight:700;color:var(--or);font-size:13px}
-.dash-orm-meta{color:var(--g6);margin-top:2px}
-.dash-bar-row{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px}
-.dash-bar-label{width:30px;font-weight:700;color:var(--g7);text-align:right;flex-shrink:0}
-.dash-bar-track{flex:1;background:var(--g2);border-radius:4px;height:18px;overflow:hidden}
-.dash-bar-fill{height:100%;border-radius:4px;transition:width 0.3s}
-.dash-bar-val{font-weight:700;color:var(--g8);width:24px;flex-shrink:0}
-/* PINES */
-.dash-det-row{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid var(--g2);font-size:13px}
+
+.mfb{padding:5px 10px;border-radius:18px;font-size:11px;font-weight:800;cursor:pointer;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,.2);background:white;color:#333}
+.mfb.on{color:white}
+.mfb.f-todos.on{background:#333;border-color:#333}
+.mfb.f-postes.on{background:#E65100;border-color:#E65100}
+.mfb.f-retenidas.on{background:#7B2D8B;border-color:#7B2D8B}
+.mfb.f-protec.on{background:#1565C0;border-color:#1565C0}
+.mfb.f-reub.on,.mfb.f-reubicaciones.on{background:#2E7D32;border-color:#2E7D32}
+.mfb.f-ejec.on{background:#E65100;color:white}
+.tipo-tabs{display:flex;gap:5px;padding:10px 14px 0;overflow-x:auto;scrollbar-width:none}
+.tipo-tabs::-webkit-scrollbar{display:none}
+.tipo-tab{flex-shrink:0;padding:7px 13px;border-radius:18px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--g3);background:var(--wh);color:var(--g6);transition:all .15s}
+.tipo-tab.on{background:var(--or);color:white;border-color:var(--or)}
+.tipo-tab.ret.on{background:#7B2D8B;border-color:#7B2D8B}
+.tipo-tab.prot.on{background:#1565C0;border-color:#1565C0}
+.tipo-tab.reub.on{background:#2E7D32;border-color:#2E7D32}
 </style>
 
 
@@ -525,14 +522,13 @@ html {
     <div class="hh-n" id="h-username">Inspector</div>
     <div class="hh-s" id="h-fecha-hoy">Domingo, 14 de junio 2026</div>
   </div>
-    <!-- Selector tipo de actividad -->
-  <div class="tipo-tabs" id="tipo-tabs">
+    <!-- Pestañas tipo actividad -->
+  <div class="tipo-tabs">
     <div class="tipo-tab on" id="tab-postes" onclick="setTipoActividad('postes')">📋 Postes</div>
     <div class="tipo-tab ret" id="tab-retenidas" onclick="setTipoActividad('retenidas')">🔗 Retenidas</div>
     <div class="tipo-tab prot" id="tab-protec" onclick="setTipoActividad('protec')">🛡️ Protec. Mec.</div>
     <div class="tipo-tab reub" id="tab-reubicaciones" onclick="setTipoActividad('reubicaciones')">🚧 Reubicaciones</div>
   </div>
-
   <div class="stats">
     <div class="sc-card or" onclick="goTo('sc-insp')">
       <div class="sc-lbl">Pend. Inspección</div>
@@ -560,25 +556,16 @@ html {
     <button onclick="goTo('sc-pins');renderPinsList()" style="width:100%;background:var(--g1);border:1.5px solid var(--g3);border-radius:var(--rmd);padding:14px;font-size:16px;font-weight:600;color:var(--g7);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px">
       🔐 Gestionar PINs de usuarios
     </button>
-    <div id="imgbb-config" style="background:var(--wh);border-radius:var(--rmd);padding:14px;border:1.5px solid var(--g3);margin-bottom:10px">
-      <div style="font-size:14px;font-weight:700;color:var(--g7);margin-bottom:8px">📷 Clave Imgbb (subida de fotos)</div>
-      <div style="display:flex;gap:8px">
-        <input type="text" id="imgbb-key-input" placeholder="Pega tu API Key de imgbb.com" 
-          value="" 
-          style="flex:1;border:1.5px solid var(--g3);border-radius:var(--rsm);padding:10px 12px;font-size:14px;font-family:inherit;outline:none">
-        <button onclick="guardarImgbbKey()" style="background:var(--or);color:white;border:none;border-radius:var(--rsm);padding:10px 16px;font-size:14px;font-weight:700;cursor:pointer">Guardar</button>
-      </div>
-      <div style="font-size:11px;color:var(--g6);margin-top:6px">Obtén tu clave gratis en <a href="https://imgbb.com" target="_blank" style="color:var(--bl)">imgbb.com</a> → Registrarse → API</div>
-    </div>
+    
   </div>
   <div id="admin-csv-section" class="hidden">
   <div style="margin-bottom:12px">
     <div style="font-size:12px;font-weight:700;color:var(--g6);margin-bottom:8px">TIPO DE IMPORTACIÓN</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-      <button class="import-tipo-btn" style="padding:8px;border-radius:8px;border:1.5px solid var(--or);background:var(--orl);color:var(--or);font-size:12px;font-weight:700;cursor:pointer" onclick="setImportTipo('postes',this)" data-tipo="postes">📋 Postes</button>
-      <button class="import-tipo-btn" style="padding:8px;border-radius:8px;border:1.5px solid var(--g3);background:var(--wh);color:var(--g6);font-size:12px;font-weight:700;cursor:pointer" onclick="setImportTipo('retenidas',this)" data-tipo="retenidas">🔗 Retenidas</button>
-      <button class="import-tipo-btn" style="padding:8px;border-radius:8px;border:1.5px solid var(--g3);background:var(--wh);color:var(--g6);font-size:12px;font-weight:700;cursor:pointer" onclick="setImportTipo('protec',this)" data-tipo="protec">🛡️ Protec. Mec.</button>
-      <button class="import-tipo-btn" style="padding:8px;border-radius:8px;border:1.5px solid var(--g3);background:var(--wh);color:var(--g6);font-size:12px;font-weight:700;cursor:pointer" onclick="setImportTipo('reubicaciones',this)" data-tipo="reubicaciones">🚧 Reubicaciones</button>
+      <button class="import-tipo-btn" style="padding:8px;border-radius:8px;border:1.5px solid var(--or);background:var(--orl);color:var(--or);font-size:12px;font-weight:700;cursor:pointer" onclick="setImportTipo('postes',this)">📋 Postes</button>
+      <button class="import-tipo-btn" style="padding:8px;border-radius:8px;border:1.5px solid var(--g3);background:var(--wh);color:var(--g6);font-size:12px;font-weight:700;cursor:pointer" onclick="setImportTipo('retenidas',this)">🔗 Retenidas</button>
+      <button class="import-tipo-btn" style="padding:8px;border-radius:8px;border:1.5px solid var(--g3);background:var(--wh);color:var(--g6);font-size:12px;font-weight:700;cursor:pointer" onclick="setImportTipo('protec',this)">🛡️ Protec. Mec.</button>
+      <button class="import-tipo-btn" style="padding:8px;border-radius:8px;border:1.5px solid var(--g3);background:var(--wh);color:var(--g6);font-size:12px;font-weight:700;cursor:pointer" onclick="setImportTipo('reubicaciones',this)">🚧 Reubicaciones</button>
     </div>
   </div>
     <div class="sec-title">📥 Importar ORMs desde AppSheet</div>
@@ -610,15 +597,18 @@ html {
     </div>
   </div>
 
-  <div class="sec-title">Últimas ORMs cargadas</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:0 4px;margin-bottom:4px">
+    <div class="sec-title" style="margin:0">Últimas ORMs cargadas</div>
+    <button onclick="abrirNuevaOrm()" style="background:var(--or);color:white;border:none;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px">➕ Nueva ORM</button>
+  </div>
   <div class="lc" id="home-list"></div>
 </div>
 <div class="bn">
-  <button class="ni on" onclick="goTo('sc-home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>Inicio</button>
-  <button class="ni" onclick="goTo('sc-insp')" id="bn-insp"><div class="niw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><span class="nbadge" id="bn-insp-cnt">—</span></div>Inspección</button>
-  <button class="ni" onclick="goTo('sc-ejec')" id="bn-ejec"><div class="niw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg><span class="nbadge" style="background:var(--bl)" id="bn-ejec-cnt">—</span></div>Ejecución</button>
-  <button class="ni" id="bn-dash" onclick="goTo('sc-dash')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg>Dashboard</button>
-</div>
+  <button class="ni on" onclick="goTo('sc-home')"><div class="niw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg></div>Inicio</button>
+  <button class="ni" onclick="goTo('sc-insp')" id="bn-insp"><div class="niw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><span class="nbadge" id="bn-insp-cnt">—</span></div>Insp.</button>
+  <button class="ni" id="bn-ejec" onclick="goTo('sc-ejec');setChip&&setChip('all');renderEjecList('')"><div class="niw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg><span class="nbadge" style="background:var(--bl)" id="bn-ejec-cnt">—</span></div>Ejec.</button>
+  <button class="ni" id="bn-mapa" onclick="abrirMapa()"><div class="niw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg></div>Mapa</button>
+  <button class="ni" id="bn-dash" onclick="goTo('sc-dash')"><div class="niw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg></div>Dashboard</button>
 </div>
 
 <!-- ===== PENDIENTE INSPECCIÓN ===== -->
@@ -626,6 +616,7 @@ html {
 <div class="tb">
   <button class="tb-back" onclick="goTo('sc-home')">←</button>
   <div class="tb-title">Pendiente Inspección</div>
+  <button onclick="abrirNuevaOrm()" style="background:white;color:var(--or);border:1.5px solid white;border-radius:20px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer">➕</button>
   <div class="tb-badge" id="insp-cnt-badge">—</div>
 </div>
 <div class="sc-content">
@@ -912,7 +903,6 @@ html {
 </div>
 
 <!-- ===== PANTALLA: GESTIÓN DE PINES (ADMIN) ===== -->
-<!-- ===== PANTALLA MAPA ===== -->
 <div class="sc" id="sc-mapa">
 <div class="tb">
   <button class="tb-back" onclick="goTo('sc-home')">←</button>
@@ -922,10 +912,10 @@ html {
 <div id="mapa-container">
   <div class="mapa-filtros">
     <button class="mapa-filtro-btn f-todos on" id="mf-todos" onclick="setMapaFiltro('todos',this)">Todos</button>
-    <button class="mapa-filtro-btn f-postes" id="mf-postes" onclick="setMapaFiltro('postes',this)">🟠 Postes</button>
-    <button class="mapa-filtro-btn f-retenidas" id="mf-retenidas" onclick="setMapaFiltro('retenidas',this)">🟣 Retenidas</button>
-    <button class="mapa-filtro-btn f-protec" id="mf-protec" onclick="setMapaFiltro('protec',this)">🔵 Protec.</button>
-    <button class="mapa-filtro-btn f-reubicaciones" id="mf-reub" onclick="setMapaFiltro('reubicaciones',this)">🟢 Reubic.</button>
+    <button class="mapa-filtro-btn f-postes" onclick="setMapaFiltro('postes',this)">🟠 Postes</button>
+    <button class="mapa-filtro-btn f-retenidas" onclick="setMapaFiltro('retenidas',this)">🟣 Retenidas</button>
+    <button class="mapa-filtro-btn f-protec" onclick="setMapaFiltro('protec',this)">🔵 Protec.</button>
+    <button class="mapa-filtro-btn f-reubicaciones" onclick="setMapaFiltro('reubicaciones',this)">🟢 Reubic.</button>
     <button class="mapa-filtro-btn f-ejec" id="mf-ejec" onclick="toggleMapaEjec(this)">⚡ Ejec.</button>
   </div>
   <div id="mapa-leaflet"></div>
@@ -979,6 +969,78 @@ html {
     </button>
   </div>
 
+</div>
+</div>
+
+
+<!-- ===== CREAR ORM MANUAL ===== -->
+<div class="sc" id="sc-nueva-orm">
+<div class="tb">
+  <button class="tb-back" onclick="goTo('sc-home')">←</button>
+  <div class="tb-title">Nueva ORM Manual</div>
+</div>
+<div class="sc-content" style="padding:16px">
+  <div style="background:var(--orl);border:1.5px solid var(--orm);border-radius:var(--rmd);padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--or);font-weight:600">
+    ➕ Registra un caso que no esté en la base de datos importada
+  </div>
+
+  <div class="fi">
+    <div class="fl">Tipo de trabajo *</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
+      <button class="nueva-orm-tipo-btn on" data-tipo="postes" onclick="setNuevaOrmTipo('postes',this)" style="padding:8px;border-radius:8px;border:1.5px solid var(--or);background:var(--orl);color:var(--or);font-size:12px;font-weight:700;cursor:pointer">📋 Poste</button>
+      <button class="nueva-orm-tipo-btn" data-tipo="retenidas" onclick="setNuevaOrmTipo('retenidas',this)" style="padding:8px;border-radius:8px;border:1.5px solid var(--g3);background:var(--wh);color:var(--g6);font-size:12px;font-weight:700;cursor:pointer">🔗 Retenida</button>
+      <button class="nueva-orm-tipo-btn" data-tipo="protec" onclick="setNuevaOrmTipo('protec',this)" style="padding:8px;border-radius:8px;border:1.5px solid var(--g3);background:var(--wh);color:var(--g6);font-size:12px;font-weight:700;cursor:pointer">🛡️ Protec. Mec.</button>
+      <button class="nueva-orm-tipo-btn" data-tipo="reubicaciones" onclick="setNuevaOrmTipo('reubicaciones',this)" style="padding:8px;border-radius:8px;border:1.5px solid var(--g3);background:var(--wh);color:var(--g6);font-size:12px;font-weight:700;cursor:pointer">🚧 Reubicación</button>
+    </div>
+  </div>
+
+  <div class="fi" style="margin-top:12px">
+    <div class="fl">N° ORM / Código *</div>
+    <input type="text" id="no-codigo" placeholder="Ej: 2042999999 o CAMPO-001" class="finput" style="border:1.5px solid var(--g3);border-radius:var(--rsm);padding:10px 12px;font-size:14px;font-family:inherit;outline:none;width:100%">
+    <div style="font-size:11px;color:var(--g5);margin-top:4px">Si aún no tiene ORM, ingresa un código temporal (ej: RET-001)</div>
+  </div>
+
+  <div class="fi" style="margin-top:12px">
+    <div class="fl">Distrito *</div>
+    <input type="text" id="no-distrito" placeholder="Ej: CARABAYLLO" class="finput" style="border:1.5px solid var(--g3);border-radius:var(--rsm);padding:10px 12px;font-size:14px;font-family:inherit;outline:none;width:100%;text-transform:uppercase">
+  </div>
+
+  <div class="fi" style="margin-top:12px">
+    <div class="fl">Suministro</div>
+    <input type="text" id="no-suministro" placeholder="Ej: 2237922" class="finput" style="border:1.5px solid var(--g3);border-radius:var(--rsm);padding:10px 12px;font-size:14px;font-family:inherit;outline:none;width:100%">
+  </div>
+
+  <div class="fi" style="margin-top:12px">
+    <div class="fl">N° de Poste (referencial)</div>
+    <input type="text" id="no-poste" placeholder="Ej: 318935" class="finput" style="border:1.5px solid var(--g3);border-radius:var(--rsm);padding:10px 12px;font-size:14px;font-family:inherit;outline:none;width:100%">
+  </div>
+
+  <div class="fi" style="margin-top:12px">
+    <div class="fl">Descripción / Petitorio *</div>
+    <textarea id="no-petitorio" placeholder="Describe el trabajo a realizar..." style="width:100%;min-height:80px;border:1.5px solid var(--g3);border-radius:var(--rsm);padding:10px 12px;font-size:14px;font-family:inherit;outline:none;resize:none"></textarea>
+  </div>
+
+  <div class="fi" style="margin-top:12px">
+    <div class="fl">Dirección / Domicilio</div>
+    <input type="text" id="no-domicilio" placeholder="Ej: Mz A Lt 5 AH Villa Paraíso" class="finput" style="border:1.5px solid var(--g3);border-radius:var(--rsm);padding:10px 12px;font-size:14px;font-family:inherit;outline:none;width:100%">
+  </div>
+
+  <div class="fi" style="margin-top:12px">
+    <div class="fl">Coordenadas (lat, lon)</div>
+    <div style="display:flex;gap:8px">
+      <input type="text" id="no-coords" placeholder="Ej: -11.878, -76.997" class="finput" style="flex:1;border:1.5px solid var(--g3);border-radius:var(--rsm);padding:10px 12px;font-size:13px;font-family:inherit;outline:none">
+      <button onclick="getGPSnuevaOrm()" style="background:var(--bl);color:white;border:none;border-radius:var(--rsm);padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">📍 GPS</button>
+    </div>
+  </div>
+
+  <div class="fi" style="margin-top:12px">
+    <div class="fl">Motivo</div>
+    <input type="text" id="no-motivo" placeholder="Ej: Mantenimiento" class="finput" style="border:1.5px solid var(--g3);border-radius:var(--rsm);padding:10px 12px;font-size:14px;font-family:inherit;outline:none;width:100%">
+  </div>
+
+  <button onclick="guardarNuevaOrm()" style="width:100%;background:var(--or);color:white;border:none;border-radius:var(--rmd);padding:14px;font-size:15px;font-weight:700;cursor:pointer;margin-top:20px">
+    💾 Agregar ORM
+  </button>
 </div>
 </div>
 
@@ -1066,6 +1128,11 @@ function buildRolePins() {
   });
   return { rolePins, roleNames };
 }
+
+// ===== TIPOS DE ACTIVIDAD (vars globales) =====
+var tipoActivo = 'postes';
+var importTipoActivo = 'postes';
+var nuevaOrmTipo = 'postes';
 
 // ===== STATE =====
 // ── Storage compatible con Apps Script (no usa localStorage) ──
@@ -1203,8 +1270,13 @@ function enterApp() {
 
 // ===== HOME =====
 function updateHome() {
-  const inspPend = state.orms.filter(o=>['Asignado','En ejecución'].includes(o['Estado inspección']) && !state.inspected.find(i=>i.code===o['Codigo de ORM']));
-  const ejecPend = state.inspected.filter(i=>!state.executed.find(e=>e.code===i.code));
+  // Filtrar por tipo activo
+  const ormsActivas = state.orms.filter(function(o) { return (o.tipo||'postes') === tipoActivo; });
+  const inspPend = ormsActivas.filter(o=>['Asignado','En ejecución'].includes(o['Estado inspección']) && !state.inspected.find(i=>i.code===o['Codigo de ORM']));
+  const ejecPend = state.inspected.filter(function(i) {
+    var orm = state.orms.find(function(o) { return o['Codigo de ORM'] === i.code; });
+    return (orm ? (orm.tipo||'postes') : 'postes') === tipoActivo && !state.executed.find(e=>e.code===i.code);
+  });
   const sinAcc = ejecPend.filter(i=>i.grua==='No').length;
   $('cnt-insp').textContent = inspPend.length;
   $('cnt-ejec').textContent = ejecPend.length;
@@ -1290,7 +1362,7 @@ function parseDate(s) {
 // ===== LISTA INSPECCIÓN =====
 let currentDistFilter='all';
 function renderDistTabs() {
-  const dists=['all',...new Set(state.orms.filter(o=>['Asignado','En ejecución'].includes(o['Estado inspección'])&&!state.inspected.find(i=>i.code===o['Codigo de ORM'])).map(o=>o['Distrito']).filter(Boolean).sort())];
+  const dists=['all',...new Set(state.orms.filter(o=>['Asignado','En ejecución'].includes(o['Estado inspección'])&&!state.inspected.find(i=>i.code===o['Codigo de ORM'])&&(o.tipo||'postes')===tipoActivo).map(o=>o['Distrito']).filter(Boolean).sort())];
   const tb=$('insp-dist-tabs'); tb.innerHTML='';
   dists.forEach(d=>{
     const el=document.createElement('div');
@@ -1302,7 +1374,7 @@ function renderDistTabs() {
 }
 function renderInspList(q) {
   const list=$('insp-list'); list.innerHTML='';
-  let orms=state.orms.filter(o=>['Asignado','En ejecución'].includes(o['Estado inspección'])&&!state.inspected.find(i=>i.code===o['Codigo de ORM']));
+  let orms=state.orms.filter(o=>['Asignado','En ejecución'].includes(o['Estado inspección'])&&!state.inspected.find(i=>i.code===o['Codigo de ORM'])&&(o.tipo||'postes')===tipoActivo);
   if(currentDistFilter!=='all') orms=orms.filter(o=>o['Distrito']===currentDistFilter);
   if(q) { const ql=q.toLowerCase(); orms=orms.filter(o=>(o['Codigo de ORM']||'').includes(ql)||(o['Suministro']||'').includes(ql)||(o['Petitorio']||'').toLowerCase().includes(ql)); }
   if(orms.length===0){list.innerHTML='<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><p>No hay ORMs pendientes</p></div>';return;}
@@ -1572,37 +1644,7 @@ function subirFotosUnaAUna(code, insp, fotos, btnSave) {
   siguiente();
 }
 
-async function subirFotoDriveAPI(codigoORM, nombreFoto, base64Data, mimeType) {
-  // Subir foto a Imgbb (servicio gratuito de hosting de imágenes)
-  // Clave gratuita - obtén la tuya en imgbb.com
-  const IMGBB_API_KEY = _store.getItem('imgbb_key') || '';
-  
-  if (!IMGBB_API_KEY) {
-    console.warn('No hay Imgbb API Key configurada');
-    // Fallback: guardar como data URL en Drive usando Apps Script si está disponible
-    return null;
-  }
-  
-  const formData = new FormData();
-  formData.append('key', IMGBB_API_KEY);
-  formData.append('image', base64Data);
-  formData.append('name', codigoORM + '_' + nombreFoto);
-  
-  try {
-    const res = await fetch('https://api.imgbb.com/1/upload', {
-      method: 'POST',
-      body: formData
-    });
-    const data = await res.json();
-    if (data.success) {
-      return data.data.url;
-    }
-    return null;
-  } catch(e) {
-    console.warn('Error subiendo a Imgbb:', e);
-    return null;
-  }
-}
+
 
 function guardarSoloRegistro(code, insp, urls) {
   const orm = state.currentOrm || {};
@@ -1659,12 +1701,11 @@ function renderEjecList(q) {
   // Para inspector/admin: ve las que él inspeccionó y están pendientes de ejecución
   let items;
   if(state.role==='tecnico') {
-    items=state.orms.filter(o=>o['Estado inspección']==='Ejecutado').map(o=>({code:o['Codigo de ORM'],insp:{grua:'Si',dms:'N',acm:0,coords:'',det:''},orm:o}));
-    // También agrega las inspeccionadas por la app (pendientes de ejecución)
-    const appInsp=state.inspected.filter(i=>!state.executed.find(e=>e.code===i.code)).map(i=>({code:i.code,insp:i,orm:state.orms.find(o=>o['Codigo de ORM']===i.code)||{}}));
+    items=state.orms.filter(o=>o['Estado inspección']==='Ejecutado'&&(o.tipo||'postes')===tipoActivo).map(o=>({code:o['Codigo de ORM'],insp:{grua:'Si',dms:'N',acm:0,coords:'',det:''},orm:o}));
+    const appInsp=state.inspected.filter(function(i){var orm=state.orms.find(o=>o['Codigo de ORM']===i.code);return (orm?(orm.tipo||'postes'):'postes')===tipoActivo&&!state.executed.find(e=>e.code===i.code);}).map(i=>({code:i.code,insp:i,orm:state.orms.find(o=>o['Codigo de ORM']===i.code)||{}}));
     items=[...appInsp,...items.filter(x=>!state.inspected.find(i=>i.code===x.code))];
   } else {
-    items=state.inspected.filter(i=>!state.executed.find(e=>e.code===i.code)).map(i=>({code:i.code,insp:i,orm:state.orms.find(o=>o['Codigo de ORM']===i.code)||{}}));
+    items=state.inspected.filter(function(i){var orm=state.orms.find(o=>o['Codigo de ORM']===i.code);return (orm?(orm.tipo||'postes'):'postes')===tipoActivo&&!state.executed.find(e=>e.code===i.code);}).map(i=>({code:i.code,insp:i,orm:state.orms.find(o=>o['Codigo de ORM']===i.code)||{}}));
   }
   if(q){const ql=q.toLowerCase();items=items.filter(x=>(x.code||'').includes(ql)||(x.orm['Petitorio']||'').toLowerCase().includes(ql));}
   if(ejecFilter==='grua') items=items.filter(x=>(x.insp.grua||'')!=='No'&&(x.insp.grua||'')!=='DMS');
@@ -2061,19 +2102,7 @@ function usarCoordsPoste(coords) {
 
 
 
-function guardarImgbbKey() {
-  const key = document.getElementById('imgbb-key-input').value.trim();
-  if (!key) { mostrarToast('⚠️ Ingresa la clave', 'var(--rd)'); return; }
-  _store.setItem('imgbb_key', key);
-  mostrarToast('✅ Clave guardada correctamente', 'var(--gr)');
-}
-
-// Cargar key guardada al iniciar
-document.addEventListener('DOMContentLoaded', function() {
-  const savedKey = _store.getItem('imgbb_key') || '';
-  const inp = document.getElementById('imgbb-key-input');
-  if (inp && savedKey) inp.value = savedKey;
-});
+;
 
 // ===== GESTIÓN DE PINES =====
 let _newRol = 'inspector';
@@ -2084,546 +2113,67 @@ function setNewRol(rol) {
   $('new-rol-tec').className  = 'tb2' + (rol==='tecnico'?' n':'');
 }
 
-function renderPinsList() {
-  const pins = getPins();
-  const container = $('pins-list');
-  container.innerHTML = '';
-
-  Object.entries(pins).forEach(function([key, user]) {
-    const rolColor = user.rol==='inspector' ? 'var(--or)' : 'var(--bl)';
-    const rolBg    = user.rol==='inspector' ? 'var(--orl)' : 'var(--bll)';
-    const div = document.createElement('div');
-    div.style.cssText = 'background:var(--wh);border-radius:var(--rmd);padding:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.08)';
-    div.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div>
-          <div style="font-size:14px;font-weight:700">${user.nombre}</div>
-          <span style="font-size:11px;font-weight:700;background:${rolBg};color:${rolColor};padding:2px 8px;border-radius:20px">${user.rol==='inspector'?'Inspector':'Técnico'}</span>
-        </div>
-        <button onclick="eliminarUsuarioPin('${key}')" 
-          style="background:var(--rdl);color:var(--rd);border:none;border-radius:var(--rsm);padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer">
-          🗑️ Eliminar
-        </button>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <div style="flex:1">
-          <div style="font-size:11px;color:var(--g6);margin-bottom:4px">PIN actual</div>
-          <div style="display:flex;gap:6px">
-            <input type="number" id="pin-input-${key}" value="${user.pin}" maxlength="4"
-              style="width:90px;border:1.5px solid var(--g3);border-radius:var(--rsm);padding:8px 10px;font-size:16px;font-weight:700;font-family:inherit;outline:none;letter-spacing:4px">
-            <button onclick="cambiarPin('${key}')"
-              style="background:var(--or);color:white;border:none;border-radius:var(--rsm);padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer">
-              ✓ Guardar
-            </button>
-          </div>
-        </div>
-      </div>`;
-    container.appendChild(div);
-  });
+function renderPinsList(){
+  var pins=getPins();var list=document.getElementById('pins-list');if(!list) return;
+  if(!pins.length){list.innerHTML='<div style="text-align:center;color:var(--g6);padding:20px">No hay usuarios</div>';return;}
+  list.innerHTML=pins.map(function(p,i){var c=p.role==='inspector'?'var(--or)':'var(--bl)';return '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--wh);border:1.5px solid var(--g2);border-radius:var(--rmd);margin-bottom:8px"><div><div style="font-weight:700;font-size:15px">'+(p.nombre||p.name||'')+'</div><div style="font-size:12px;color:'+c+';font-weight:700;text-transform:uppercase">'+(p.role||p.rol||'')+'</div></div><div style="display:flex;align-items:center;gap:10px"><div style="font-size:20px;font-weight:800;letter-spacing:4px;color:var(--g5)">'+p.pin+'</div><button onclick="eliminarUsuario('+i+')" style="background:var(--rdl);color:var(--rd);border:1.5px solid var(--rdm);border-radius:8px;padding:6px 10px;cursor:pointer">🗑</button></div></div>';}).join('');
 }
 
-function cambiarPin(key) {
-  const input = $('pin-input-' + key);
-  const newPin = String(input.value).trim();
-  if (newPin.length !== 4 || isNaN(newPin)) {
-    mostrarToast('⚠️ El PIN debe tener exactamente 4 dígitos', 'var(--rd)');
-    return;
-  }
-  // Verificar que no esté en uso
-  const pins = getPins();
-  const enUso = Object.entries(pins).find(function([k, u]) { return u.pin === newPin && k !== key; });
-  if (enUso) {
-    mostrarToast('⚠️ Ese PIN ya está en uso por ' + enUso[1].nombre, 'var(--rd)');
-    return;
-  }
-  pins[key].pin = newPin;
-  _store.setItem('pins_config', JSON.stringify(pins));
-  mostrarToast('✅ PIN de ' + pins[key].nombre + ' actualizado a ' + newPin, 'var(--gr)');
-  renderPinsList();
+function agregarUsuario(){
+  var nombre=(document.getElementById('new-nombre')||{}).value||'';
+  var pin=(document.getElementById('new-pin')||{}).value||'';
+  var rolBtn=document.querySelector('.new-rol-btn.active');
+  var rol=rolBtn?(rolBtn.dataset.rol||rolBtn.getAttribute('data-rol')||'inspector'):'inspector';
+  if(!nombre.trim()){mostrarToast('⚠️ Escribe un nombre','var(--rd)');return;}
+  if(!/^\d{4}$/.test(pin)){mostrarToast('⚠️ PIN debe ser 4 dígitos','var(--rd)');return;}
+  var pins=getPins();
+  if(pins.find(function(p){return p.pin===pin;})){mostrarToast('⚠️ PIN ya existe','var(--rd)');return;}
+  pins.push({nombre:nombre.trim(),pin:pin,role:rol});
+  _store.setItem('pins_config',JSON.stringify(pins));
+  var ne=document.getElementById('new-nombre');if(ne) ne.value='';
+  var pe=document.getElementById('new-pin');if(pe) pe.value='';
+  renderPinsList();mostrarToast('✅ Usuario '+nombre.trim()+' agregado','var(--gr)');
 }
 
-function eliminarUsuarioPin(key) {
-  const pins = getPins();
-  const nombre = pins[key] ? pins[key].nombre : key;
-  if (Object.keys(pins).length <= 1) {
-    mostrarToast('⚠️ Debe haber al menos un usuario', 'var(--rd)');
-    return;
-  }
-  delete pins[key];
-  _store.setItem('pins_config', JSON.stringify(pins));
-  mostrarToast('🗑️ ' + nombre + ' eliminado', 'var(--or)');
-  renderPinsList();
+function eliminarUsuario(idx){
+  var pins=getPins();var nombre=pins[idx]?pins[idx].nombre:'';
+  pins.splice(idx,1);_store.setItem('pins_config',JSON.stringify(pins));
+  renderPinsList();mostrarToast('✅ '+nombre+' eliminado','var(--gr)');
 }
 
-function agregarUsuario() {
-  const nombre = $('new-nombre').value.trim();
-  const pin    = String($('new-pin').value).trim();
-
-  if (!nombre) { mostrarToast('⚠️ Escribe un nombre', 'var(--rd)'); return; }
-  if (pin.length !== 4 || isNaN(pin)) { mostrarToast('⚠️ El PIN debe tener 4 dígitos', 'var(--rd)'); return; }
-
-  const pins = getPins();
-  // Verificar PIN único
-  const enUso = Object.values(pins).find(function(u) { return u.pin === pin; });
-  if (enUso) { mostrarToast('⚠️ PIN ' + pin + ' ya está en uso por ' + enUso.nombre, 'var(--rd)'); return; }
-
-  const key = _newRol + '_' + Date.now();
-  pins[key] = { pin, nombre, rol: _newRol };
-  _store.setItem('pins_config', JSON.stringify(pins));
-
-  $('new-nombre').value = '';
-  $('new-pin').value = '';
-  mostrarToast('✅ ' + nombre + ' agregado con PIN ' + pin, 'var(--gr)');
-  renderPinsList();
-}
-
-// ===== SINCRONIZACIÓN DESDE SHEET AL INICIAR =====
-function sincronizarDesdeSheet() {
-  // Cargar inspecciones desde Google Sheets API
-  const url = 'https://sheets.googleapis.com/v4/spreadsheets/1jYHm5nx6MzXzVppG-drTGZdTD7S8UIrC7Vl2iTjmlVQ/values/Inspecciones!A1:AE?key=AIzaSyCSOb4VzWkwke0QimyQK3XsW7I5b_igkRI';
-  const urlEjec = 'https://sheets.googleapis.com/v4/spreadsheets/1jYHm5nx6MzXzVppG-drTGZdTD7S8UIrC7Vl2iTjmlVQ/values/Ejecuciones!A1:L?key=AIzaSyCSOb4VzWkwke0QimyQK3XsW7I5b_igkRI';
-  
-  Promise.all([fetch(url).then(r=>r.json()), fetch(urlEjec).then(r=>r.json())])
-    .then(function([dataInsp, dataEjec]) {
-      const inspecciones = [], ejecuciones = [];
-      
-      if (dataInsp.values && dataInsp.values.length > 1) {
-        const headers = dataInsp.values[0];
-        dataInsp.values.slice(1).forEach(function(row) {
-          const obj = {};
-          headers.forEach(function(h,i) { obj[h] = row[i]||''; });
-          if (obj['Codigo ORM']) inspecciones.push(obj);
-        });
-      }
-      
-      if (dataEjec.values && dataEjec.values.length > 1) {
-        const headers = dataEjec.values[0];
-        dataEjec.values.slice(1).forEach(function(row) {
-          const obj = {};
-          headers.forEach(function(h,i) { obj[h] = row[i]||''; });
-          if (obj['Codigo ORM']) ejecuciones.push(obj);
-        });
-      }
-      
-      const fakeJson = JSON.stringify({inspecciones, ejecuciones});
-      procesarSyncData(fakeJson);
-    })
-    .catch(e => console.warn('Error sync:', e));
+function setNewRol(rol,btn){
+  document.querySelectorAll('.new-rol-btn').forEach(function(b){b.classList.remove('active','n');});
+  if(btn){btn.classList.add('active','n');}
 }
 
 
-// ===== SINCRONIZACIÓN CON APPSHEET DE PLUS =====
-function getSyncState(code) {
-  const synced = JSON.parse(_store.getItem('synced_plus') || '{}');
-  return synced[code] === true ? 'subido' : 'pendiente';
-}
+// ===== FILTRAR HOME Y LISTAS POR TIPO ACTIVO =====
+// Sobreescribir updateHome para filtrar por tipo
+var _origUpdateHome = null;
 
-function toggleSync(code) {
-  const synced = JSON.parse(_store.getItem('synced_plus') || '{}');
-  if (synced[code]) {
-    delete synced[code];
-    mostrarToast('⏳ ' + code + ' marcado como pendiente', 'var(--or)');
-  } else {
-    synced[code] = true;
-    mostrarToast('✅ ' + code + ' marcado como subido a Plus', 'var(--gr)');
-  }
-  _store.setItem('synced_plus', JSON.stringify(synced));
-  // Refrescar lista actual
-  if (document.getElementById('sc-ejec').classList.contains('on')) renderEjecList('');
-  if (document.getElementById('sc-insp').classList.contains('on')) renderInspList('');
-}
 
-function mostrarToast(msg, color) {
-  const prev = document.getElementById('toast-msg');
-  if (prev) prev.remove();
-  const toast = document.createElement('div');
-  toast.id = 'toast-msg';
-  toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:' + color + ';color:white;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:700;z-index:999;box-shadow:0 4px 12px rgba(0,0,0,.2);white-space:nowrap';
-  toast.textContent = msg;
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 2500);
-}
-
-// ===== ELIMINAR INSPECCIÓN =====
-let _delCode = null;
-
-function pedirEliminar(code) {
-  _delCode = code;
-  const o = state.orms.find(x=>x['Codigo de ORM']===code)||{};
-  $('mo-del-msg').innerHTML = `Se eliminará la inspección de la ORM <strong>${code}</strong>${o['Distrito']?' — '+o['Distrito']:''}.<br><br>La ORM volverá a <strong>Pendiente de Inspección</strong>.`;
-  $('mo-del').classList.add('on');
-}
-
-function confirmarEliminar() {
-  if (!_delCode) return;
-  const code = _delCode;
-
-  state.inspected = state.inspected.filter(i => i.code !== code);
-  state.executed = state.executed.filter(e => e.code !== code);
-  save();
-
-  // Eliminar del Sheet via API
-  eliminarDelSheet(code);
-
-  closeMo('mo-del');
-  _delCode = null;
-  updateHome();
-  if (document.getElementById('sc-ejec').classList.contains('on')) renderEjecList('');
-  if (document.getElementById('sc-insp').classList.contains('on')) renderInspList('');
-  mostrarToast('✓ Inspección eliminada — ORM vuelve a pendiente', 'var(--gr)');
-}
-
-async function eliminarDelSheet(code) {
-  // Buscar y eliminar fila en Inspecciones
-  try {
-    const url = 'https://sheets.googleapis.com/v4/spreadsheets/1jYHm5nx6MzXzVppG-drTGZdTD7S8UIrC7Vl2iTjmlVQ/values/Inspecciones!A:A?key=AIzaSyCSOb4VzWkwke0QimyQK3XsW7I5b_igkRI';
-    const res = await fetch(url);
-    const data = await res.json();
-    if (!data.values) return;
-    
-    // Encontrar la fila
-    const rowIdx = data.values.findIndex(r => r[0] === code);
-    if (rowIdx < 0) return;
-    
-    // Limpiar la fila (no podemos eliminar filas con API key sola, necesita OAuth)
-    // En su lugar, marcamos como eliminada
-    const clearUrl = 'https://sheets.googleapis.com/v4/spreadsheets/1jYHm5nx6MzXzVppG-drTGZdTD7S8UIrC7Vl2iTjmlVQ/values/Inspecciones!A' + (rowIdx+1) + ':AE' + (rowIdx+1) + ':clear?key=AIzaSyCSOb4VzWkwke0QimyQK3XsW7I5b_igkRI';
-    await fetch(clearUrl, { method: 'POST', headers: {'Content-Type':'application/json'} });
-  } catch(e) {
-    console.warn('Error eliminando del Sheet:', e);
-  }
-}
-
-// ===== BUSCADOR POR NÚMERO DE POSTE =====
-
-function togglePoste2() {
-  const body=document.getElementById('poste2-body');
-  const chev=document.getElementById('poste2-chev');
-  const open=body.classList.toggle('open');
-  chev.textContent=open?'▲':'▼';
-  if(open) setTimeout(()=>document.getElementById('poste2-input').focus(),100);
-}
-function buscarPoste2(q) {
-  const res=document.getElementById('poste2-results');
-  q=(q||'').trim();
-  if(q.length<3){res.innerHTML='<div class="pr-empty">Ingresa al menos 3 caracteres</div>';return;}
-  // Buscar primero en POLES_DB
-  if (Object.keys(POLES_DB).length > 0) {
-    const poleMatches = Object.entries(POLES_DB)
-      .filter(([id]) => id.startsWith(q) || id === q)
-      .slice(0, 4);
-    if (poleMatches.length > 0) {
-      res.innerHTML = '';
-      poleMatches.forEach(([id, coords]) => {
-        const d = document.createElement('div');
-        d.className = 'poste-result-card';
-        d.style.borderLeftColor = 'var(--bl)';
-        d.innerHTML = `<div class="pr-code" style="color:var(--bl)">Poste N° ${id}</div>
-          <div style="font-size:11px;color:var(--g6);margin-bottom:8px">📍 ${coords}</div>
-          <div class="pr-actions"><button class="pr-btn-map" onclick="openMaps('${coords}')">🗺️ Abrir en Maps</button></div>`;
-        res.appendChild(d);
-      });
-      return;
-    }
-  }
-  const found=state.orms.filter(o=>{
-    const pet=(o['Petitorio']||'').toLowerCase();
-    const sumi=(o['Suministro']||'').toLowerCase();
-    const cod=(o['Codigo de ORM']||'').toLowerCase();
-    return pet.includes(q.toLowerCase())||sumi.includes(q)||cod.includes(q);
-  }).slice(0,8);
-  if(found.length===0){res.innerHTML='<div class="pr-empty">No encontrado</div>';return;}
-  res.innerHTML='';
-  found.forEach(o=>{
-    const insp=state.inspected.find(i=>i.code===o['Codigo de ORM']);
-    const coords=insp?insp.coords:(o['Coordenadas']||'');
-    const hasCoords=coords&&coords.trim()!=='';
-    const pet=(o['PetitorioCorto']||'').replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'),m=>`<span class="poste-highlight">${m}</span>`);
-    const estado=o['Estado inspección']||'';
-    const yaInsp=!!insp;
-    const div=document.createElement('div');
-    div.className='poste-result-card';
-    div.innerHTML=`
-      <div class="pr-code">${o['Codigo de ORM']||'—'}</div>
-      <div><span class="pr-dist">${o['Distrito']||'—'}</span> <span style="font-size:11px;color:var(--g6)">${estado}${yaInsp?' · ✓ Inspeccionado':''}</span></div>
-      <div class="pr-pet">${pet}</div>
-      ${hasCoords?`<div style="font-size:11px;color:var(--g6);margin-bottom:6px">📍 ${coords}</div>`:''}
-      <div class="pr-actions">
-        ${hasCoords?`<button class="pr-btn-map" onclick="openMaps('${coords}')">🗺️ Abrir en Maps</button>`:''}
-        ${!yaInsp&&['Asignado','En ejecución'].includes(estado)?`<button class="pr-btn-insp" onclick="openForm('${o['Codigo de ORM']}');togglePoste2()">📋 Inspeccionar</button>`:''}
-      </div>`;
-    res.appendChild(div);
-  });
-}
-
-function togglePoste() {
-  const body = document.getElementById('poste-body');
-  const chev = document.getElementById('poste-chevron');
-  const open = body.classList.toggle('open');
-  chev.textContent = open ? '▲' : '▼';
-  if (open) setTimeout(() => document.getElementById('poste-input').focus(), 100);
-}
-
-function buscarPoste(q) {
-  const res = document.getElementById('poste-results');
-  q = (q || '').trim();
-  if (q.length < 3) { res.innerHTML = '<div class="pr-empty">Ingresa al menos 3 caracteres</div>'; return; }
-  // Buscar primero en POLES_DB (número de poste exacto)
-  if (Object.keys(POLES_DB).length > 0) {
-    const poleMatches = Object.entries(POLES_DB)
-      .filter(([id]) => id.startsWith(q) || id === q)
-      .slice(0, 4);
-    if (poleMatches.length > 0) {
-      res.innerHTML = '<div style="font-size:11px;font-weight:700;color:var(--g6);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Postes encontrados</div>';
-      poleMatches.forEach(([id, coords]) => {
-        const d = document.createElement('div');
-        d.className = 'poste-result-card';
-        d.style.borderLeftColor = 'var(--bl)';
-        d.innerHTML = `<div class="pr-code" style="color:var(--bl)">Poste N° ${id}</div>
-          <div style="font-size:11px;color:var(--g6);margin-bottom:8px">📍 ${coords}</div>
-          <div class="pr-actions"><button class="pr-btn-map" onclick="openMaps('${coords}')">🗺️ Abrir en Maps</button></div>`;
-        res.appendChild(d);
-      });
-      return;
-    }
-  }
-  // Si no hay postes, buscar en ORMs
-  const found = state.orms.filter(o => {
-    const pet = (o['Petitorio'] || '').toLowerCase();
-    const sumi = (o['Suministro'] || '').toLowerCase();
-    const cod = (o['Codigo de ORM'] || '').toLowerCase();
-    return pet.includes(q.toLowerCase()) || sumi.includes(q) || cod.includes(q);
-  }).slice(0, 8);
-  if (found.length === 0) { res.innerHTML = '<div class="pr-empty">No se encontraron ORMs con ese número de poste</div>'; return; }
-  res.innerHTML = '';
-  found.forEach(o => {
-    const insp = state.inspected.find(i => i.code === o['Codigo de ORM']);
-    const coords = insp ? insp.coords : (o['Coordenadas'] || '');
-    const hasCoords = coords && coords.trim() !== '';
-    // Highlight el término buscado en el petitorio
-    const pet = (o['PetitorioCorto'] || o['Petitorio'] || '').replace(
-      new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'),
-      m => `<span class="poste-highlight">${m}</span>`
-    );
-    const estado = o['Estado inspección'] || '';
-    const yaInsp = !!insp;
-    const div = document.createElement('div');
-    div.className = 'poste-result-card';
-    div.innerHTML = `
-      <div class="pr-code">${o['Codigo de ORM'] || '—'}</div>
-      <div><span class="pr-dist">${o['Distrito'] || '—'}</span> <span style="font-size:11px;color:var(--g6)">${estado}${yaInsp?' · ✓ Inspeccionado':''}</span></div>
-      <div class="pr-pet">${pet}</div>
-      ${hasCoords ? `<div style="font-size:11px;color:var(--g6);margin-bottom:6px">📍 ${coords}</div>` : ''}
-      <div class="pr-actions">
-        ${hasCoords ? `<button class="pr-btn-map" onclick="openMaps('${coords}')">🗺️ Abrir en Maps</button>` : ''}
-        ${!yaInsp && ['Asignado','En ejecución'].includes(estado) ? `<button class="pr-btn-insp" onclick="openForm('${o['Codigo de ORM']}');togglePoste()">📋 Inspeccionar</button>` : ''}
-      </div>
-    `;
-    res.appendChild(div);
-  });
-}
-
-// ===== ABRIR GOOGLE MAPS =====
-function openMaps(coords) {
-  if (!coords || coords.trim() === '') return;
-  const clean = coords.trim().replace(/\s+/g, '');
-  const url = 'https://www.google.com/maps?q=' + clean;
-  // Compatible con Apps Script y navegadores móviles
-  const a = document.createElement('a');
-  a.href = url; a.target = '_blank'; a.rel = 'noopener';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-}
-
-// ── APPS SCRIPT COMPAT FIX ──
-// Prevenir que el iframe bloquee interacciones
-document.addEventListener('touchstart', function(){}, {passive:true});
-// Asegurar que los clicks en role-cards funcionan en iframe
-document.querySelectorAll('.role-card').forEach(function(card) {
-  card.addEventListener('touchend', function(e) {
-    e.preventDefault();
-    var onclick = card.getAttribute('onclick');
-    if(onclick) { try { eval(onclick); } catch(err) { console.log(err); } }
-  }, {passive:false});
-});
-// INIT
-const d=new Date();
-$('h-fecha-hoy').textContent=d.toLocaleDateString('es-PE',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-
-// ===== TIPOS DE ACTIVIDAD =====
-var tipoActivo = 'postes';
-var importTipoActivo = 'postes';
-
-function setTipoActividad(tipo) {
-  tipoActivo = tipo;
-  document.querySelectorAll('.tipo-tab').forEach(function(t) { t.classList.remove('on'); });
-  const tab = document.getElementById('tab-' + tipo);
-  if (tab) tab.classList.add('on');
-  updateHome();
-}
-
-function setImportTipo(tipo, btn) {
-  importTipoActivo = tipo;
-  document.querySelectorAll('.import-tipo-btn').forEach(function(b) {
-    b.style.background = 'var(--wh)'; b.style.color = 'var(--g6)'; b.style.borderColor = 'var(--g3)';
-  });
-  if (btn) { btn.style.background = 'var(--orl)'; btn.style.color = 'var(--or)'; btn.style.borderColor = 'var(--or)'; }
-  const titles = {postes:'📥 Importar ORMs desde AppSheet',retenidas:'🔗 Importar Cambio de Retenidas',protec:'🛡️ Importar Protecciones Mecánicas',reubicaciones:'🚧 Importar Reubicaciones de Postes'};
-  const descs = {postes:'Descarga el CSV desde AppSheet de Plus<br>y súbelo aquí.<br><strong>Solo se importan ORMs activas</strong>',retenidas:'Sube el Excel <strong>CAMBIO_RETENIDAS.xlsx</strong><br>Filtra: EECC=COBRA + PENDIENTE DE ASIGNAR',protec:'Sube el Excel <strong>CAMBIO_PROTEC_MEC.xlsx</strong><br>Filtra: EECC=COBRA + PENDIENTE DE ASIGNAR',reubicaciones:'Sube el Excel <strong>ORM_REUBICACIONES.xlsx</strong><br>Carga la hoja CLINTON completa'};
-  const te = document.getElementById('import-section-title');
-  const de = document.getElementById('import-desc');
-  if (te) te.textContent = titles[tipo]||titles.postes;
-  if (de) de.innerHTML = descs[tipo]||descs.postes;
-}
-
-function triggerImportInput() {
-  if (importTipoActivo === 'postes') {
-    document.getElementById('csv-input').click();
-  } else {
-    const inp = document.getElementById('xlsx-input');
-    if (inp) inp.click();
-    else { const i = document.createElement('input'); i.type='file'; i.accept='.xlsx,.xls'; i.onchange=function(e){importarExcelTipo(e.target.files[0]);}; i.click(); }
-  }
-}
-
-function dmsToDecimal(dmsStr) {
-  if (!dmsStr) return null;
-  dmsStr = String(dmsStr).trim().replace(/	/g,'');
-  const parts = dmsStr.split(',');
-  if (parts.length < 2) return null;
-  function parseDMS(s) {
-    s = s.trim(); const neg = s.startsWith('-'); s = s.replace('-','').trim();
-    const m = s.match(/(\d+)[°\s]+(\d+)['\s]+([\.\d]+)/);
-    if (!m) return null;
-    const dec = parseFloat(m[1]) + parseFloat(m[2])/60 + parseFloat(m[3])/3600;
-    return neg ? -dec : dec;
-  }
-  const lon = parseDMS(parts[0]); const lat = parseDMS(parts[1]);
-  if (lat===null||lon===null) return null;
-  return lat+','+lon;
-}
-
-function limpiarCoords(coordStr) {
-  if (!coordStr) return null;
-  coordStr = String(coordStr).trim();
-  if (coordStr.includes('°')) return dmsToDecimal(coordStr);
-  const parts = coordStr.split(',');
-  if (parts.length >= 2) {
-    const lat = parseFloat(parts[0].trim()); const lon = parseFloat(parts[1].trim());
-    if (!isNaN(lat) && !isNaN(lon)) return lat+','+lon;
-  }
-  return null;
-}
-
-function importarExcelTipo(file) {
-  if (!file) return;
-  if (!window.XLSX) { mostrarToast('⚠️ Librería Excel cargando, intenta de nuevo', 'var(--or)'); return; }
-  mostrarToast('⏳ Procesando Excel...', 'var(--bl)');
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const data = new Uint8Array(e.target.result);
-      const wb = XLSX.read(data, {type:'array'});
-      let registros = [];
-
-      if (importTipoActivo === 'retenidas') {
-        const ws = wb.Sheets['RET_PRIORIDAD_A'] || wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
-        registros = rows.slice(1)
-          .filter(r => String(r[22]||'').trim().toUpperCase()==='COBRA' && String(r[30]||'').toUpperCase().includes('PENDIENTE'))
-          .map(function(r) {
-            return { tipo:'retenidas', 'Codigo de ORM':String(r[0]||'').trim(),
-              'Suministro':String(r[19]||'').trim(), 'Distrito':String(r[21]||'').trim(),
-              'Petitorio':'CAMBIO DE RETENIDA', 'Motivo':'RETENIDA',
-              'Coordenadas':limpiarCoords(String(r[11]||'')),
-              'SED':String(r[2]||'').trim(), 'CodigoPoste':String(r[0]||'').trim(),
-              'Estado inspección':'Pendiente', 'PetitorioCorto':'RETENIDA',
-              'Fecha registro': new Date().toISOString().split('T')[0] };
-          });
-      }
-      else if (importTipoActivo === 'protec') {
-        const ws = wb.Sheets['BD'] || wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
-        registros = rows.slice(1)
-          .filter(r => String(r[22]||'').trim().toUpperCase()==='COBRA' && String(r[30]||'').toUpperCase().includes('PENDIENTE'))
-          .map(function(r) {
-            return { tipo:'protec', 'Codigo de ORM':String(r[0]||'').trim(),
-              'Suministro':String(r[19]||'').trim(), 'Distrito':String(r[21]||'').trim(),
-              'Petitorio':'PROTECCIÓN MECÁNICA', 'Motivo':'PROTEC MECANICA',
-              'Coordenadas':limpiarCoords(String(r[11]||'')),
-              'SED':String(r[2]||'').trim(), 'CodigoPoste':String(r[0]||'').trim(),
-              'Estado inspección':'Pendiente', 'PetitorioCorto':'PROTEC MEC',
-              'Fecha registro': new Date().toISOString().split('T')[0] };
-          });
-      }
-      else if (importTipoActivo === 'reubicaciones') {
-        const ws = wb.Sheets['CLINTON'] || wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
-        registros = rows.slice(3).filter(r => r.some(v => v))
-          .map(function(r) {
-            return { tipo:'reubicaciones', 'Codigo de ORM':String(r[1]||r[10]||'').trim(),
-              'Suministro':String(r[4]||'').trim(), 'Distrito':String(r[5]||'').trim(),
-              'Petitorio':String(r[26]||'REUBICACIÓN DE POSTE').slice(0,100),
-              'Motivo':'REUBICACION COMERCIAL',
-              'Coordenadas':limpiarCoords(String(r[11]||'')),
-              'CodigoPoste':String(r[10]||'').trim(),
-              'Estado inspección':'Pendiente', 'PetitorioCorto':'REUBICACION',
-              'Fecha registro':String(r[19]||'').split(' ')[0] };
-          });
-      }
-
-      let nuevos = 0;
-      registros.forEach(function(r) {
-        if (!r['Codigo de ORM']) return;
-        const existe = state.orms.find(o => o['Codigo de ORM']===r['Codigo de ORM'] && o.tipo===r.tipo);
-        if (!existe) { state.orms.push(r); nuevos++; }
-      });
-      save(); updateHome();
-      mostrarToast('✅ '+nuevos+' registros de '+importTipoActivo.toUpperCase()+' importados', 'var(--gr)');
-    } catch(err) {
-      console.error('Error importando Excel:', err);
-      mostrarToast('❌ Error: '+err.message, 'var(--rd)');
-    }
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-function buscarCoordsPoste(codigoPoste) {
-  if (typeof poleCoords !== 'undefined' && poleCoords && poleCoords[codigoPoste]) return poleCoords[codigoPoste];
-  return null;
-}
-
-function abrirMapsReferencial(orm) {
-  let coords = orm['Coordenadas'];
-  if (!coords && orm['CodigoPoste']) coords = buscarCoordsPoste(orm['CodigoPoste']);
-  if (!coords) { mostrarToast('⚠️ Sin coordenadas disponibles', 'var(--or)'); return; }
-  const parts = coords.split(',');
-  if (parts.length >= 2) window.open('https://www.google.com/maps?q='+parts[0].trim()+','+parts[1].trim(), '_blank');
-}
 
 // ===== MAPA INTERACTIVO =====
-var mapaLeaflet = null;
-var mapaMarkers = [];
-var mapaFiltroTipo = 'todos';
-var mapaFiltroEjec = false;
-var mapaUserMarker = null;
-var mapaInitialized = false;
-
-var COLORES_TIPO = {
+var mapaLeaflet = null, mapaMarkers = [], mapaFiltroTipo = 'todos', mapaFiltroEjec = false;
+var mapaUserMarker = null, mapaInitialized = false;
+var COLORES_MAPA = {
   postes:{fill:'#E65100',stroke:'#BF360C'}, retenidas:{fill:'#7B2D8B',stroke:'#4A148C'},
   protec:{fill:'#1565C0',stroke:'#0D47A1'}, reubicaciones:{fill:'#2E7D32',stroke:'#1B5E20'},
   inspeccionado:{fill:'#F9A825',stroke:'#E65100'}, ejecutado:{fill:'#43A047',stroke:'#1B5E20'}
 };
 
 function crearIconoPin(color, stroke) {
-  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="31" viewBox="0 0 24 34"><path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 22 12 22S24 21 24 12C24 5.4 18.6 0 12 0z" fill="'+color+'" stroke="'+stroke+'" stroke-width="1.5"/><circle cx="12" cy="12" r="5" fill="white" opacity="0.9"/></svg>';
-  return L.divIcon({html:svg, className:'', iconSize:[22,31], iconAnchor:[11,31], popupAnchor:[0,-31]});
+  var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="31" viewBox="0 0 24 34">'
+    +'<path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 22 12 22S24 21 24 12C24 5.4 18.6 0 12 0z" fill="'+color+'" stroke="'+stroke+'" stroke-width="1.5"/>'
+    +'<circle cx="12" cy="12" r="5" fill="white" opacity="0.9"/></svg>';
+  return L.divIcon({html:svg,className:'',iconSize:[22,31],iconAnchor:[11,31],popupAnchor:[0,-31]});
 }
 
 function getColorOrm(orm) {
-  const code = orm['Codigo de ORM'];
-  if (state.executed.find(e=>e.code===code)) return COLORES_TIPO.ejecutado;
-  if (state.inspected.find(i=>i.code===code)) return COLORES_TIPO.inspeccionado;
-  return COLORES_TIPO[orm.tipo||'postes'] || COLORES_TIPO.postes;
+  var code = orm['Codigo de ORM'];
+  if (state.executed.find(function(e){return e.code===code;})) return COLORES_MAPA.ejecutado;
+  if (state.inspected.find(function(i){return i.code===code;})) return COLORES_MAPA.inspeccionado;
+  return COLORES_MAPA[orm.tipo||'postes'] || COLORES_MAPA.postes;
 }
 
 function abrirMapa() {
@@ -2632,16 +2182,16 @@ function abrirMapa() {
 }
 
 function inicializarMapa() {
-  if (mapaInitialized && mapaLeaflet) { mapaLeaflet.invalidateSize(); return; }
-  mapaLeaflet = L.map('mapa-leaflet', {center:[-11.9,-77.0], zoom:11, zoomControl:true});
+  if (mapaInitialized && mapaLeaflet) { try{mapaLeaflet.invalidateSize();}catch(e){} return; }
+  if (!document.getElementById('mapa-leaflet')) return;
+  mapaLeaflet = L.map('mapa-leaflet', {center:[-11.9,-77.0], zoom:11});
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'© OpenStreetMap', maxZoom:19}).addTo(mapaLeaflet);
   mapaInitialized = true;
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(function(pos) {
-      const lat=pos.coords.latitude, lon=pos.coords.longitude;
-      mapaLeaflet.setView([lat,lon],13);
+      mapaLeaflet.setView([pos.coords.latitude, pos.coords.longitude], 13);
       if (mapaUserMarker) mapaLeaflet.removeLayer(mapaUserMarker);
-      mapaUserMarker = L.circleMarker([lat,lon],{radius:10,fillColor:'#2196F3',color:'white',weight:2,fillOpacity:0.9}).addTo(mapaLeaflet).bindPopup('📍 Tu ubicación');
+      mapaUserMarker = L.circleMarker([pos.coords.latitude,pos.coords.longitude],{radius:10,fillColor:'#2196F3',color:'white',weight:2,fillOpacity:0.9}).addTo(mapaLeaflet).bindPopup('📍 Tu ubicación');
     }, function(){}, {timeout:5000});
   }
 }
@@ -2649,48 +2199,51 @@ function inicializarMapa() {
 function cargarPinesEnMapa() {
   if (!mapaLeaflet) return;
   mapaMarkers.forEach(function(m){mapaLeaflet.removeLayer(m);}); mapaMarkers=[];
-  const inspCodes = new Set(state.inspected.map(i=>i.code));
-  const ejecCodes = new Set(state.executed.map(e=>e.code));
-  let total=0;
+  var inspCodes = new Set(state.inspected.map(function(i){return i.code;}));
+  var ejecCodes = new Set(state.executed.map(function(e){return e.code;}));
+  var total = 0;
   state.orms.forEach(function(orm) {
-    const code = orm['Codigo de ORM'];
-    const tipo = orm.tipo||'postes';
+    var code = orm['Codigo de ORM'];
+    var tipo = orm.tipo||'postes';
     if (mapaFiltroTipo!=='todos' && tipo!==mapaFiltroTipo) return;
     if (mapaFiltroEjec && !ejecCodes.has(code)) return;
-    let coords = orm['Coordenadas'];
+    var coords = orm['Coordenadas'];
     if (!coords && orm['CodigoPoste']) coords = buscarCoordsPoste(orm['CodigoPoste']);
     if (!coords) return;
-    const parts = String(coords).split(',');
+    var parts = String(coords).split(',');
     if (parts.length<2) return;
-    const lat=parseFloat(parts[0].trim()), lon=parseFloat(parts[1].trim());
+    var lat=parseFloat(parts[0].trim()), lon=parseFloat(parts[1].trim());
     if (isNaN(lat)||isNaN(lon)) return;
-    const col = getColorOrm(orm);
-    const esEjec=ejecCodes.has(code), esInsp=inspCodes.has(code);
-    const estadoLabel = esEjec?'✅ Ejecutado':esInsp?'🔍 Inspeccionado':'⏳ Pendiente';
-    const tipoLabels = {postes:'POSTE',retenidas:'RETENIDA',protec:'PROTEC. MEC.',reubicaciones:'REUBICACIÓN'};
-    const codeEsc = code.replace(/'/g,"\'");
-    const popupHtml = '<div style="min-width:180px;font-family:sans-serif">'+
-      '<div style="font-weight:800;font-size:14px;color:#E65100">'+code+'</div>'+
-      '<div style="font-size:12px;color:#666;margin:2px 0">📍 '+(orm['Distrito']||'—')+'</div>'+
-      '<div style="font-size:11px;background:#F5F5F5;padding:2px 7px;border-radius:10px;display:inline-block;margin-bottom:6px;font-weight:700">'+(tipoLabels[tipo]||tipo)+'</div>'+
-      '<div style="font-size:12px;margin-bottom:8px">'+estadoLabel+'</div>'+
-      (!esInsp&&!esEjec?'<button onclick="abrirFormDesdeMapaI(\"'+codeEsc+'\")" style="background:#E65100;color:white;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;width:100%;margin-bottom:4px">🔍 Inspeccionar</button>':'')+
-      (esInsp&&!esEjec?'<button onclick="abrirFormDesdeMapaE(\"'+codeEsc+'\")" style="background:#2E7D32;color:white;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;width:100%">⚡ Ejecutar</button>':'')+
-      '</div>';
-    const marker = L.marker([lat,lon],{icon:crearIconoPin(col.fill,col.stroke)}).addTo(mapaLeaflet).bindPopup(popupHtml,{maxWidth:220});
+    var col = getColorOrm(orm);
+    var esEjec=ejecCodes.has(code), esInsp=inspCodes.has(code);
+    var estadoLabel = esEjec?'✅ Ejecutado':esInsp?'🔍 Inspeccionado':'⏳ Pendiente';
+    var tipoLabels = {postes:'POSTE',retenidas:'RETENIDA',protec:'PROTEC.',reubicaciones:'REUBIC.'};
+    var safeCode = code.replace(/['"]/g,'');
+    var popup = '<div style="min-width:170px;font-family:sans-serif">'
+      +'<div style="font-weight:800;font-size:13px;color:#E65100">'+code+'</div>'
+      +'<div style="font-size:11px;color:#666">📍 '+(orm['Distrito']||'—')+'</div>'
+      +'<div style="font-size:10px;background:#F5F5F5;padding:2px 6px;border-radius:8px;display:inline-block;margin:3px 0;font-weight:700">'+(tipoLabels[tipo]||tipo.toUpperCase())+'</div>'
+      +'<div style="font-size:11px;margin-bottom:6px">'+estadoLabel+'</div>';
+    if (!esInsp&&!esEjec) popup += '<button data-code="'+safeCode+'" onclick="mapaIrA(this,String.fromCharCode(105))" style="background:#E65100;color:white;border:none;border-radius:5px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;width:100%;margin-bottom:3px">🔍 Inspeccionar</button>';
+    if (esInsp&&!esEjec) popup += '<button data-code="'+safeCode+'" onclick="mapaIrA(this,String.fromCharCode(101))" style="background:#2E7D32;color:white;border:none;border-radius:5px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;width:100%">⚡ Ejecutar</button>';
+    popup += '</div>';
+    var marker = L.marker([lat,lon],{icon:crearIconoPin(col.fill,col.stroke)}).addTo(mapaLeaflet).bindPopup(popup,{maxWidth:200});
     mapaMarkers.push(marker); total++;
   });
-  const cnt=document.getElementById('mapa-contador'); if(cnt) cnt.textContent=total+' casos';
-  const badge=document.getElementById('mapa-total-badge'); if(badge) badge.textContent=total;
-  if (mapaMarkers.length>0) { try { mapaLeaflet.fitBounds(L.featureGroup(mapaMarkers).getBounds().pad(0.1)); } catch(e){} }
+  var cnt=document.getElementById('mapa-contador'); if(cnt) cnt.textContent=total+' casos';
+  var badge=document.getElementById('mapa-total-badge'); if(badge) badge.textContent=total;
+  if (mapaMarkers.length>0) { try{mapaLeaflet.fitBounds(L.featureGroup(mapaMarkers).getBounds().pad(0.1));}catch(e){} }
 }
 
+function mapaIrA(btn, tipo) {
+  var code = btn.getAttribute('data-code');
+  if (tipo==='i') { goTo('sc-insp'); openForm(code); }
+  else { goTo('sc-ejec'); openEjecForm(code); }
+}
 
-function abrirFormDesdeMapaI(code) { goTo('sc-insp'); openForm(code); }
-function abrirFormDesdeMapaE(code) { goTo('sc-ejec'); openEjecForm(code); }
 function setMapaFiltro(tipo, btn) {
   mapaFiltroTipo=tipo;
-  document.querySelectorAll('.mapa-filtro-btn').forEach(function(b){if(!b.classList.contains('f-ejec'))b.classList.remove('on');});
+  document.querySelectorAll('.mfb').forEach(function(b){if(!b.classList.contains('f-ejec'))b.classList.remove('on');});
   if(btn) btn.classList.add('on');
   cargarPinesEnMapa();
 }
@@ -2704,57 +2257,296 @@ function toggleMapaEjec(btn) {
 function centrarEnUbicacion() {
   if (!navigator.geolocation) { mostrarToast('⚠️ GPS no disponible','var(--or)'); return; }
   navigator.geolocation.getCurrentPosition(function(pos) {
-    const lat=pos.coords.latitude, lon=pos.coords.longitude;
-    if(mapaLeaflet) { mapaLeaflet.setView([lat,lon],15); }
+    if(mapaLeaflet) mapaLeaflet.setView([pos.coords.latitude,pos.coords.longitude],15);
     if(mapaUserMarker) mapaLeaflet.removeLayer(mapaUserMarker);
-    mapaUserMarker=L.circleMarker([lat,lon],{radius:10,fillColor:'#2196F3',color:'white',weight:2,fillOpacity:0.9}).addTo(mapaLeaflet).bindPopup('📍 Tu ubicación').openPopup();
+    mapaUserMarker = L.circleMarker([pos.coords.latitude,pos.coords.longitude],{radius:10,fillColor:'#2196F3',color:'white',weight:2,fillOpacity:0.9}).addTo(mapaLeaflet).bindPopup('📍 Tu ubicación').openPopup();
   }, function(){mostrarToast('⚠️ No se pudo obtener ubicación','var(--or)');});
 }
 
-// ===== GESTIÓN DE PINS =====
-function renderPinsList() {
-  const pins = getPins();
-  const list = document.getElementById('pins-list');
-  if (!list) return;
-  if (!pins.length) { list.innerHTML='<div style="text-align:center;color:var(--g6);padding:20px">No hay usuarios</div>'; return; }
-  list.innerHTML = pins.map(function(p,i) {
-    const c = p.role==='inspector'?'var(--or)':'var(--bl)';
-    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--wh);border:1.5px solid var(--g2);border-radius:var(--rmd);margin-bottom:8px">'+
-      '<div><div style="font-weight:700;font-size:15px">'+(p.nombre||p.name)+'</div><div style="font-size:12px;color:'+c+';font-weight:700;text-transform:uppercase">'+(p.role||p.rol)+'</div></div>'+
-      '<div style="display:flex;align-items:center;gap:10px"><div style="font-size:20px;font-weight:800;letter-spacing:4px;color:var(--g5)">'+p.pin+'</div>'+
-      '<button onclick="eliminarUsuario('+i+')" style="background:var(--rdl);color:var(--rd);border:1.5px solid var(--rdm);border-radius:8px;padding:6px 10px;cursor:pointer">🗑</button></div></div>';
-  }).join('');
+function buscarCoordsPoste(codigoPoste) {
+  if (typeof POLES_DB !== 'undefined' && POLES_DB && POLES_DB[codigoPoste]) return POLES_DB[codigoPoste];
+  return null;
 }
 
-function agregarUsuario() {
-  const nombre = (document.getElementById('new-nombre')||{}).value||'';
-  const pin = (document.getElementById('new-pin')||{}).value||'';
-  const rolBtn = document.querySelector('.new-rol-btn.active');
-  const rol = rolBtn ? (rolBtn.dataset.rol||rolBtn.getAttribute('data-rol')||'inspector') : 'inspector';
-  if (!nombre.trim()) { mostrarToast('⚠️ Escribe un nombre','var(--rd)'); return; }
-  if (!/^\d{4}$/.test(pin)) { mostrarToast('⚠️ PIN debe ser 4 dígitos','var(--rd)'); return; }
-  const pins = getPins();
-  if (pins.find(p=>p.pin===pin)) { mostrarToast('⚠️ Ese PIN ya existe','var(--rd)'); return; }
-  pins.push({nombre:nombre.trim(), pin:pin, role:rol});
-  _store.setItem('pins_config', JSON.stringify(pins));
-  const ne=document.getElementById('new-nombre'); if(ne) ne.value='';
-  const pe=document.getElementById('new-pin'); if(pe) pe.value='';
-  renderPinsList();
-  mostrarToast('✅ Usuario '+nombre.trim()+' agregado','var(--gr)');
+
+// ===================================================
+// TIPOS DE ACTIVIDAD + IMPORTACIÓN EXCEL + NUEVA ORM
+// ===================================================
+
+function setTipoActividad(tipo) {
+  tipoActivo = tipo;
+  // Actualizar pestañas visuales
+  document.querySelectorAll('.tipo-tab').forEach(function(t) { t.classList.remove('on'); });
+  var tab = document.getElementById('tab-' + tipo);
+  if (tab) tab.classList.add('on');
+  // Actualizar contadores del home
+  updateHome();
+  // Si estamos en inspección o ejecución, actualizar lista
+  var si = document.getElementById('sc-insp');
+  if (si && si.classList.contains('on')) { renderDistTabs(); renderInspList(''); }
+  var se = document.getElementById('sc-ejec');
+  if (se && se.classList.contains('on')) { renderEjecList(''); }
 }
 
-function eliminarUsuario(idx) {
-  const pins = getPins();
-  const nombre = pins[idx]?pins[idx].nombre:'';
-  pins.splice(idx,1);
-  _store.setItem('pins_config', JSON.stringify(pins));
-  renderPinsList();
-  mostrarToast('✅ Usuario '+nombre+' eliminado','var(--gr)');
+function setImportTipo(tipo, btn) {
+  importTipoActivo = tipo;
+  document.querySelectorAll('.import-tipo-btn').forEach(function(b) {
+    b.style.background='var(--wh)'; b.style.color='var(--g6)'; b.style.borderColor='var(--g3)';
+  });
+  if (btn) { btn.style.background='var(--orl)'; btn.style.color='var(--or)'; btn.style.borderColor='var(--or)'; }
+  var titles = {
+    postes:'📥 Importar ORMs desde AppSheet',
+    retenidas:'🔗 Importar Cambio de Retenidas',
+    protec:'🛡️ Importar Protecciones Mecánicas',
+    reubicaciones:'🚧 Importar Reubicaciones de Postes'
+  };
+  var descs = {
+    postes:'Descarga el CSV desde AppSheet de Plus<br>y súbelo aquí.<br><strong>Solo se importan ORMs activas</strong>',
+    retenidas:'Sube el Excel <strong>CAMBIO_RETENIDAS.xlsx</strong><br>Filtra: EECC=COBRA + PENDIENTE DE ASIGNAR',
+    protec:'Sube el Excel <strong>CAMBIO_PROTEC_MEC.xlsx</strong><br>Filtra: EECC=COBRA + PENDIENTE DE ASIGNAR',
+    reubicaciones:'Sube el Excel <strong>ORM_REUBICACIONES.xlsx</strong><br>Carga la hoja CLINTON completa'
+  };
+  var te = document.getElementById('import-section-title');
+  var de = document.getElementById('import-desc');
+  if (te) te.textContent = titles[tipo]||titles.postes;
+  if (de) de.innerHTML = descs[tipo]||descs.postes;
 }
 
-function setNewRol(rol, btn) {
-  document.querySelectorAll('.new-rol-btn').forEach(function(b){b.classList.remove('active','n');});
-  if(btn){btn.classList.add('active','n');}
+// ─── Conversión DMS a decimal ───
+function dmsToDecimal(s) {
+  if (!s) return null;
+  s = String(s).trim();
+  var parts = s.split(',');
+  if (parts.length < 2) return null;
+  function p(d) {
+    d=d.trim(); var neg=d.startsWith('-'); d=d.replace('-','').trim();
+    var m=d.match(/(\d+)[°\s]+(\d+)['\'\s]+([.\d]+)/);
+    if(!m)return null;
+    var v=parseFloat(m[1])+parseFloat(m[2])/60+parseFloat(m[3])/3600;
+    return neg?-v:v;
+  }
+  var lon=p(parts[0]),lat=p(parts[1]);
+  return (lat!==null&&lon!==null)?lat+','+lon:null;
+}
+
+function limpiarCoords(c) {
+  if (!c) return null;
+  c = String(c).trim();
+  if (c.includes('°')) return dmsToDecimal(c);
+  var pts = c.split(',');
+  if (pts.length>=2) {
+    var la=parseFloat(pts[0].trim()),lo=parseFloat(pts[1].trim());
+    if(!isNaN(la)&&!isNaN(lo)) return la+','+lo;
+  }
+  return null;
+}
+
+// ─── Importar Excel (Retenidas / Protec / Reubicaciones) ───
+function triggerImportInput() {
+  if (importTipoActivo==='postes') {
+    document.getElementById('csv-input').click();
+  } else {
+    var inp = document.getElementById('xlsx-input');
+    if (!inp) {
+      inp = document.createElement('input');
+      inp.type='file'; inp.id='xlsx-input'; inp.accept='.xlsx,.xls';
+      inp.style.display='none';
+      inp.onchange = function(e) { importarExcelTipo(e.target.files[0]); };
+      document.body.appendChild(inp);
+    }
+    inp.click();
+  }
+}
+
+function importarExcelTipo(file) {
+  if (!file) return;
+  if (!window.XLSX) { mostrarToast('⚠️ Librería Excel aún cargando, intenta en un momento','var(--or)'); return; }
+  mostrarToast('⏳ Procesando Excel...','var(--bl)');
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var data = new Uint8Array(e.target.result);
+      var wb = XLSX.read(data,{type:'array'});
+      var registros = [];
+
+      if (importTipoActivo==='retenidas') {
+        var ws = wb.Sheets['RET_PRIORIDAD_A'] || wb.Sheets[wb.SheetNames[0]];
+        var rows = XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+        registros = rows.slice(1)
+          .filter(function(r){ return String(r[22]||'').trim().toUpperCase()==='COBRA' && String(r[30]||'').toUpperCase().includes('PENDIENTE'); })
+          .map(function(r){
+            return { tipo:'retenidas','Codigo de ORM':String(r[0]||'').trim(),
+              'Suministro':String(r[19]||'').trim(),'Distrito':String(r[21]||'').trim(),
+              'Petitorio':'CAMBIO DE RETENIDA','Motivo':'RETENIDA',
+              'Coordenadas':limpiarCoords(String(r[11]||'')),
+              'SED':String(r[2]||'').trim(),'CodigoPoste':String(r[0]||'').trim(),
+              'PetitorioCorto':'RETENIDA','Estado inspección':'Pendiente',
+              'Fecha registro':new Date().toLocaleDateString('es-PE') };
+          });
+      } else if (importTipoActivo==='protec') {
+        var ws2 = wb.Sheets['BD'] || wb.Sheets[wb.SheetNames[0]];
+        var rows2 = XLSX.utils.sheet_to_json(ws2,{header:1,defval:''});
+        registros = rows2.slice(1)
+          .filter(function(r){ return String(r[22]||'').trim().toUpperCase()==='COBRA' && String(r[30]||'').toUpperCase().includes('PENDIENTE'); })
+          .map(function(r){
+            return { tipo:'protec','Codigo de ORM':String(r[0]||'').trim(),
+              'Suministro':String(r[19]||'').trim(),'Distrito':String(r[21]||'').trim(),
+              'Petitorio':'PROTECCIÓN MECÁNICA','Motivo':'PROTEC MECANICA',
+              'Coordenadas':limpiarCoords(String(r[11]||'')),
+              'SED':String(r[2]||'').trim(),'CodigoPoste':String(r[0]||'').trim(),
+              'PetitorioCorto':'PROTEC MEC','Estado inspección':'Pendiente',
+              'Fecha registro':new Date().toLocaleDateString('es-PE') };
+          });
+      } else if (importTipoActivo==='reubicaciones') {
+        var ws3 = wb.Sheets['CLINTON'] || wb.Sheets[wb.SheetNames[0]];
+        var rows3 = XLSX.utils.sheet_to_json(ws3,{header:1,defval:''});
+        registros = rows3.slice(3)
+          .filter(function(r){ return r.some(function(v){return v;}); })
+          .map(function(r){
+            return { tipo:'reubicaciones','Codigo de ORM':String(r[1]||r[10]||'').trim(),
+              'Suministro':String(r[4]||'').trim(),'Distrito':String(r[5]||'').trim(),
+              'Petitorio':String(r[26]||'REUBICACIÓN DE POSTE').slice(0,100),
+              'Motivo':'REUBICACION','CodigoPoste':String(r[10]||'').trim(),
+              'Coordenadas':limpiarCoords(String(r[11]||'')),
+              'PetitorioCorto':'REUBICACION','Estado inspección':'Pendiente',
+              'Fecha registro':String(r[19]||'').split(' ')[0] };
+          });
+      }
+
+      var nuevos = 0;
+      registros.forEach(function(r) {
+        if (!r['Codigo de ORM']) return;
+        var existe = state.orms.find(function(o){ return o['Codigo de ORM']===r['Codigo de ORM'] && o.tipo===r.tipo; });
+        if (!existe) { state.orms.push(r); nuevos++; }
+      });
+      save(); updateHome();
+      mostrarToast('✅ '+nuevos+' registros importados ('+importTipoActivo+')','var(--gr)');
+    } catch(err) {
+      mostrarToast('❌ Error al leer el archivo: '+err.message,'var(--rd)');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ─── Sincronizar desde Sheet ───
+function sincronizarDesdeSheet() {
+  var SURL = (typeof APPS_SCRIPT_URL !== 'undefined') ? APPS_SCRIPT_URL : (_store.getItem('apps_script_url')||'');
+  if (!SURL) return;
+  fetch(SURL+'?action=registros',{redirect:'follow'})
+    .then(function(r){return r.text();})
+    .then(function(text) {
+      try {
+        var data = JSON.parse(text);
+        if (data.error) return;
+        var inspSheet=(data.inspecciones||[]).filter(function(i){return i['Codigo ORM']&&!i['Codigo ORM'].startsWith('TEST');});
+        var ejecSheet=(data.ejecuciones||[]).filter(function(e){return e['Codigo ORM'];});
+        var cambios=false;
+        inspSheet.forEach(function(insp) {
+          var code=insp['Codigo ORM'];
+          var idx=state.inspected.findIndex(function(i){return i.code===code;});
+          var obj={code,fecha:insp['Fecha Insp']||'',hora:insp['Hora Insp']||'',
+            fechaRep:insp['Fecha Reporte']||'',lcl:insp['LCL']||'',apoyo:insp['Cod Apoyo']||'',
+            coords:insp['Coordenadas']||'',incl:insp['Inclinado']||'N',angulo:insp['Angulo']||'',
+            dms:insp['Cumple DMS']||'N',grua:insp['Acceso Grua']||'Si',acm:insp['Acometidas']||0,
+            dhlp:insp['DHLP']||'',dhlc:insp['DHLC']||'',dvlp:insp['DVLP']||'',
+            det:insp['Detalle Trabajos']||'',inspector:insp['Inspector']||'',
+            fotoUrls:{'Foto_Perfil':insp['Foto Perfil']||'','Foto_Vista_defrente':insp['Foto Vista']||'',
+              'Foto_Panoramica':insp['Foto Panoramica']||'','Foto_deficiencia':insp['Foto Deficiencia']||'',
+              'Foto_Insp1':insp['Foto Insp1']||'','Foto_Insp2':insp['Foto Insp2']||'',
+              'Croquis':insp['Croquis']||'','Conformidad_cliente':insp['Conformidad']||''},_fromSheet:true};
+          if(idx>=0){state.inspected[idx]=obj;}else{state.inspected.push(obj);}
+          cambios=true;
+        });
+        ejecSheet.forEach(function(ejec) {
+          var code=ejec['Codigo ORM'];
+          if(!state.executed.find(function(e){return e.code===code;})) {
+            state.executed.push({code,fecha:ejec['Fecha Ejec']||'',fechaRep:ejec['Fecha Reporte']||'',
+              tipo:ejec['Tipo Poste BT']||'',det:ejec['Detalle Ejecutado']||'',tecnico:ejec['Tecnico']||'',
+              fotoUrls:{'Foto_despues1':ejec['Foto Despues 1']||'','Foto_despues2':ejec['Foto Despues 2']||'',
+                'Foto_despues3':ejec['Foto Despues 3']||'','Foto_despues4':ejec['Foto Despues 4']||''},_fromSheet:true});
+            cambios=true;
+          }
+        });
+        if(cambios){save();updateHome();}
+      } catch(e2){console.warn('Sync error:',e2);}
+    })
+    .catch(function(e){console.warn('Fetch sync error:',e);});
+}
+
+// ─── Abrir Maps referencial ───
+function abrirMapsReferencial(orm) {
+  var coords = orm['Coordenadas'];
+  if (!coords && orm['CodigoPoste'] && typeof POLES_DB!=='undefined') coords = POLES_DB[orm['CodigoPoste']];
+  if (!coords) { mostrarToast('⚠️ Sin coordenadas disponibles','var(--or)'); return; }
+  var pts = coords.split(',');
+  if (pts.length>=2) window.open('https://www.google.com/maps?q='+pts[0].trim()+','+pts[1].trim(),'_blank');
+}
+
+
+
+// ===== NUEVA ORM MANUAL =====
+
+function setNuevaOrmTipo(tipo, btn) {
+  nuevaOrmTipo = tipo;
+  document.querySelectorAll('.nueva-orm-tipo-btn').forEach(function(b) {
+    b.style.background='var(--wh)'; b.style.color='var(--g6)'; b.style.borderColor='var(--g3)';
+    b.classList.remove('on');
+  });
+  if (btn) { btn.style.background='var(--orl)'; btn.style.color='var(--or)'; btn.style.borderColor='var(--or)'; btn.classList.add('on'); }
+}
+
+function abrirNuevaOrm() {
+  ['no-codigo','no-distrito','no-suministro','no-poste','no-petitorio','no-domicilio','no-coords','no-motivo'].forEach(function(id) {
+    var el = document.getElementById(id); if (el) el.value = '';
+  });
+  nuevaOrmTipo = 'postes';
+  document.querySelectorAll('.nueva-orm-tipo-btn').forEach(function(b) {
+    b.style.background='var(--wh)'; b.style.color='var(--g6)'; b.style.borderColor='var(--g3)';
+  });
+  var fb = document.querySelector('.nueva-orm-tipo-btn');
+  if (fb) { fb.style.background='var(--orl)'; fb.style.color='var(--or)'; fb.style.borderColor='var(--or)'; }
+  goTo('sc-nueva-orm');
+}
+
+function getGPSnuevaOrm() {
+  if (!navigator.geolocation) { mostrarToast('⚠️ GPS no disponible','var(--or)'); return; }
+  navigator.geolocation.getCurrentPosition(function(pos) {
+    var el = document.getElementById('no-coords');
+    if (el) el.value = pos.coords.latitude.toFixed(6)+', '+pos.coords.longitude.toFixed(6);
+    mostrarToast('📍 Coordenadas capturadas','var(--gr)');
+  }, function(){mostrarToast('⚠️ No se pudo obtener GPS','var(--or)');});
+}
+
+function guardarNuevaOrm() {
+  var codigo = (document.getElementById('no-codigo')||{}).value||'';
+  var distrito = (document.getElementById('no-distrito')||{}).value||'';
+  var petitorio = (document.getElementById('no-petitorio')||{}).value||'';
+  codigo = codigo.trim(); distrito = distrito.trim().toUpperCase(); petitorio = petitorio.trim();
+  if (!codigo) { mostrarToast('⚠️ Ingresa un código o N° de ORM','var(--rd)'); return; }
+  if (!distrito) { mostrarToast('⚠️ Ingresa el distrito','var(--rd)'); return; }
+  if (!petitorio) { mostrarToast('⚠️ Ingresa la descripción del trabajo','var(--rd)'); return; }
+  if (state.orms.find(function(o){return o['Codigo de ORM']===codigo;})) {
+    mostrarToast('⚠️ Ya existe una ORM con ese código','var(--rd)'); return;
+  }
+  var nuevaOrm = {
+    'Codigo de ORM': codigo,
+    'Suministro': ((document.getElementById('no-suministro')||{}).value||'').trim(),
+    'Distrito': distrito,
+    'Petitorio': petitorio,
+    'PetitorioCorto': petitorio.slice(0,110),
+    'Domicilio': ((document.getElementById('no-domicilio')||{}).value||'').trim(),
+    'Coordenadas': ((document.getElementById('no-coords')||{}).value||'').trim(),
+    'CodigoPoste': ((document.getElementById('no-poste')||{}).value||'').trim(),
+    'Motivo': ((document.getElementById('no-motivo')||{}).value||'Manual').trim(),
+    'Estado inspección': 'Asignado',
+    'Fecha registro': new Date().toLocaleDateString('es-PE'),
+    'Nombre': '—', 'tipo': nuevaOrmTipo, '_manual': true
+  };
+  state.orms.push(nuevaOrm);
+  save();
+  setTipoActividad(nuevaOrmTipo);
+  mostrarToast('✅ ORM '+codigo+' agregada correctamente','var(--gr)');
+  goTo('sc-home');
 }
 
 </script>
