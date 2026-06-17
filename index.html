@@ -2741,8 +2741,9 @@ function renderDashboardDetalle() {
   const iListEl = document.getElementById('dash-insp-lista');
   if(iListEl) iListEl.innerHTML = inspPeriodo.map(function(i){
     const orm=state.orms.find(o=>o['Codigo de ORM']===i.code)||{};
-    return '<div class="dash-orm-row" onclick="abrirDetalle(''+i.code+'')">'+
-      '<div class="dash-orm-code">'+i.code+'</div>'+
+    const codeI = i.code;
+    return '<div class="dash-orm-row" onclick="abrirDetalle(\"'+codeI+'\")">' +
+      '<div class="dash-orm-code">'+codeI+'</div>'+
       '<div class="dash-orm-meta">👤 '+(i.inspector||'—')+' · 📅 '+fmtF(i.fecha)+'</div>'+
       '<div class="dash-orm-meta">📍 '+(orm['Distrito']||'—')+'</div>'+
       '</div>';
@@ -2771,8 +2772,9 @@ function renderDashboardDetalle() {
   const eListEl = document.getElementById('dash-ejec-lista');
   if(eListEl) eListEl.innerHTML = ejecPeriodo.map(function(e){
     const orm=state.orms.find(o=>o['Codigo de ORM']===e.code)||{};
-    return '<div class="dash-orm-row" onclick="abrirDetalle(''+e.code+'')">'+
-      '<div class="dash-orm-code">'+e.code+'</div>'+
+    const codeE = e.code;
+    return '<div class="dash-orm-row" onclick="abrirDetalle(\"'+codeE+'\")">' +
+      '<div class="dash-orm-code">'+codeE+'</div>'+
       '<div class="dash-orm-meta">🔧 '+(e.tecnico||'—')+' · 📅 '+fmtF(e.fecha)+'</div>'+
       '<div class="dash-orm-meta">📍 '+(orm['Distrito']||'—')+' · '+(e.det||'—').slice(0,50)+'</div>'+
       '</div>';
