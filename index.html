@@ -2112,7 +2112,28 @@ function renderEjecList(q) {
     const appInsp=state.inspected.filter(i=>!state.executed.find(e=>e.code===i.code)).map(i=>({code:i.code,insp:i,orm:state.orms.find(o=>o['Codigo de ORM']===i.code)||{}}));
     items=[...appInsp,...items.filter(x=>!state.inspected.find(i=>i.code===x.code))];
   } else {
-    items=state.inspected.filter(i=>!state.executed.find(e=>e.code===i.code)).map(i=>({code:i.code,insp:i,orm:state.orms.find(o=>o['Codigo de ORM']===i.code)||{}}));
+    if (ejecFilter === 'ejecutados') {
+      // Mostrar SOLO los ejecutados
+      items = state.inspected
+        .filter(i => state.executed.find(e => e.code === i.code))
+        .map(i => ({code:i.code, insp:i, orm:state.orms.find(o=>o['Codigo de ORM']===i.code)||{}}));
+      // También incluir ejecutados que no tienen inspección local pero sí en el Sheet
+      state.executed.forEach(function(ejec) {
+        if (!items.find(x => x.code === ejec.code)) {
+          const orm = state.orms.find(o => o['Codigo de ORM'] === ejec.code) || {};
+          items.push({
+            code: ejec.code,
+            insp: {grua:'Si', dms:'N', acm:0, coords:'', det:'', inspector:'', fecha:'', fotoUrls:{}},
+            orm: orm,
+            ejec: ejec
+          });
+        }
+      });
+    } else {
+      items = state.inspected
+        .filter(i => !state.executed.find(e => e.code === i.code))
+        .map(i => ({code:i.code, insp:i, orm:state.orms.find(o=>o['Codigo de ORM']===i.code)||{}}));
+    }
   }
   if(q){const ql=q.toLowerCase();items=items.filter(x=>(x.code||'').includes(ql)||(x.orm['Petitorio']||'').toLowerCase().includes(ql));}
   if(ejecFilter==='grua') items=items.filter(x=>(x.insp.grua||'')!=='No'&&(x.insp.grua||'')!=='DMS');
@@ -2120,7 +2141,7 @@ function renderEjecList(q) {
   if(ejecFilter==='dms') items=items.filter(x=>x.insp.grua==='DMS'||x.insp.dms==='Y');
   if(ejecFilter==='pendiente_sync') items=items.filter(x=>getSyncState(x.code)!=='subido');
   if(ejecFilter==='subido_sync') items=items.filter(x=>getSyncState(x.code)==='subido');
-  if(ejecFilter==='ejecutados') items=items.filter(x=>state.executed.find(e=>e.code===x.code));
+  // filtro ejecutados manejado arriba en el source
   if(items.length===0){list.innerHTML='<div class="empty"><p>No hay ORMs en esta categoría</p></div>';return;}
   items.forEach(({code,insp,orm})=>{
     const tipo=insp.grua==='No'?'sin-acc':insp.grua==='DMS'?'dms-t':'grua';
