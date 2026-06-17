@@ -515,18 +515,6 @@ html {
     </div>
   </div>
 
-  <!-- Google Auth Bar - visible para TODOS los perfiles -->
-  <div id="google-auth-bar" class="google-auth-bar" style="display:none;margin:0 16px 12px">
-    <div class="google-auth-info">
-      <span id="google-auth-status">📷 Conecta tu cuenta Google para subir fotos a Drive</span>
-      <strong id="google-auth-email" style="display:none"></strong>
-    </div>
-    <button id="google-auth-btn" class="btn-google" onclick="iniciarGoogleAuth()">
-      <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-      Conectar con Google
-    </button>
-  </div>
-
   <div id="admin-pin-btn" style="display:none;padding:0 16px;margin-top:8px">
     <button onclick="goTo('sc-pins');renderPinsList()" style="width:100%;background:var(--g1);border:1.5px solid var(--g3);border-radius:var(--rmd);padding:14px;font-size:16px;font-weight:600;color:var(--g7);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px">
       🔐 Gestionar PINs de usuarios
@@ -913,8 +901,16 @@ html {
     <div class="ir"><span class="ik">Coordenadas</span><span class="iv" id="det-coords">—</span></div>
     <div class="ir"><span class="ik">Acometidas</span><span class="iv" id="det-acm">—</span></div>
     <div style="margin-top:8px">
-      <div style="font-size:13px;font-weight:700;color:var(--g7);margin-bottom:6px">Detalle trabajos</div>
+      <div style="font-size:13px;font-weight:700;color:var(--g7);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+        Detalle trabajos
+        <button onclick="toggleEditarDetalle()" id="btn-editar-det" style="background:var(--orl);color:var(--or);border:1.5px solid var(--or);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer">✏️ Editar</button>
+      </div>
       <div id="det-det" style="font-size:14px;color:var(--g7);line-height:1.6;background:var(--g1);padding:10px 12px;border-radius:8px">—</div>
+      <textarea id="det-det-edit" style="display:none;width:100%;border:2px solid var(--or);border-radius:8px;padding:10px 12px;font-size:14px;font-family:inherit;resize:none;height:100px;outline:none"></textarea>
+      <div id="det-edit-btns" style="display:none;gap:8px;margin-top:8px">
+        <button onclick="guardarEditDetalle()" style="flex:1;background:var(--or);color:white;border:none;border-radius:8px;padding:10px;font-size:14px;font-weight:700;cursor:pointer">💾 Guardar cambio</button>
+        <button onclick="cancelarEditDetalle()" style="flex:1;background:var(--g2);color:var(--g7);border:none;border-radius:8px;padding:10px;font-size:14px;font-weight:700;cursor:pointer">Cancelar</button>
+      </div>
     </div>
     <div style="margin-top:12px">
       <button id="det-maps-btn" onclick="" style="display:none;width:100%;background:var(--bl);color:white;border:none;border-radius:var(--rmd);padding:12px;font-size:14px;font-weight:700;cursor:pointer">📍 Ver en Google Maps</button>
@@ -1247,11 +1243,15 @@ function enterApp() {
   updateHome();
   goTo('sc-home');
   loadPolesFromSheet();
-  // Sincronizar inmediatamente desde el Sheet
   sincronizarDesdeSheet();
-  // Re-sincronizar después de 3 segundos por si la primera falla
   setTimeout(sincronizarDesdeSheet, 3000);
-  setTimeout(actualizarEstadoGoogleAuth, 800);
+  // Auto-sincronizar cada 2 minutos
+  if (window._syncInterval) clearInterval(window._syncInterval);
+  window._syncInterval = setInterval(function() {
+    sincronizarDesdeSheet();
+  }, 120000);
+  // Auto-conectar Google Drive silenciosamente
+  setTimeout(autoConectarGoogle, 1000);
 }
 
 // ===== HOME =====
@@ -1260,7 +1260,9 @@ function updateHome() {
   const ejecPend = state.inspected.filter(i=>!state.executed.find(e=>e.code===i.code));
   const sinAcc = ejecPend.filter(i=>i.grua==='No').length;
   $('cnt-insp').textContent = inspPend.length;
-  $('cnt-ejec').textContent = ejecPend.length;
+  // Pend. ejecución = inspeccionadas CON acceso (sin los sin acceso y DMS)
+  const ejecConAcceso = ejecPend.filter(i => i.grua !== 'No' && i.grua !== 'DMS' && i.dms !== 'Y');
+  $('cnt-ejec').textContent = ejecConAcceso.length;
   $('cnt-sin').textContent = sinAcc;
   $('cnt-done').textContent = state.executed.length;
   $('bn-insp-cnt').textContent = inspPend.length;
@@ -2116,6 +2118,7 @@ function renderEjecList(q) {
   if(ejecFilter==='dms') items=items.filter(x=>x.insp.grua==='DMS'||x.insp.dms==='Y');
   if(ejecFilter==='pendiente_sync') items=items.filter(x=>getSyncState(x.code)!=='subido');
   if(ejecFilter==='subido_sync') items=items.filter(x=>getSyncState(x.code)==='subido');
+  if(ejecFilter==='ejecutados') items=items.filter(x=>state.executed.find(e=>e.code===x.code));
   if(items.length===0){list.innerHTML='<div class="empty"><p>No hay ORMs en esta categoría</p></div>';return;}
   items.forEach(({code,insp,orm})=>{
     const tipo=insp.grua==='No'?'sin-acc':insp.grua==='DMS'?'dms-t':'grua';
@@ -3059,6 +3062,67 @@ async function eliminarDelSheet(code) {
 }
 
 
+
+// ── Editar descargo de inspección ──
+function toggleEditarDetalle() {
+  const det = $('det-det');
+  const edit = $('det-det-edit');
+  const btns = $('det-edit-btns');
+  const btn = $('btn-editar-det');
+  
+  edit.value = det.textContent;
+  det.style.display = 'none';
+  edit.style.display = 'block';
+  btns.style.display = 'flex';
+  btn.style.display = 'none';
+}
+
+function cancelarEditDetalle() {
+  const det = $('det-det');
+  const edit = $('det-det-edit');
+  const btns = $('det-edit-btns');
+  const btn = $('btn-editar-det');
+  
+  det.style.display = 'block';
+  edit.style.display = 'none';
+  btns.style.display = 'none';
+  btn.style.display = 'block';
+}
+
+function guardarEditDetalle() {
+  const code = $('det-code').textContent;
+  const nuevoDetalle = $('det-det-edit').value.trim();
+  if (!nuevoDetalle) { mostrarToast('⚠️ El detalle no puede estar vacío', 'var(--rd)'); return; }
+  
+  // Actualizar localmente
+  $('det-det').textContent = nuevoDetalle;
+  cancelarEditDetalle();
+  
+  // Actualizar en state
+  const idx = state.inspected.findIndex(i => i.code === code);
+  if (idx >= 0) {
+    state.inspected[idx].det = nuevoDetalle;
+    save();
+  }
+  
+  // Actualizar en Sheet via Apps Script
+  const url = APPS_SCRIPT_URL + '?action=editarDetalle&code=' + encodeURIComponent(code) + '&det=' + encodeURIComponent(nuevoDetalle);
+  fetch(url, { redirect: 'follow' })
+    .then(r => r.text())
+    .then(function(text) {
+      try {
+        const res = JSON.parse(text);
+        if (res.ok) mostrarToast('✅ Descargo actualizado', 'var(--gr)');
+        else mostrarToast('⚠️ Guardado localmente, error en servidor', 'var(--or)');
+      } catch(e) {
+        mostrarToast('✅ Guardado localmente', 'var(--gr)');
+      }
+    })
+    .catch(function() {
+      mostrarToast('✅ Guardado localmente', 'var(--gr)');
+    });
+}
+
 // ===== PANTALLA DETALLE ORM =====
 function abrirDetalle(code) {
   const o = state.orms.find(x => x['Codigo de ORM'] === code) || {};
@@ -3214,6 +3278,27 @@ function cargarDetalleDesdeSheet(code) {
     .catch(e => console.warn('Error fetch detalle:', e));
 }
 
+
+// ── Abrir lista filtrada desde stats del home ──
+function abrirListaFiltrada(tipo) {
+  if (tipo === 'ejecucion') {
+    // Solo inspeccionadas CON acceso grúa (no sin acceso, no DMS)
+    goTo('sc-ejec');
+    setEjecFilter('grua');
+    renderEjecList('');
+  } else if (tipo === 'sin_acceso') {
+    // Solo inspeccionadas SIN acceso
+    goTo('sc-ejec');
+    setEjecFilter('sin');
+    renderEjecList('');
+  } else if (tipo === 'ejecutados') {
+    // Solo las completamente ejecutadas
+    goTo('sc-ejec');
+    setEjecFilter('ejecutados');
+    renderEjecList('');
+  }
+}
+
 // ===== BUSCADOR POR NÚMERO DE POSTE =====
 
 function togglePoste2() {
@@ -3359,6 +3444,44 @@ function openMaps(coords) {
 
 // Login handlers - Netlify version (no iframe fix needed)
 
+
+
+// ── Auto-conectar Google Drive al entrar ──
+function autoConectarGoogle() {
+  const token = _store.getItem('google_access_token') || '';
+  const expires = parseInt(_store.getItem('google_token_expires') || '0');
+  
+  // Si el token sigue válido, no hacer nada
+  if (token && expires > Date.now() + 300000) {
+    console.log('✅ Google Drive ya conectado');
+    return;
+  }
+  
+  // Intentar renovar silenciosamente
+  if (!googleTokenClient) {
+    setTimeout(function() {
+      initGoogleAuth();
+      setTimeout(autoConectarGoogle, 2000);
+    }, 1000);
+    return;
+  }
+  
+  // Solicitar token sin popup (usa cuenta ya logueada en el dispositivo)
+  googleTokenClient.callback = function(response) {
+    if (!response.error) {
+      _store.setItem('google_access_token', response.access_token);
+      _store.setItem('google_token_expires', String(Date.now() + (response.expires_in * 1000)));
+      console.log('✅ Google Drive conectado automáticamente');
+    }
+  };
+  
+  try {
+    // prompt: '' = usa la cuenta por defecto sin popup
+    googleTokenClient.requestAccessToken({prompt: ''});
+  } catch(e) {
+    console.warn('Auto-connect Google falló:', e);
+  }
+}
 
 // ===== MODAL GOOGLE AUTH OBLIGATORIO =====
 function verificarYPedirGoogleAuth() {
