@@ -1038,8 +1038,8 @@ html {
     <div class="fi" style="margin-bottom:10px">
       <div class="fl">Rol</div>
       <div class="tg">
-        <button class="tb2 n" id="new-rol-insp" onclick="setNewRol('inspector')">Inspector</button>
-        <button class="tb2" id="new-rol-tec" onclick="setNewRol('tecnico')">Técnico</button>
+        <button class="tb2 n new-rol-btn active" id="new-rol-insp" data-rol="inspector" onclick="setNewRol('inspector',this)">Inspector</button>
+        <button class="tb2 new-rol-btn" id="new-rol-tec" data-rol="tecnico" onclick="setNewRol('tecnico',this)">Técnico</button>
       </div>
     </div>
     <div class="fi" style="margin-bottom:14px">
@@ -2818,7 +2818,7 @@ function agregarUsuario() {
   const nombre = (document.getElementById('new-nombre') || {}).value || '';
   const pin    = (document.getElementById('new-pin')    || {}).value || '';
   const rolBtn = document.querySelector('.new-rol-btn.active');
-  const rol    = rolBtn ? rolBtn.dataset.rol : 'inspector';
+  const rol = rolBtn ? (rolBtn.dataset.rol || rolBtn.getAttribute('data-rol') || 'inspector') : 'inspector';
   
   if (!nombre.trim()) { mostrarToast('⚠️ Escribe un nombre', 'var(--rd)'); return; }
   if (!/^\d{4}$/.test(pin)) { mostrarToast('⚠️ El PIN debe ser 4 dígitos', 'var(--rd)'); return; }
@@ -2851,6 +2851,16 @@ function eliminarUsuario(idx) {
 function seleccionarRolNuevo(rol, btn) {
   document.querySelectorAll('.new-rol-btn').forEach(function(b) { b.classList.remove('active'); });
   if (btn) btn.classList.add('active');
+}
+
+function setNewRol(rol, btn) {
+  document.querySelectorAll('.new-rol-btn').forEach(function(b) { 
+    b.classList.remove('active', 'n'); 
+  });
+  if (btn) { btn.classList.add('active', 'n'); }
+  // Guardar rol seleccionado en data attribute del contenedor
+  const container = document.getElementById('new-rol-insp');
+  if (container) container.closest('.tg').dataset.selectedRol = rol;
 }
 
 
