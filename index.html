@@ -2126,7 +2126,9 @@ function renderEjecList(q) {
     const tipoLabel=insp.grua==='No'?'Sin acceso':insp.grua==='DMS'?'DMS':'Con grúa';
     const coords_e = insp.coords || orm['Coordenadas'] || '';
     const mapsBtn = coords_e ? `<button class="maps-btn" onclick="event.stopPropagation();openMaps('${coords_e}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Abrir en Google Maps</button>` : '';
-    const delBtnEjec = (state.role==='admin'||state.role==='inspector') ? `<button class="btn-eliminar" onclick="event.stopPropagation();pedirEliminar('${code}')">🗑️ Eliminar inspección</button>` : '';
+    const esEjecutado = !!state.executed.find(e => e.code === code);
+    const delBtnEjec = state.role==='admin' ? `<button class="btn-eliminar" onclick="event.stopPropagation();pedirEliminar('${code}')">🗑️ Eliminar registro</button>` : 
+                       (!esEjecutado && state.role==='inspector') ? `<button class="btn-eliminar" onclick="event.stopPropagation();pedirEliminar('${code}')">🗑️ Eliminar inspección</button>` : '';
     const syncState = getSyncState(code);
     const syncBtn = `<button class="sync-badge ${syncState==='subido'?'sync-subido':'sync-pendiente'}" 
       onclick="event.stopPropagation();toggleSync('${code}')" title="${syncState==='subido'?'Subido a AppSheet de Plus — clic para desmarcar':'Pendiente de subir a AppSheet de Plus — clic para marcar como subido'}">
@@ -2786,86 +2788,84 @@ function agregarUsuario() {
 function sincronizarDesdeSheet() {
   const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
   if (!SCRIPT_URL) return;
-  
-  // Mostrar indicador de sincronización
-  const homeList = document.getElementById('home-list');
-  if (homeList) homeList.innerHTML = '<div style="text-align:center;padding:20px;color:var(--g6)">🔄 Sincronizando datos...</div>';
-  
+
   fetch(SCRIPT_URL + '?action=registros', {redirect: 'follow'})
     .then(r => r.text())
     .then(function(text) {
       try {
         const data = JSON.parse(text);
-        if (data.error) {
-          console.warn('Error sync:', data.error);
-          return;
-        }
-        
+        if (data.error) { console.warn('Error sync:', data.error); return; }
+
+        const inspSheet  = (data.inspecciones || []).filter(i => i['Codigo ORM'] && !i['Codigo ORM'].startsWith('TEST'));
+        const ejecSheet  = (data.ejecuciones  || []).filter(e => e['Codigo ORM'] && !e['Codigo ORM'].startsWith('TEST'));
+        const codesInsp  = new Set(inspSheet.map(i => i['Codigo ORM']));
+        const codesEjec  = new Set(ejecSheet.map(e => e['Codigo ORM']));
+
         let cambios = false;
-        
-        // Sincronizar inspecciones — reemplazar completamente si hay datos en Sheet
-        (data.inspecciones || []).forEach(function(insp) {
+
+        // ── Eliminar del localStorage lo que ya no está en el Sheet ──
+        const antesInsp = state.inspected.length;
+        const antesEjec = state.executed.length;
+        state.inspected = state.inspected.filter(i => codesInsp.has(i.code));
+        state.executed  = state.executed.filter(e => codesEjec.has(e.code));
+        if (state.inspected.length !== antesInsp || state.executed.length !== antesEjec) {
+          cambios = true;
+          console.log('🗑️ Eliminados del local:', (antesInsp - state.inspected.length), 'insp,', (antesEjec - state.executed.length), 'ejec');
+        }
+
+        // ── Agregar/actualizar lo que está en el Sheet ──
+        inspSheet.forEach(function(insp) {
           const code = insp['Codigo ORM'];
-          if (!code || code.startsWith('TEST')) return;
-          
-          const existe = state.inspected.find(i => i.code === code);
-          if (!existe) {
-            state.inspected.push({
-              code,
-              fecha:     insp['Fecha Insp']       || '',
-              hora:      insp['Hora Insp']         || '',
-              fechaRep:  insp['Fecha Reporte']     || '',
-              lcl:       insp['LCL']               || '',
-              apoyo:     insp['Cod Apoyo']         || '',
-              coords:    insp['Coordenadas']        || '',
-              incl:      insp['Inclinado']          || 'N',
-              angulo:    insp['Angulo']             || '',
-              dms:       insp['Cumple DMS']         || 'N',
-              grua:      insp['Acceso Grua']        || 'Si',
-              acm:       insp['Acometidas']         || 0,
-              dhlp:      insp['DHLP']               || '',
-              dhlc:      insp['DHLC']               || '',
-              dvlp:      insp['DVLP']               || '',
-              det:       insp['Detalle Trabajos']   || '',
-              inspector: insp['Inspector']          || '',
-              fotoUrls: {
-                'Foto_Perfil':         insp['Foto Perfil']      || '',
-                'Foto_Vista_defrente': insp['Foto Vista']       || '',
-                'Foto_Panoramica':     insp['Foto Panoramica']  || '',
-                'Foto_deficiencia':    insp['Foto Deficiencia'] || '',
-                'Foto_Insp1':          insp['Foto Insp1']       || '',
-                'Foto_Insp2':          insp['Foto Insp2']       || '',
-                'Croquis':             insp['Croquis']          || '',
-                'Conformidad_cliente': insp['Conformidad']      || ''
-              },
-              _fromSheet: true
-            });
+          const idx = state.inspected.findIndex(i => i.code === code);
+          const obj = {
+            code,
+            fecha:     insp['Fecha Insp']       || '',
+            hora:      insp['Hora Insp']         || '',
+            fechaRep:  insp['Fecha Reporte']     || '',
+            lcl:       insp['LCL']               || '',
+            apoyo:     insp['Cod Apoyo']         || '',
+            coords:    insp['Coordenadas']        || '',
+            incl:      insp['Inclinado']          || 'N',
+            angulo:    insp['Angulo']             || '',
+            dms:       insp['Cumple DMS']         || 'N',
+            grua:      insp['Acceso Grua']        || 'Si',
+            acm:       insp['Acometidas']         || 0,
+            dhlp:      insp['DHLP']               || '',
+            dhlc:      insp['DHLC']               || '',
+            dvlp:      insp['DVLP']               || '',
+            det:       insp['Detalle Trabajos']   || '',
+            inspector: insp['Inspector']          || '',
+            fotoUrls: {
+              'Foto_Perfil':         insp['Foto Perfil']      || '',
+              'Foto_Vista_defrente': insp['Foto Vista']       || '',
+              'Foto_Panoramica':     insp['Foto Panoramica']  || '',
+              'Foto_deficiencia':    insp['Foto Deficiencia'] || '',
+              'Foto_Insp1':          insp['Foto Insp1']       || '',
+              'Foto_Insp2':          insp['Foto Insp2']       || '',
+              'Croquis':             insp['Croquis']          || '',
+              'Conformidad_cliente': insp['Conformidad']      || ''
+            },
+            _fromSheet: true
+          };
+          if (idx >= 0) {
+            // Actualizar datos existentes (preservar fotos si el Sheet no tiene)
+            if (!state.inspected[idx].fotoUrls || !state.inspected[idx].fotoUrls['Foto_Perfil']) {
+              state.inspected[idx] = obj;
+            } else {
+              state.inspected[idx].det = obj.det;
+              state.inspected[idx].grua = obj.grua;
+              state.inspected[idx].coords = obj.coords;
+            }
             cambios = true;
           } else {
-            // Actualizar fotoUrls si el Sheet tiene URLs y el local no
-            if (!existe.fotoUrls || !existe.fotoUrls['Foto_Perfil']) {
-              existe.fotoUrls = {
-                'Foto_Perfil':         insp['Foto Perfil']      || '',
-                'Foto_Vista_defrente': insp['Foto Vista']       || '',
-                'Foto_Panoramica':     insp['Foto Panoramica']  || '',
-                'Foto_deficiencia':    insp['Foto Deficiencia'] || '',
-                'Foto_Insp1':          insp['Foto Insp1']       || '',
-                'Foto_Insp2':          insp['Foto Insp2']       || '',
-                'Croquis':             insp['Croquis']          || '',
-                'Conformidad_cliente': insp['Conformidad']      || ''
-              };
-              cambios = true;
-            }
+            state.inspected.push(obj);
+            cambios = true;
           }
         });
 
-        // Sincronizar ejecuciones
-        (data.ejecuciones || []).forEach(function(ejec) {
+        ejecSheet.forEach(function(ejec) {
           const code = ejec['Codigo ORM'];
-          if (!code || code.startsWith('TEST')) return;
-          
-          const existe = state.executed.find(e => e.code === code);
-          if (!existe) {
+          if (!state.executed.find(e => e.code === code)) {
             state.executed.push({
               code,
               fecha:    ejec['Fecha Ejec']        || '',
@@ -2885,21 +2885,9 @@ function sincronizarDesdeSheet() {
           }
         });
 
-        if (cambios) {
-          save();
-        }
-        
-        // Siempre actualizar el home con datos frescos
-        updateHome();
-        
-        const total = state.inspected.length + state.executed.length;
-        if (total > 0) {
-          mostrarToast('🔄 ' + total + ' registros sincronizados', 'var(--bl)');
-        }
-        
-      } catch(e) {
-        console.warn('Error procesando sync:', e);
-      }
+        if (cambios) { save(); updateHome(); }
+
+      } catch(e) { console.warn('Error procesando sync:', e); }
     })
     .catch(e => console.warn('Error sync:', e));
 }
