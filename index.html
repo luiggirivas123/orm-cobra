@@ -1157,19 +1157,24 @@ const DEFAULT_PINS = {
 
 function getPins() {
   try {
-    const saved = _store.getItem('pins_config');
-    return saved ? JSON.parse(saved) : DEFAULT_PINS;
-  } catch(e) { return DEFAULT_PINS; }
+    const saved = _store.getItem('pins_config') || _store.getItem('custom_pins');
+    if (!saved) return Array.isArray(DEFAULT_PINS) ? DEFAULT_PINS : [];
+    const parsed = JSON.parse(saved);
+    return Array.isArray(parsed) ? parsed : Array.isArray(DEFAULT_PINS) ? DEFAULT_PINS : [];
+  } catch(e) { 
+    return Array.isArray(DEFAULT_PINS) ? DEFAULT_PINS : [];
+  }
 }
 
 function buildRolePins() {
   const pins = getPins();
   const rolePins = { inspector: [], tecnico: [] };
   const roleNames = {};
-  Object.values(pins).forEach(function(u) {
-    if (u.rol === 'inspector') rolePins.inspector.push(u.pin);
-    if (u.rol === 'tecnico')   rolePins.tecnico.push(u.pin);
-    roleNames[u.pin] = u.nombre;
+  pins.forEach(function(p) {
+    const rol = p.role || p.rol || 'inspector';
+    if (!rolePins[rol]) rolePins[rol] = [];
+    rolePins[rol].push(p.pin);
+    roleNames[p.pin] = p.nombre || p.name || rol;
   });
   return { rolePins, roleNames };
 }
