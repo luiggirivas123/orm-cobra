@@ -554,12 +554,12 @@ html {
       <button class="import-tipo-btn" style="padding:11px 8px;border-radius:10px;border:1.5px solid var(--g3);background:var(--wh);color:var(--g6);font-size:12px;font-weight:700;cursor:pointer" onclick="setImportTipo('reubicaciones',this)">🚧 Reubicaciones</button>
     </div>
   </div>
-    <div class="sec-title">📥 Importar ORMs desde AppSheet</div>
-    <div class="upload-zone" id="dropzone" onclick="document.getElementById('csv-input').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)">
+    <div class="sec-title" id="import-section-title">📥 Importar ORMs desde AppSheet</div>
+    <div class="upload-zone" id="dropzone" onclick="triggerImportInput()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      <p>Descarga el CSV desde AppSheet de Plus<br>y súbelo aquí.<br><strong>Solo se importan ORMs activas</strong></p>
+      <p id="import-desc">Descarga el CSV desde AppSheet de Plus<br>y súbelo aquí.<br><strong>Solo se importan ORMs activas</strong></p>
     </div>
-    <input type="file" id="csv-input" accept=".csv" style="display:none" onchange="handleCSV(this)">
+    <input type="file" id="csv-input" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleArchivoImport(this)">
     <div id="upload-result" style="display:none" class="upload-result">
       <p id="upload-msg">✓ Importación exitosa</p>
       <span id="upload-detail"></span>
@@ -1154,13 +1154,18 @@ function save() {
 
 // ===== NAVEGACIÓN =====
 function goTo(id) {
-  document.querySelectorAll('.sc').forEach(s=>s.classList.remove('on'));
-  $(id).classList.add('on');
-  try { window.scrollTo(0,0); } catch(e) {}
-  if(id==='sc-home') updateHome();
-  if(id==='sc-insp') { renderDistTabs(); renderInspList(''); }
-  if(id==='sc-ejec') renderEjecList('');
-  if(id==='sc-dash') renderDash();
+  try {
+    document.querySelectorAll('.sc').forEach(function(s){ s.classList.remove('on'); });
+    var el = document.getElementById(id);
+    if (!el) { console.warn('goTo: elemento no encontrado:', id); return; }
+    el.classList.add('on');
+    try { window.scrollTo(0,0); } catch(e) {}
+    if (id==='sc-home') updateHome();
+    if (id==='sc-insp') { renderDistTabs(); renderInspList(''); }
+    if (id==='sc-ejec') renderEjecList('');
+    if (id==='sc-dash') renderDash();
+    if (id==='sc-mapa') { setTimeout(function(){ if(typeof inicializarMapa==='function'){ inicializarMapa(); cargarPinesEnMapa(); } }, 250); }
+  } catch(err) { console.error('goTo error en', id, ':', err); }
 }
 
 // ===== LOGIN =====
@@ -2434,6 +2439,32 @@ var nuevaOrmTipo = 'postes';
 var mapaLeaflet = null, mapaMarkers = [], mapaFiltroTipo = 'todos';
 var mapaFiltroEjec = false, mapaUserMarker = null, mapaInitialized = false;
 
+
+// ─── Manejo de importación con tipo ───
+function triggerImportInput() {
+  if (typeof importTipoActivo !== 'undefined' && importTipoActivo !== 'postes') {
+    // Para Excel: cambiar el accept y abrir
+    var inp = document.getElementById('csv-input');
+    inp.accept = '.xlsx,.xls';
+    inp.click();
+  } else {
+    var inp2 = document.getElementById('csv-input');
+    inp2.accept = '.csv';
+    inp2.click();
+  }
+}
+
+function handleArchivoImport(input) {
+  var file = input.files[0];
+  if (!file) return;
+  input.value = '';
+  if (typeof importTipoActivo !== 'undefined' && importTipoActivo !== 'postes') {
+    importarExcelTipo(file);
+  } else {
+    handleCSV(input);
+  }
+}
+
 // ─── Tipo actividad ───
 function setTipoActividad(tipo) {
   tipoActivo = tipo;
@@ -2624,12 +2655,7 @@ function guardarNuevaOrm(){
   mostrarToast('✅ ORM '+codigo+' agregada','var(--gr)'); goTo('sc-home');
 }
 
-// ─── goTo extendido para mapa ───
-var _origGoTo = goTo;
-goTo = function(id) {
-  try { _origGoTo(id); } catch(e) { console.warn('goTo error:', e); }
-  if (id === 'sc-mapa') { setTimeout(function(){ inicializarMapa(); cargarPinesEnMapa(); }, 250); }
-};
+// goTo ya maneja sc-mapa internamente
 
 // ─── eliminarUsuarioPin ───
 function eliminarUsuarioPin(idx) {
