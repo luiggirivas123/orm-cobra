@@ -1366,11 +1366,7 @@ function renderInspList(q) {
   orms.forEach(o=>{
     const dias=diasAtras(o['Fecha registro']);
     const urg=dias&&dias>180?'urgente':'';
-    const syncStateInsp = getSyncState(o['Codigo de ORM']);
-    const syncBadgeInsp = `<button class="sync-badge ${syncStateInsp==='subido'?'sync-subido':'sync-pendiente'}"
-      onclick="event.stopPropagation();toggleSync('${o['Codigo de ORM']}')" title="${syncStateInsp==='subido'?'Subido a AppSheet — clic para desmarcar':'Pendiente de subir a AppSheet — clic para marcar'}">
-      ${syncStateInsp==='subido'?'✅ Subido a Plus':'⏳ Pendiente subir a Plus'}
-    </button>`;
+    const syncBadgeInsp = ''; // Solo visible para admin en ejecutados
     list.innerHTML+=`<div class="oc ${urg}" onclick="openForm('${o['Codigo de ORM']}')">
       <div class="oh"><div class="ocode">${o['Codigo de ORM']||'—'}</div>${dias!==null?`<span class="obadge ${dias>180?'b-urg':'b-pend'}">${o['Estado inspección']}</span>`:`<span class="obadge b-pend">${o['Estado inspección']}</span>`}</div>
       <div class="osumi">Suministro: ${o['Suministro']||'—'} · Reg: ${fmtDate(o['Fecha registro'])} ${antiguedadBadge(o['Fecha registro'])}</div>
