@@ -2810,10 +2810,6 @@ function renderPinsList() {
 }
 
 function agregarUsuario() {
-  if (state.role !== 'admin') {
-    mostrarToast('⚠️ Solo el admin puede gestionar usuarios', 'var(--rd)');
-    return;
-  }
   const nombre = (document.getElementById('new-nombre') || {}).value || '';
   const pin    = (document.getElementById('new-pin')    || {}).value || '';
   const rolBtn = document.querySelector('.new-rol-btn.active');
@@ -2839,7 +2835,6 @@ function agregarUsuario() {
 }
 
 function eliminarUsuario(idx) {
-  if (state.role !== 'admin') return;
   const pins = getPins();
   const nombre = pins[idx] ? pins[idx].name : '';
   pins.splice(idx, 1);
