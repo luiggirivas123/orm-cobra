@@ -2064,18 +2064,26 @@ function guardarSoloRegistro(code, insp, urls) {
     }
   };
 
-  fetch('/.netlify/functions/upload', {
+  // Guardar via Apps Script directamente (sin Netlify Function)
+  const SCRIPT_URL = APPS_SCRIPT_URL;
+  fetch(SCRIPT_URL, {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(payload)
+    headers: {'Content-Type': 'text/plain;charset=utf-8'},
+    body: JSON.stringify(payload),
+    redirect: 'follow'
   })
-  .then(r => r.json())
-  .then(function(res) {
-    console.log('Registro guardado:', res.ok ? '✅' : '❌', res);
+  .then(r => r.text())
+  .then(function(text) {
+    try {
+      const res = JSON.parse(text);
+      console.log('Registro guardado:', res.ok ? '✅' : '❌', res);
+    } catch(e) {
+      console.warn('Response guardar:', text.slice(0,100));
+    }
     mostrarModalInsp(insp);
   })
   .catch(function(e) {
-    console.warn('Error guardando registro:', e);
+    console.warn('Error guardando:', e);
     mostrarModalInsp(insp);
   });
 }
@@ -2907,21 +2915,21 @@ function confirmarEliminar() {
 }
 
 async function eliminarDelSheet(code) {
-  // Buscar y eliminar fila en Inspecciones
+  // Eliminar via Apps Script (tiene permisos de escritura)
   try {
-    const url = 'https://sheets.googleapis.com/v4/spreadsheets/1jYHm5nx6MzXzVppG-drTGZdTD7S8UIrC7Vl2iTjmlVQ/values/Inspecciones!A:A?key=AIzaSyCSOb4VzWkwke0QimyQK3XsW7I5b_igkRI';
-    const res = await fetch(url);
-    const data = await res.json();
-    if (!data.values) return;
-    
-    // Encontrar la fila
-    const rowIdx = data.values.findIndex(r => r[0] === code);
-    if (rowIdx < 0) return;
-    
-    // Limpiar la fila (no podemos eliminar filas con API key sola, necesita OAuth)
-    // En su lugar, marcamos como eliminada
-    const clearUrl = 'https://sheets.googleapis.com/v4/spreadsheets/1jYHm5nx6MzXzVppG-drTGZdTD7S8UIrC7Vl2iTjmlVQ/values/Inspecciones!A' + (rowIdx+1) + ':AE' + (rowIdx+1) + ':clear?key=AIzaSyCSOb4VzWkwke0QimyQK3XsW7I5b_igkRI';
-    await fetch(clearUrl, { method: 'POST', headers: {'Content-Type':'application/json'} });
+    const url = 'https://script.google.com/macros/s/AKfycbz4YIdhQjkIWwDfVEWP5Qc-K2zpVocNi1ZikwCmE9bxwMA_o5OSwe-5SvflwbfwKXqc/exec?action=eliminarRegistro&code=' + encodeURIComponent(code);
+    const res = await fetch(url, { redirect: 'follow' });
+    const text = await res.text();
+    try {
+      const data = JSON.parse(text);
+      if (data.ok) {
+        console.log('✅ Eliminado del Sheet:', code);
+      } else {
+        console.warn('❌ Error eliminando del Sheet:', data.error);
+      }
+    } catch(e) {
+      console.warn('Respuesta no JSON al eliminar:', text.slice(0,100));
+    }
   } catch(e) {
     console.warn('Error eliminando del Sheet:', e);
   }
