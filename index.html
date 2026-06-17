@@ -2381,53 +2381,176 @@ function finalizarEjec() {
     tecnico: state.username
   };
 
-  // Recopilar fotos de ejecución
-  const fotosEjec = [];
-  [{slotId:'se-1',nombre:'Foto_despues1'},{slotId:'se-2',nombre:'Foto_despues2'},
-   {slotId:'se-3',nombre:'Foto_despues3'},{slotId:'se-4',nombre:'Foto_despues4'}
-  ].forEach(f => {
-    const slot = document.getElementById(f.slotId);
-    if (!slot) return;
-    const b64 = slot.dataset.b64;
-    const mime = slot.dataset.mime || 'image/jpeg';
-    if (b64 && b64.length > 100) {
-      fotosEjec.push({ nombre: f.nombre, base64: b64, mime });
-    }
-  });
-  console.log('Fotos ejecución a subir:', fotosEjec.length);
+  // Recopilar fotos desde los inputs directamente
+  const fotoSlots = [
+    {inputId:'pe-1', slotId:'se-1', nombre:'Foto_despues1'},
+    {inputId:'pe-2', slotId:'se-2', nombre:'Foto_despues2'},
+    {inputId:'pe-3', slotId:'se-3', nombre:'Foto_despues3'},
+    {inputId:'pe-4', slotId:'se-4', nombre:'Foto_despues4'}
+  ];
 
   state.executed.push(ejec); save();
 
   const btnFin = document.querySelector('.bsv.gr-btn');
-  if (btnFin) { btnFin.disabled = true; btnFin.textContent = '⏳ Finalizando...'; }
+  if (btnFin) { btnFin.disabled = true; btnFin.textContent = '⏳ Leyendo fotos...'; }
 
-  if (typeof google === 'undefined' || !google.script || !google.script.run || fotosEjec.length === 0) {
-    if (typeof google !== 'undefined' && google.script && google.script.run) {
-      google.script.run.guardarRegistro({ tipo:'ejecucion', data:{ code, tecnico:ejec.tecnico, fecha:ejec.fecha, fechaRep:ejec.fechaRep, tipo:ejec.tipo, det:ejec.det, fotos:{} }});
-    }
-    if (btnFin) { btnFin.disabled=false; btnFin.textContent='👍 Finalizar ejecución'; }
-    $('mo-ejec').classList.add('on'); updateHome(); return;
+  // Verificar token OAuth
+  const token = _store.getItem('google_access_token') || '';
+  const expires = parseInt(_store.getItem('google_token_expires') || '0');
+  const ROOT_FOLDER_ID = '1z5BGDGFAh7PwLHRmE73WWCDDZ-l0m9AT';
+
+  // Leer fotos desde inputs
+  const fotosParaSubir = [];
+  let pendientes = 0;
+
+  fotoSlots.forEach(function(f) {
+    const inp = document.getElementById(f.inputId);
+    if (inp && inp.files && inp.files[0]) pendientes++;
+  });
+
+  if (pendientes === 0 || !token || expires < Date.now()) {
+    // Sin fotos o sin token → guardar solo datos
+    guardarSoloEjecucion(code, ejec, {}, btnFin);
+    return;
   }
 
-  const urlsEjec = {}; let eIdx = 0;
-  function subirSiguienteEjec() {
-    if (eIdx >= fotosEjec.length) {
+  let leidas = 0;
+  fotoSlots.forEach(function(f) {
+    const inp = document.getElementById(f.inputId);
+    if (!inp || !inp.files || !inp.files[0]) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      const dataUrl = ev.target.result;
+      const b64 = dataUrl.split(',')[1];
+      const mime = dataUrl.split(';')[0].split(':')[1] || 'image/jpeg';
+      if (b64 && b64.length > 50) fotosParaSubir.push({ nombre: f.nombre, base64: b64, mime });
+      leidas++;
+      if (leidas === pendientes) subirFotosEjecucion(code, ejec, fotosParaSubir, token, ROOT_FOLDER_ID, btnFin);
+    };
+    reader.readAsDataURL(inp.files[0]);
+  });
+}
+
+function subirFotosEjecucion(code, ejec, fotos, token, rootFolderId, btnFin) {
+  const urlsAcum = {};
+  let idx = 0;
+
+  function siguiente() {
+    if (idx >= fotos.length) {
       const eI = state.executed.findIndex(e => e.code === code);
-      if (eI >= 0) { state.executed[eI].fotoUrls = urlsEjec; save(); }
-      google.script.run
-        .withSuccessHandler(function() { if(btnFin){btnFin.disabled=false;btnFin.textContent='👍 Finalizar ejecución';} $('mo-ejec').classList.add('on'); updateHome(); })
-        .withFailureHandler(function() { if(btnFin){btnFin.disabled=false;btnFin.textContent='👍 Finalizar ejecución';} $('mo-ejec').classList.add('on'); updateHome(); })
-        .guardarRegistro({ tipo:'ejecucion', data:{ code, tecnico:ejec.tecnico, fecha:ejec.fecha, fechaRep:ejec.fechaRep, tipo:ejec.tipo, det:ejec.det, fotos:urlsEjec }});
+      if (eI >= 0) { state.executed[eI].fotoUrls = urlsAcum; save(); }
+      guardarSoloEjecucion(code, ejec, urlsAcum, btnFin);
       return;
     }
-    const foto = fotosEjec[eIdx];
-    if (btnFin) btnFin.textContent = `⏳ Subiendo foto ${eIdx+1}/${fotosEjec.length}...`;
-    google.script.run
-      .withSuccessHandler(function(r) { if(r&&r.url) urlsEjec[foto.nombre]=r.url; eIdx++; subirSiguienteEjec(); })
-      .withFailureHandler(function() { eIdx++; subirSiguienteEjec(); })
-      .subirUnaFoto(code, 'Ejecucion', foto.nombre, foto.base64, foto.mime);
+    const foto = fotos[idx];
+    if (btnFin) btnFin.textContent = '⏳ Subiendo foto ' + (idx+1) + '/' + fotos.length + '...';
+
+    comprimirFoto(foto.base64, foto.mime, function(b64comp) {
+      subirFotoDriveEjecucion(code, foto.nombre, b64comp, foto.mime, token, rootFolderId)
+        .then(function(url) {
+          if (url) {
+            urlsAcum[foto.nombre] = url;
+            console.log('✅ Foto ejecución subida:', foto.nombre);
+          }
+          idx++; siguiente();
+        })
+        .catch(function(e) {
+          console.warn('❌ Error foto ejecución:', foto.nombre, e);
+          idx++; siguiente();
+        });
+    });
   }
-  subirSiguienteEjec();
+  siguiente();
+}
+
+async function subirFotoDriveEjecucion(codigoORM, nombre, b64, mime, token, rootFolderId) {
+  try {
+    const ormFolderId = await obtenerOCrearCarpeta(codigoORM, rootFolderId, token);
+    const ejecFolderId = await obtenerOCrearCarpeta('Ejecucion', ormFolderId, token);
+
+    const boundary = 'orm_ejec_' + Date.now();
+    const metadata = JSON.stringify({
+      name: nombre + '.jpg',
+      parents: [ejecFolderId],
+      mimeType: mime || 'image/jpeg'
+    });
+
+    const body = '--' + boundary + '\r\n' +
+      'Content-Type: application/json\r\n\r\n' +
+      metadata + '\r\n' +
+      '--' + boundary + '\r\n' +
+      'Content-Type: ' + (mime || 'image/jpeg') + '\r\n' +
+      'Content-Transfer-Encoding: base64\r\n\r\n' +
+      b64 + '\r\n' +
+      '--' + boundary + '--';
+
+    const uploadResp = await fetch(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'multipart/related; boundary=' + boundary
+        },
+        body: body
+      }
+    );
+
+    if (!uploadResp.ok) throw new Error('Upload failed: ' + await uploadResp.text());
+    const file = await uploadResp.json();
+
+    await fetch('https://www.googleapis.com/drive/v3/files/' + file.id + '/permissions', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({role: 'reader', type: 'anyone'})
+    });
+
+    return 'https://drive.google.com/thumbnail?id=' + file.id + '&sz=s1600';
+  } catch(e) {
+    console.error('Error subirFotoDriveEjecucion:', e);
+    return null;
+  }
+}
+
+function guardarSoloEjecucion(code, ejec, urls, btnFin) {
+  const payload = {
+    action: 'guardarEjecucion',
+    tipo: 'ejecucion',
+    data: {
+      code: String(code),
+      tecnico: String(ejec.tecnico || ''),
+      fecha: String(ejec.fecha || ''),
+      fechaRep: String(ejec.fechaRep || ''),
+      tipo: String(ejec.tipo || ''),
+      det: String(ejec.det || ''),
+      fotos: urls || {}
+    }
+  };
+
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: {'Content-Type': 'text/plain;charset=utf-8'},
+    body: JSON.stringify(payload),
+    redirect: 'follow'
+  })
+  .then(r => r.text())
+  .then(function(text) {
+    try {
+      const res = JSON.parse(text);
+      console.log('Ejecución guardada:', res.ok ? '✅' : '❌');
+    } catch(e) {
+      console.warn('Respuesta guardar ejecución:', text.slice(0,100));
+    }
+    if (btnFin) { btnFin.disabled=false; btnFin.textContent='👍 Finalizar ejecución'; }
+    $('mo-ejec').classList.add('on');
+    updateHome();
+  })
+  .catch(function(e) {
+    console.warn('Error guardando ejecución:', e);
+    if (btnFin) { btnFin.disabled=false; btnFin.textContent='👍 Finalizar ejecución'; }
+    $('mo-ejec').classList.add('on');
+    updateHome();
+  });
 }
 
 // ===== DASHBOARD =====
