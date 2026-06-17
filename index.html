@@ -764,7 +764,7 @@ html {
     <div class="chip chip-sin" id="chip-sin" onclick="setChip('sin');setEjecFilter('sin');setTitle('Sin Acceso')">Sin acceso</div>
     <div class="chip chip-dms" id="chip-dms" onclick="setChip('dms');setEjecFilter('dms');setTitle('DMS')">DMS</div>
     <div class="chip" id="chip-ejec" style="background:var(--grl);color:var(--gr);border:1.5px solid var(--grm)" onclick="setChip('ejec');setEjecFilter('ejecutados');setTitle('Ejecutados')">✅ Ejecutados</div>
-    <div class="chip" id="chip-sync" style="background:#FFF3CD;color:#856404;border:1.5px solid #FFCA2C" onclick="setChip('sync');setEjecFilter('pendiente_sync');setTitle('Sin subir a Plus')">⏳ Sin subir</div>
+    <div class="chip" id="chip-sync" style="display:none;background:#FFF3CD;color:#856404;border:1.5px solid #FFCA2C" onclick="setChip('sync');setEjecFilter('pendiente_sync');setTitle('Sin subir a Plus')">⏳ Sin subir</div>
   </div>
   <div class="lc" id="ejec-list"></div>
 </div>
@@ -2153,10 +2153,12 @@ function renderEjecList(q) {
     const delBtnEjec = state.role==='admin' ? `<button class="btn-eliminar" onclick="event.stopPropagation();pedirEliminar('${code}')">🗑️ Eliminar registro</button>` : 
                        (!esEjecutado && state.role==='inspector') ? `<button class="btn-eliminar" onclick="event.stopPropagation();pedirEliminar('${code}')">🗑️ Eliminar inspección</button>` : '';
     const syncState = getSyncState(code);
-    const syncBtn = `<button class="sync-badge ${syncState==='subido'?'sync-subido':'sync-pendiente'}" 
+    // Badge sync solo para admin en ejecutados
+    const esEjecutadoSync = !!state.executed.find(e => e.code === code);
+    const syncBtn = (state.role === 'admin' && esEjecutadoSync) ? `<button class="sync-badge ${syncState==='subido'?'sync-subido':'sync-pendiente'}" 
       onclick="event.stopPropagation();toggleSync('${code}')" title="${syncState==='subido'?'Subido a AppSheet de Plus — clic para desmarcar':'Pendiente de subir a AppSheet de Plus — clic para marcar como subido'}">
       ${syncState==='subido'?'✅ Subido a Plus':'⏳ Pendiente subir a Plus'}
-    </button>`;
+    </button>` : '';
     list.innerHTML+=`<div class="oc ${tipo}" onclick="openEjecForm('${code}')">
       <div class="oh"><div class="ocode">${code}</div><span class="obadge ${tipoBadge}" style="${insp.grua==='DMS'?'background:var(--pul);color:var(--pu)':''}">${tipoLabel}</span></div>
       <div class="osumi">Suministro: ${orm['Suministro']||'—'} · Inspector: ${insp.inspector||'—'}</div>
@@ -3293,20 +3295,30 @@ function cargarDetalleDesdeSheet(code) {
 // ── Abrir lista filtrada desde stats del home ──
 function abrirListaFiltrada(tipo) {
   const titleEl = document.getElementById('ejec-title');
+  const chipSync = document.getElementById('chip-sync');
+  
+  // Ocultar chip sync por defecto
+  if (chipSync) chipSync.style.display = 'none';
+  
   if (tipo === 'ejecucion') {
     if (titleEl) titleEl.textContent = 'Pend. Ejecución (Con grúa)';
     goTo('sc-ejec');
+    setChip('grua');
     setEjecFilter('grua');
     renderEjecList('');
   } else if (tipo === 'sin_acceso') {
     if (titleEl) titleEl.textContent = 'Sin Acceso / Fibra de Vidrio';
     goTo('sc-ejec');
+    setChip('sin');
     setEjecFilter('sin');
     renderEjecList('');
   } else if (tipo === 'ejecutados') {
     if (titleEl) titleEl.textContent = 'Órdenes Ejecutadas';
     goTo('sc-ejec');
+    setChip('ejec');
     setEjecFilter('ejecutados');
+    // Mostrar chip "Sin subir" solo para admin
+    if (chipSync && state.role === 'admin') chipSync.style.display = 'inline-flex';
     renderEjecList('');
   }
 }
@@ -3319,6 +3331,9 @@ function setChip(id) {
   });
   const el = document.getElementById('chip-' + id);
   if (el) el.classList.add('on');
+  // Ocultar chip sync cuando se cambia a otro filtro (excepto ejec para admin)
+  const chipSync = document.getElementById('chip-sync');
+  if (chipSync && id !== 'ejec' && id !== 'sync') chipSync.style.display = 'none';
 }
 function setTitle(t) {
   const el = document.getElementById('ejec-title');
