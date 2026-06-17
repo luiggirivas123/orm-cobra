@@ -759,10 +759,12 @@ html {
     <input class="si" type="text" placeholder="Buscar ORM..." oninput="renderEjecList(this.value)">
   </div>
   <div class="chips">
-    <div class="chip chip-all" onclick="setEjecFilter('all')">Todos</div>
-    <div class="chip chip-grua" onclick="setEjecFilter('grua')">Con grúa</div>
-    <div class="chip chip-sin" onclick="setEjecFilter('sin')">Sin acceso</div>
-    <div class="chip chip-dms" onclick="setEjecFilter('dms')">DMS</div>
+    <div class="chip chip-all on" id="chip-all" onclick="setChip('all');setEjecFilter('all');setTitle('Pendiente Ejecución')">Todos</div>
+    <div class="chip chip-grua" id="chip-grua" onclick="setChip('grua');setEjecFilter('grua');setTitle('Con Grúa')">Con grúa</div>
+    <div class="chip chip-sin" id="chip-sin" onclick="setChip('sin');setEjecFilter('sin');setTitle('Sin Acceso')">Sin acceso</div>
+    <div class="chip chip-dms" id="chip-dms" onclick="setChip('dms');setEjecFilter('dms');setTitle('DMS')">DMS</div>
+    <div class="chip" id="chip-ejec" style="background:var(--grl);color:var(--gr);border:1.5px solid var(--grm)" onclick="setChip('ejec');setEjecFilter('ejecutados');setTitle('Ejecutados')">✅ Ejecutados</div>
+    <div class="chip" id="chip-sync" style="background:#FFF3CD;color:#856404;border:1.5px solid #FFCA2C" onclick="setChip('sync');setEjecFilter('pendiente_sync');setTitle('Sin subir a Plus')">⏳ Sin subir</div>
   </div>
   <div class="lc" id="ejec-list"></div>
 </div>
@@ -3286,6 +3288,20 @@ function abrirListaFiltrada(tipo) {
     setEjecFilter('ejecutados');
     renderEjecList('');
   }
+}
+
+
+function setChip(id) {
+  ['all','grua','sin','dms','ejec','sync'].forEach(function(c) {
+    const el = document.getElementById('chip-' + c);
+    if (el) el.classList.remove('on');
+  });
+  const el = document.getElementById('chip-' + id);
+  if (el) el.classList.add('on');
+}
+function setTitle(t) {
+  const el = document.getElementById('ejec-title');
+  if (el) el.textContent = t;
 }
 
 // ===== BUSCADOR POR NÚMERO DE POSTE =====
