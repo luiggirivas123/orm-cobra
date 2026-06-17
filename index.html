@@ -418,6 +418,22 @@ html {
 .foto-item-label{padding:5px 8px;font-size:12px;font-weight:700;color:var(--g6);background:var(--wh);display:flex;justify-content:space-between;align-items:center}
 .foto-item-label a{font-size:11px;color:var(--bl);text-decoration:none;font-weight:700}
 .no-foto-msg{color:var(--g6);font-size:13px;font-style:italic;padding:12px 0;grid-column:1/-1;text-align:center}
+
+/* DASHBOARD MEJORADO */
+.dash-det-row{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid var(--g2);font-size:13px}
+.dash-det-row:last-child{border-bottom:none}
+.dash-det-name{font-weight:700;color:var(--g8)}
+.dash-det-count{background:var(--or);color:white;border-radius:12px;padding:2px 10px;font-weight:700;font-size:13px}
+.dash-det-count-gr{background:var(--gr);color:white;border-radius:12px;padding:2px 10px;font-weight:700;font-size:13px}
+.dash-orm-row{padding:8px 12px;border-bottom:1px solid var(--g2);font-size:12px;cursor:pointer}
+.dash-orm-row:hover{background:var(--g1)}
+.dash-orm-code{font-weight:700;color:var(--or);font-size:13px}
+.dash-orm-meta{color:var(--g6);margin-top:2px}
+.dash-bar-row{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px}
+.dash-bar-label{width:30px;font-weight:700;color:var(--g7);text-align:right;flex-shrink:0}
+.dash-bar-track{flex:1;background:var(--g2);border-radius:4px;height:18px;overflow:hidden}
+.dash-bar-fill{height:100%;border-radius:4px;transition:width 0.3s}
+.dash-bar-val{font-weight:700;color:var(--g8);width:24px;flex-shrink:0}
 </style>
 
 
@@ -859,17 +875,60 @@ html {
     <div class="ptab" onclick="setPeriod('semana')">Semana</div>
     <div class="ptab" onclick="setPeriod('mes')">Mes</div>
   </div>
+
+  <!-- Tarjetas resumen clickeables -->
   <div class="dash-grid">
-    <div class="dcard or-t"><div class="dl">Inspecciones</div><div class="dn" id="d-insp-n">0</div></div>
-    <div class="dcard gr-t"><div class="dl">Ejecuciones</div><div class="dn" id="d-ejec-n">0</div></div>
-    <div class="dcard bl-t"><div class="dl">Total ORMs</div><div class="dn" id="d-total-n">0</div></div>
+    <div class="dcard or-t" onclick="toggleDashSection('dash-insp-det')" style="cursor:pointer">
+      <div class="dl">🔍 Inspecciones</div>
+      <div class="dn" id="d-insp-n">0</div>
+      <div style="font-size:11px;opacity:0.7">Tap para ver detalle ▾</div>
+    </div>
+    <div class="dcard gr-t" onclick="toggleDashSection('dash-ejec-det')" style="cursor:pointer">
+      <div class="dl">🔧 Ejecuciones</div>
+      <div class="dn" id="d-ejec-n">0</div>
+      <div style="font-size:11px;opacity:0.7">Tap para ver detalle ▾</div>
+    </div>
+    <div class="dcard bl-t">
+      <div class="dl">📋 Total ORMs</div>
+      <div class="dn" id="d-total-n">0</div>
+    </div>
   </div>
-  <div class="chart-wrap">
-    <div class="chart-title" id="chart-title">Inspecciones por día (últimos 7 días)</div>
-    <div id="chart-bars"></div>
+
+  <!-- Detalle inspecciones desplegable -->
+  <div id="dash-insp-det" style="display:none;margin:0 0 12px">
+    <div class="chart-wrap">
+      <div class="chart-title">🔍 Detalle de Inspecciones — por Inspector</div>
+      <div id="dash-insp-por-inspector"></div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">📅 Inspecciones por día</div>
+      <div id="dash-insp-por-dia"></div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">📋 Listado de inspecciones</div>
+      <div id="dash-insp-lista" style="max-height:300px;overflow-y:auto"></div>
+    </div>
   </div>
+
+  <!-- Detalle ejecuciones desplegable -->
+  <div id="dash-ejec-det" style="display:none;margin:0 0 12px">
+    <div class="chart-wrap">
+      <div class="chart-title">🔧 Detalle de Ejecuciones — por Técnico</div>
+      <div id="dash-ejec-por-tecnico"></div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">📅 Ejecuciones por día</div>
+      <div id="dash-ejec-por-dia"></div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">📋 Listado de ejecuciones</div>
+      <div id="dash-ejec-lista" style="max-height:300px;overflow-y:auto"></div>
+    </div>
+  </div>
+
+  <!-- Gráfico por distrito -->
   <div class="chart-wrap">
-    <div class="chart-title">Por distrito</div>
+    <div class="chart-title">🗺️ Por distrito</div>
     <div id="dist-bars"></div>
   </div>
 </div>
@@ -3333,6 +3392,190 @@ function setChip(id) {
 function setTitle(t) {
   const el = document.getElementById('ejec-title');
   if (el) el.textContent = t;
+}
+
+
+// ===== DASHBOARD GERENCIA =====
+var dashPeriod = 'dia';
+
+function toggleDashSection(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const visible = el.style.display !== 'none';
+  el.style.display = visible ? 'none' : 'block';
+  if (!visible) renderDashboardDetalle();
+}
+
+function setPeriod(p) {
+  dashPeriod = p;
+  document.querySelectorAll('.ptab').forEach(function(t) { t.classList.remove('on'); });
+  event.target.classList.add('on');
+  renderDashboard();
+  renderDashboardDetalle();
+}
+
+function renderDashboard() {
+  const now = new Date();
+  const inspList = state.inspected || [];
+  const ejecList = state.executed || [];
+
+  function enPeriodo(fechaStr) {
+    if (!fechaStr) return false;
+    try {
+      const f = new Date(fechaStr);
+      if (dashPeriod === 'dia') {
+        return f.toDateString() === now.toDateString();
+      } else if (dashPeriod === 'semana') {
+        const diff = (now - f) / (1000*60*60*24);
+        return diff >= 0 && diff < 7;
+      } else {
+        return f.getMonth() === now.getMonth() && f.getFullYear() === now.getFullYear();
+      }
+    } catch(e) { return false; }
+  }
+
+  const inspPeriodo = inspList.filter(i => enPeriodo(i.fecha || i.fechaRep));
+  const ejecPeriodo = ejecList.filter(e => enPeriodo(e.fecha || e.fechaRep));
+
+  $('d-insp-n').textContent = inspPeriodo.length;
+  $('d-ejec-n').textContent = ejecPeriodo.length;
+  $('d-total-n').textContent = state.orms.length;
+
+  // Gráfico por distrito
+  const distMap = {};
+  inspPeriodo.forEach(function(i) {
+    const orm = state.orms.find(o => o['Codigo de ORM'] === i.code);
+    const dist = (orm && orm['Distrito']) || 'Sin distrito';
+    distMap[dist] = (distMap[dist] || 0) + 1;
+  });
+  const distBars = $('dist-bars');
+  const distEntries = Object.entries(distMap).sort((a,b) => b[1]-a[1]);
+  const maxDist = distEntries.length ? distEntries[0][1] : 1;
+  if (distEntries.length === 0) {
+    distBars.innerHTML = '<div style="text-align:center;color:var(--g6);padding:16px">Sin datos aún</div>';
+  } else {
+    distBars.innerHTML = distEntries.map(function(d) {
+      const pct = Math.round((d[1]/maxDist)*100);
+      return '<div class="dash-bar-row"><div class="dash-bar-label" style="width:80px;font-size:11px">' + d[0].slice(0,10) + '</div><div class="dash-bar-track"><div class="dash-bar-fill" style="width:' + pct + '%;background:var(--or)"></div></div><div class="dash-bar-val">' + d[1] + '</div></div>';
+    }).join('');
+  }
+}
+
+function renderDashboardDetalle() {
+  const now = new Date();
+  const inspList = state.inspected || [];
+  const ejecList = state.executed || [];
+
+  function enPeriodo(fechaStr) {
+    if (!fechaStr) return false;
+    try {
+      const f = new Date(fechaStr);
+      if (dashPeriod === 'dia') return f.toDateString() === now.toDateString();
+      if (dashPeriod === 'semana') { const diff = (now-f)/(1000*60*60*24); return diff>=0&&diff<7; }
+      return f.getMonth()===now.getMonth()&&f.getFullYear()===now.getFullYear();
+    } catch(e) { return false; }
+  }
+
+  function fmtFechaCorta(fechaStr) {
+    if (!fechaStr) return '—';
+    try {
+      const f = new Date(fechaStr);
+      return f.toLocaleDateString('es-PE', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    } catch(e) { return fechaStr; }
+  }
+
+  const inspPeriodo = inspList.filter(i => enPeriodo(i.fecha || i.fechaRep));
+  const ejecPeriodo = ejecList.filter(e => enPeriodo(e.fecha || e.fechaRep));
+
+  // ── Inspecciones: por inspector ──
+  const inspPorInspector = {};
+  inspPeriodo.forEach(function(i) {
+    const nombre = i.inspector || 'Sin asignar';
+    if (!inspPorInspector[nombre]) inspPorInspector[nombre] = [];
+    inspPorInspector[nombre].push(i);
+  });
+  const inspInspEl = $('dash-insp-por-inspector');
+  if (inspInspEl) {
+    const entries = Object.entries(inspPorInspector).sort((a,b)=>b[1].length-a[1].length);
+    inspInspEl.innerHTML = entries.length ? entries.map(function(e) {
+      return '<div class="dash-det-row"><span class="dash-det-name">👤 ' + e[0] + '</span><span class="dash-det-count">' + e[1].length + '</span></div>';
+    }).join('') : '<div style="text-align:center;color:var(--g6);padding:12px">Sin datos</div>';
+  }
+
+  // ── Inspecciones: por día ──
+  const inspPorDia = {};
+  inspPeriodo.forEach(function(i) {
+    const f = new Date(i.fecha || i.fechaRep || '');
+    const key = f.toLocaleDateString('es-PE', {weekday:'short',day:'2-digit',month:'2-digit'});
+    inspPorDia[key] = (inspPorDia[key]||0) + 1;
+  });
+  const inspDiaEl = $('dash-insp-por-dia');
+  const inspDiaEntries = Object.entries(inspPorDia).sort();
+  const maxInspDia = inspDiaEntries.length ? Math.max(...inspDiaEntries.map(e=>e[1])) : 1;
+  if (inspDiaEl) {
+    inspDiaEl.innerHTML = inspDiaEntries.length ? inspDiaEntries.map(function(e) {
+      const pct = Math.round((e[1]/maxInspDia)*100);
+      return '<div class="dash-bar-row"><div class="dash-bar-label" style="width:70px;font-size:11px">' + e[0] + '</div><div class="dash-bar-track"><div class="dash-bar-fill" style="width:'+pct+'%;background:var(--or)"></div></div><div class="dash-bar-val">'+e[1]+'</div></div>';
+    }).join('') : '<div style="text-align:center;color:var(--g6);padding:12px">Sin datos</div>';
+  }
+
+  // ── Inspecciones: listado ──
+  const inspListEl = $('dash-insp-lista');
+  if (inspListEl) {
+    inspListEl.innerHTML = inspPeriodo.length ? inspPeriodo.map(function(i) {
+      const orm = state.orms.find(o=>o['Codigo de ORM']===i.code)||{};
+      return '<div class="dash-orm-row" onclick="abrirDetalle('' + i.code + '')">' +
+        '<div class="dash-orm-code">' + i.code + '</div>' +
+        '<div class="dash-orm-meta">👤 ' + (i.inspector||'—') + ' · 📅 ' + fmtFechaCorta(i.fecha) + '</div>' +
+        '<div class="dash-orm-meta">📍 ' + (orm['Distrito']||'—') + ' · ' + (orm['PetitorioCorto']||'—').slice(0,50) + '</div>' +
+        '</div>';
+    }).join('') : '<div style="text-align:center;color:var(--g6);padding:12px">Sin inspecciones en este período</div>';
+  }
+
+  // ── Ejecuciones: por técnico ──
+  const ejecPorTecnico = {};
+  ejecPeriodo.forEach(function(e) {
+    const nombre = e.tecnico || 'Sin asignar';
+    if (!ejecPorTecnico[nombre]) ejecPorTecnico[nombre] = [];
+    ejecPorTecnico[nombre].push(e);
+  });
+  const ejecTecEl = $('dash-ejec-por-tecnico');
+  if (ejecTecEl) {
+    const entries = Object.entries(ejecPorTecnico).sort((a,b)=>b[1].length-a[1].length);
+    ejecTecEl.innerHTML = entries.length ? entries.map(function(e) {
+      return '<div class="dash-det-row"><span class="dash-det-name">🔧 ' + e[0] + '</span><span class="dash-det-count-gr">' + e[1].length + '</span></div>';
+    }).join('') : '<div style="text-align:center;color:var(--g6);padding:12px">Sin datos</div>';
+  }
+
+  // ── Ejecuciones: por día ──
+  const ejecPorDia = {};
+  ejecPeriodo.forEach(function(e) {
+    const f = new Date(e.fecha||e.fechaRep||'');
+    const key = f.toLocaleDateString('es-PE',{weekday:'short',day:'2-digit',month:'2-digit'});
+    ejecPorDia[key] = (ejecPorDia[key]||0)+1;
+  });
+  const ejecDiaEl = $('dash-ejec-por-dia');
+  const ejecDiaEntries = Object.entries(ejecPorDia).sort();
+  const maxEjecDia = ejecDiaEntries.length ? Math.max(...ejecDiaEntries.map(e=>e[1])) : 1;
+  if (ejecDiaEl) {
+    ejecDiaEl.innerHTML = ejecDiaEntries.length ? ejecDiaEntries.map(function(e) {
+      const pct = Math.round((e[1]/maxEjecDia)*100);
+      return '<div class="dash-bar-row"><div class="dash-bar-label" style="width:70px;font-size:11px">'+e[0]+'</div><div class="dash-bar-track"><div class="dash-bar-fill" style="width:'+pct+'%;background:var(--gr)"></div></div><div class="dash-bar-val">'+e[1]+'</div></div>';
+    }).join('') : '<div style="text-align:center;color:var(--g6);padding:12px">Sin datos</div>';
+  }
+
+  // ── Ejecuciones: listado ──
+  const ejecListEl = $('dash-ejec-lista');
+  if (ejecListEl) {
+    ejecListEl.innerHTML = ejecPeriodo.length ? ejecPeriodo.map(function(e) {
+      const orm = state.orms.find(o=>o['Codigo de ORM']===e.code)||{};
+      return '<div class="dash-orm-row" onclick="abrirDetalle('' + e.code + '')">' +
+        '<div class="dash-orm-code">' + e.code + '</div>' +
+        '<div class="dash-orm-meta">🔧 ' + (e.tecnico||'—') + ' · 📅 ' + fmtFechaCorta(e.fecha) + '</div>' +
+        '<div class="dash-orm-meta">📍 ' + (orm['Distrito']||'—') + ' · ' + (e.det||'—').slice(0,50) + '</div>' +
+        '</div>';
+    }).join('') : '<div style="text-align:center;color:var(--g6);padding:12px">Sin ejecuciones en este período</div>';
+  }
 }
 
 // ===== BUSCADOR POR NÚMERO DE POSTE =====
