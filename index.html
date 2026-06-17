@@ -434,9 +434,26 @@ html {
 .dash-bar-track{flex:1;background:var(--g2);border-radius:4px;height:18px;overflow:hidden}
 .dash-bar-fill{height:100%;border-radius:4px;transition:width 0.3s}
 .dash-bar-val{font-weight:700;color:var(--g8);width:24px;flex-shrink:0}
+
+/* TIPOS DE ACTIVIDAD */
+.tipo-tabs{display:flex;gap:6px;padding:12px 16px 0;overflow-x:auto;scrollbar-width:none}
+.tipo-tabs::-webkit-scrollbar{display:none}
+.tipo-tab{flex-shrink:0;padding:8px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--g3);background:var(--wh);color:var(--g6);transition:all 0.15s}
+.tipo-tab.on{background:var(--or);color:white;border-color:var(--or)}
+.tipo-tab.ret.on{background:#7B2D8B;border-color:#7B2D8B}
+.tipo-tab.prot.on{background:#1565C0;border-color:#1565C0}
+.tipo-tab.reub.on{background:#2E7D32;border-color:#2E7D32}
+.tipo-badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:800;margin-left:4px}
+.tb-ret{background:#F3E5F5;color:#7B2D8B}
+.tb-prot{background:#E3F2FD;color:#1565C0}
+.tb-reub{background:#E8F5E9;color:#2E7D32}
+.tb-pos{background:#FFF3E0;color:#E65100}
+.coord-ref-btn{display:flex;align-items:center;gap:6px;background:#E3F2FD;color:#1565C0;border:1.5px solid #90CAF9;border-radius:8px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;width:100%;margin-top:8px}
+.coord-real-btn{display:flex;align-items:center;gap:6px;background:var(--orl);color:var(--or);border:1.5px solid var(--orm);border-radius:8px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;width:100%;margin-top:6px}
 </style>
 
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -508,6 +525,14 @@ html {
     <div class="hh-n" id="h-username">Inspector</div>
     <div class="hh-s" id="h-fecha-hoy">Domingo, 14 de junio 2026</div>
   </div>
+  <!-- Selector tipo de actividad -->
+  <div class="tipo-tabs" id="tipo-tabs">
+    <div class="tipo-tab on" id="tab-postes" onclick="setTipoActividad('postes')">📋 Postes</div>
+    <div class="tipo-tab ret" id="tab-retenidas" onclick="setTipoActividad('retenidas')">🔗 Retenidas</div>
+    <div class="tipo-tab prot" id="tab-protec" onclick="setTipoActividad('protec')">🛡️ Protec. Mec.</div>
+    <div class="tipo-tab reub" id="tab-reubicaciones" onclick="setTipoActividad('reubicaciones')">🚧 Reubicaciones</div>
+  </div>
+
   <div class="stats">
     <div class="sc-card or" onclick="goTo('sc-insp');renderInspList('')" style="cursor:pointer">
       <div class="sc-lbl">Pend. Inspección</div>
@@ -2267,7 +2292,18 @@ function openEjecForm(code) {
   // Reset fotos inspección
   $('ef-fotos-insp-grid').innerHTML = '<div style="text-align:center;color:var(--g6);font-size:12px;padding:12px;grid-column:1/-1">⏳ Cargando fotos del inspector...</div>';
 
-  goTo('sc-ejec-form');
+  goTo('sc-ejec-form')
+  // Mostrar fotos extra para nuevos tipos
+  const ormEjec = state.orms.find(o => o['Codigo de ORM'] === code) || {};
+  const esNuevoTipo = ormEjec.tipo && ormEjec.tipo !== 'postes';
+  const fotosExtraSection = document.getElementById('fotos-extra-section');
+  if (fotosExtraSection) fotosExtraSection.style.display = esNuevoTipo ? 'block' : 'none';
+  // Botón referencial en ejecución
+  const refContainerEjec = document.getElementById('coord-ref-container');
+  if (refContainerEjec && esNuevoTipo) {
+    const tieneCoords = ormEjec['Coordenadas'] || (ormEjec['CodigoPoste'] && buscarCoordsPoste(ormEjec['CodigoPoste']));
+    refContainerEjec.style.display = tieneCoords ? 'block' : 'none';
+  };
 
   // Cargar datos completos desde el Sheet (incluye fotos)
   cargarInspeccionDesdeSheet(code);
@@ -2477,6 +2513,13 @@ function finalizarEjec() {
     {inputId:'pe-3', slotId:'se-3', nombre:'Foto_despues3'},
     {inputId:'pe-4', slotId:'se-4', nombre:'Foto_despues4'}
   ];
+  // Agregar fotos de plano y boleta para nuevos tipos
+  const ormActualEjec = state.currentOrm || {};
+  const esNuevoTipoEjec = ormActualEjec.tipo && ormActualEjec.tipo !== 'postes';
+  if (esNuevoTipoEjec) {
+    fotoSlots.push({inputId:'pe-plano', slotId:'se-plano', nombre:'Foto_plano'});
+    fotoSlots.push({inputId:'pe-boleta', slotId:'se-boleta', nombre:'Foto_boleta'});
+  }
 
   state.executed.push(ejec); save();
 
@@ -2958,6 +3001,237 @@ function sincronizarDesdeSheet() {
       } catch(e) { console.warn('Error procesando sync:', e); }
     })
     .catch(e => console.warn('Error sync:', e));
+}
+
+
+// ===== TIPOS DE ACTIVIDAD =====
+var tipoActivo = 'postes'; // postes | retenidas | protec | reubicaciones
+var importTipoActivo = 'postes';
+
+function setTipoActividad(tipo) {
+  tipoActivo = tipo;
+  // Actualizar tabs
+  document.querySelectorAll('.tipo-tab').forEach(function(t) { t.classList.remove('on'); });
+  const tab = document.getElementById('tab-' + tipo);
+  if (tab) tab.classList.add('on');
+  updateHome();
+}
+
+function setImportTipo(tipo, btn) {
+  importTipoActivo = tipo;
+  document.querySelectorAll('.import-tipo-btn').forEach(function(b) {
+    b.style.background = 'var(--wh)';
+    b.style.color = 'var(--g6)';
+    b.style.borderColor = 'var(--g3)';
+  });
+  if (btn) {
+    btn.style.background = 'var(--orl)';
+    btn.style.color = 'var(--or)';
+    btn.style.borderColor = 'var(--or)';
+  }
+  const hint = document.getElementById('import-hint');
+  if (hint) {
+    const hints = {
+      postes: 'Arrastra el CSV de AppSheet Plus aquí',
+      retenidas: 'Arrastra el Excel de Retenidas (.xlsx) — filtra COBRA + PENDIENTE',
+      protec: 'Arrastra el Excel de Protec. Mecánica (.xlsx) — filtra COBRA + PENDIENTE',
+      reubicaciones: 'Arrastra el Excel de Reubicaciones (.xlsx) — hoja CLINTON'
+    };
+    hint.textContent = hints[tipo] || hints.postes;
+  }
+}
+
+// Convertir coordenadas DMS a decimal
+function dmsToDecimal(dmsStr) {
+  if (!dmsStr) return null;
+  dmsStr = String(dmsStr).trim().replace(/\t/g, '');
+  // Formato: -77° 3' 23.8", -11° 49' 44.7"
+  const parts = dmsStr.split(',');
+  if (parts.length < 2) return null;
+  function parseDMS(s) {
+    s = s.trim();
+    const neg = s.startsWith('-');
+    s = s.replace('-','').trim();
+    const m = s.match(/(\d+)[°\s]+(\d+)['\'\s]+([\.\d]+)/);
+    if (!m) return null;
+    const dec = parseFloat(m[1]) + parseFloat(m[2])/60 + parseFloat(m[3])/3600;
+    return neg ? -dec : dec;
+  }
+  const lon = parseDMS(parts[0]);
+  const lat = parseDMS(parts[1]);
+  if (lat === null || lon === null) return null;
+  return lat + ',' + lon;
+}
+
+// Limpiar coordenadas de cualquier formato
+function limpiarCoords(coordStr) {
+  if (!coordStr) return null;
+  coordStr = String(coordStr).trim();
+  // Si contiene °, convertir DMS
+  if (coordStr.includes('°')) return dmsToDecimal(coordStr);
+  // Ya es decimal
+  const parts = coordStr.split(',');
+  if (parts.length >= 2) {
+    const lat = parseFloat(parts[0].trim());
+    const lon = parseFloat(parts[1].trim());
+    if (!isNaN(lat) && !isNaN(lon)) return lat + ',' + lon;
+  }
+  return null;
+}
+
+// Importar Excel de nuevos tipos (XLSX -> procesado en el cliente)
+function importarExcelTipo(file) {
+  if (!file) return;
+  mostrarToast('⏳ Procesando Excel...', 'var(--bl)');
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      // Usar SheetJS para leer el Excel
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, {type: 'array'});
+      
+      let registros = [];
+      
+      if (importTipoActivo === 'retenidas') {
+        const ws = wb.Sheets['RET_PRIORIDAD_A'] || wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+        // Filtrar COBRA + PENDIENTE DE ASIGNAR
+        registros = rows.slice(1)
+          .filter(r => String(r[22]||'').trim().toUpperCase() === 'COBRA' && 
+                       String(r[30]||'').toUpperCase().includes('PENDIENTE'))
+          .map(function(r) {
+            return {
+              tipo: 'retenidas',
+              'Codigo de ORM': String(r[0]||'').trim(), // código poste como ID temporal
+              'Suministro': String(r[19]||'').trim(),
+              'Distrito': String(r[21]||'').trim(),
+              'Petitorio': 'CAMBIO DE RETENIDA',
+              'Motivo': 'RETENIDA - ' + (r[28]||''),
+              'Coordenadas': limpiarCoords(String(r[11]||'')),
+              'SED': String(r[2]||'').trim(),
+              'Material': String(r[6]||'').trim(),
+              'Tamaño': String(r[7]||'').trim(),
+              'Prioridad': String(r[32]||'').trim(),
+              'Calle': String(r[20]||'').trim(),
+              'ZonaAccesible': String(r[15]||'').trim(),
+              'CodigoPoste': String(r[0]||'').trim(),
+              'Estado inspección': 'Pendiente',
+              'PetitorioCorto': 'RETENIDA',
+              'Fecha registro': new Date().toISOString().split('T')[0],
+              '_esNuevoTipo': true
+            };
+          });
+      }
+      
+      else if (importTipoActivo === 'protec') {
+        const ws = wb.Sheets['BD'] || wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+        registros = rows.slice(1)
+          .filter(r => String(r[22]||'').trim().toUpperCase() === 'COBRA' && 
+                       String(r[30]||'').toUpperCase().includes('PENDIENTE'))
+          .map(function(r) {
+            return {
+              tipo: 'protec',
+              'Codigo de ORM': String(r[0]||'').trim(),
+              'Suministro': String(r[19]||'').trim(),
+              'Distrito': String(r[21]||'').trim(),
+              'Petitorio': 'PROTECCIÓN MECÁNICA',
+              'Motivo': 'PROTEC MECANICA - ' + (r[28]||''),
+              'Coordenadas': limpiarCoords(String(r[11]||'')),
+              'SED': String(r[2]||'').trim(),
+              'Material': String(r[6]||'').trim(),
+              'Tamaño': String(r[7]||'').trim(),
+              'Prioridad': String(r[32]||'').trim(),
+              'Calle': String(r[20]||'').trim(),
+              'ZonaAccesible': String(r[15]||'').trim(),
+              'CodigoPoste': String(r[0]||'').trim(),
+              'Estado inspección': 'Pendiente',
+              'PetitorioCorto': 'PROTEC MEC',
+              'Fecha registro': new Date().toISOString().split('T')[0],
+              '_esNuevoTipo': true
+            };
+          });
+      }
+      
+      else if (importTipoActivo === 'reubicaciones') {
+        const ws = wb.Sheets['CLINTON'] || wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+        // Header en fila 3 (índice 2), datos desde fila 4
+        registros = rows.slice(3)
+          .filter(r => r.some(v => v))
+          .map(function(r) {
+            const coords = limpiarCoords(String(r[11]||''));
+            return {
+              tipo: 'reubicaciones',
+              'Codigo de ORM': String(r[1]||r[10]||'').trim(), // OT o código poste
+              'Suministro': String(r[4]||'').trim(),
+              'Distrito': String(r[5]||'').trim(),
+              'Petitorio': String(r[26]||'REUBICACIÓN DE POSTE').trim().slice(0,100),
+              'Motivo': 'REUBICACION COMERCIAL',
+              'Coordenadas': coords,
+              'SED': String(r[7]||'').trim(),
+              'CodigoPoste': String(r[10]||'').trim(),
+              'TipoPoste': String(r[9]||'').trim(),
+              'Estado inspección': 'Pendiente',
+              'PetitorioCorto': 'REUBICACION',
+              'Fecha registro': String(r[19]||'').split(' ')[0],
+              '_esNuevoTipo': true
+            };
+          });
+      }
+      
+      if (registros.length === 0) {
+        mostrarToast('⚠️ No se encontraron registros con los filtros aplicados', 'var(--rd)');
+        return;
+      }
+      
+      // Agregar a state.orms según tipo
+      let nuevos = 0;
+      registros.forEach(function(r) {
+        const existe = state.orms.find(o => o['Codigo de ORM'] === r['Codigo de ORM'] && o.tipo === r.tipo);
+        if (!existe) {
+          state.orms.push(r);
+          nuevos++;
+        }
+      });
+      
+      save();
+      updateHome();
+      mostrarToast('✅ ' + nuevos + ' registros de ' + importTipoActivo.toUpperCase() + ' importados', 'var(--gr)');
+      
+    } catch(err) {
+      console.error('Error importando Excel:', err);
+      mostrarToast('❌ Error al leer el archivo: ' + err.message, 'var(--rd)');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// Buscar coordenadas de un poste en la BD de postes
+function buscarCoordsPoste(codigoPoste) {
+  // poleCoords es el mapa de postes cargado
+  if (typeof poleCoords !== 'undefined' && poleCoords[codigoPoste]) {
+    return poleCoords[codigoPoste];
+  }
+  return null;
+}
+
+// Obtener coordenadas para abrir Maps (referencial del cliente)
+function abrirMapsReferencial(orm) {
+  let coords = orm['Coordenadas'] || orm['Coordenadas referencial'];
+  // Si no tiene, buscar por código de poste
+  if (!coords && orm['CodigoPoste']) {
+    coords = buscarCoordsPoste(orm['CodigoPoste']);
+  }
+  if (!coords) {
+    mostrarToast('⚠️ Sin coordenadas disponibles para este caso', 'var(--or)');
+    return;
+  }
+  const parts = coords.split(',');
+  if (parts.length >= 2) {
+    window.open('https://www.google.com/maps?q=' + parts[0].trim() + ',' + parts[1].trim(), '_blank');
+  }
 }
 
 // ===== BUSCADOR POR NÚMERO DE POSTE =====
