@@ -493,25 +493,25 @@ html {
     <div class="hh-s" id="h-fecha-hoy">Domingo, 14 de junio 2026</div>
   </div>
   <div class="stats">
-    <div class="sc-card or" onclick="goTo('sc-insp')">
+    <div class="sc-card or" onclick="goTo('sc-insp');renderInspList('')" style="cursor:pointer">
       <div class="sc-lbl">Pend. Inspección</div>
       <div class="sc-num" id="cnt-insp">—</div>
       <div class="sc-sub">Tap para ver →</div>
     </div>
-    <div class="sc-card bl" onclick="goTo('sc-ejec')">
+    <div class="sc-card bl" onclick="abrirListaFiltrada('ejecucion')" style="cursor:pointer">
       <div class="sc-lbl">Pend. Ejecución</div>
       <div class="sc-num" id="cnt-ejec">—</div>
       <div class="sc-sub">Tap para ver →</div>
     </div>
-    <div class="sc-card pu">
+    <div class="sc-card pu" onclick="abrirListaFiltrada('sin_acceso')" style="cursor:pointer">
       <div class="sc-lbl">Sin acceso</div>
       <div class="sc-num" id="cnt-sin">—</div>
-      <div class="sc-sub">Fibra de vidrio</div>
+      <div class="sc-sub">Tap para ver →</div>
     </div>
-    <div class="sc-card gr">
+    <div class="sc-card gr" onclick="abrirListaFiltrada('ejecutados')" style="cursor:pointer">
       <div class="sc-lbl">Ejecutados</div>
       <div class="sc-num" id="cnt-done">—</div>
-      <div class="sc-sub">Total registrados</div>
+      <div class="sc-sub">Tap para ver →</div>
     </div>
   </div>
 
@@ -3269,18 +3269,19 @@ function cargarDetalleDesdeSheet(code) {
 
 // ── Abrir lista filtrada desde stats del home ──
 function abrirListaFiltrada(tipo) {
+  const titleEl = document.getElementById('ejec-title');
   if (tipo === 'ejecucion') {
-    // Solo inspeccionadas CON acceso grúa (no sin acceso, no DMS)
+    if (titleEl) titleEl.textContent = 'Pend. Ejecución (Con grúa)';
     goTo('sc-ejec');
     setEjecFilter('grua');
     renderEjecList('');
   } else if (tipo === 'sin_acceso') {
-    // Solo inspeccionadas SIN acceso
+    if (titleEl) titleEl.textContent = 'Sin Acceso / Fibra de Vidrio';
     goTo('sc-ejec');
     setEjecFilter('sin');
     renderEjecList('');
   } else if (tipo === 'ejecutados') {
-    // Solo las completamente ejecutadas
+    if (titleEl) titleEl.textContent = 'Órdenes Ejecutadas';
     goTo('sc-ejec');
     setEjecFilter('ejecutados');
     renderEjecList('');
