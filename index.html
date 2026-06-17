@@ -2638,762 +2638,6 @@ function guardarSoloEjecucion(code, ejec, urls, btnFin) {
 }
 
 // ===== DASHBOARD =====
-function setPeriod(p){state.dashPeriod=p;document.querySelectorAll('.ptab').forEach((t,i)=>{t.classList.toggle('on',['dia','semana','mes'][i]===p)});renderDash();}
-function renderDash() {
-  const all=[...state.inspected,...state.executed];
-  const now=new Date();
-  function inPeriod(fechaStr) {
-    if(!fechaStr) return false;
-    const f=new Date(fechaStr);
-    if(state.dashPeriod==='dia') return f.toDateString()===now.toDateString();
-    if(state.dashPeriod==='semana'){const d=new Date(now);d.setDate(d.getDate()-6);return f>=d;}
-    if(state.dashPeriod==='mes'){const d=new Date(now);d.setDate(d.getDate()-29);return f>=d;}
-    return false;
-  }
-  const inspH=state.inspected.filter(i=>inPeriod(i.fechaRep||i.fecha));
-  const ejecH=state.executed.filter(e=>inPeriod(e.fechaRep||e.fecha));
-  $('d-insp-n').textContent=inspH.length;
-  $('d-ejec-n').textContent=ejecH.length;
-  $('d-total-n').textContent=inspH.length+ejecH.length;
-  const titles={dia:'Inspecciones de hoy',semana:'Últimos 7 días',mes:'Últimos 30 días'};
-  $('chart-title').textContent=titles[state.dashPeriod];
-
-  // Chart por día (últimos 7)
-  const bars=$('chart-bars'); bars.innerHTML='';
-  const days=[]; for(let i=6;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);days.push(d);}
-  const maxV=Math.max(1,...days.map(d=>state.inspected.filter(i=>{const f=new Date(i.fechaRep||i.fecha);return f.toDateString()===d.toDateString();}).length));
-  days.forEach(d=>{
-    const cnt=state.inspected.filter(i=>{const f=new Date(i.fechaRep||i.fecha);return f.toDateString()===d.toDateString();}).length;
-    const pct=Math.round((cnt/maxV)*100)||0;
-    const lbl=['Do','Lu','Ma','Mi','Ju','Vi','Sá'][d.getDay()];
-    bars.innerHTML+=`<div class="bar-row"><div class="bar-lbl">${lbl}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(pct,cnt>0?15:5)}%">${cnt>0?cnt:''}</div></div></div>`;
-  });
-
-  // Chart por distrito
-  const db=$('dist-bars'); db.innerHTML='';
-  const dists={};
-  state.inspected.forEach(i=>{const o=state.orms.find(x=>x['Codigo de ORM']===i.code);if(o){const d=o['Distrito']||'Otro';dists[d]=(dists[d]||0)+1;}});
-  const maxD=Math.max(1,...Object.values(dists));
-  Object.entries(dists).sort((a,b)=>b[1]-a[1]).forEach(([d,c])=>{
-    const pct=Math.round((c/maxD)*100);
-    db.innerHTML+=`<div class="bar-row"><div class="bar-lbl" style="width:80px;font-size:10px">${d.slice(0,9)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(pct,15)}%;background:var(--bl)">${c}</div></div></div>`;
-  });
-  if(Object.keys(dists).length===0) db.innerHTML='<div style="color:var(--g6);font-size:13px;text-align:center;padding:20px">Sin datos aún</div>';
-}
-
-function closeMo(id){$(id).classList.remove('on');}
-
-
-
-// ===== BUSCADOR DE POSTE EN FORMULARIO (usa POLES_DB de Google Sheets) =====
-function buscarPosteForm(q) {
-  const res = document.getElementById('form-poste-results');
-  q = (q || '').trim();
-  if (q.length < 3) { res.innerHTML = ''; return; }
-
-  if (!polesLoaded || Object.keys(POLES_DB).length === 0) {
-    res.innerHTML = '<div style="font-size:12px;color:var(--g6);padding:6px 0">⏳ Cargando base de datos de postes...</div>';
-    loadPolesFromSheet();
-    return;
-  }
-  // Busca por número de poste exacto o que empiece con el valor ingresado
-  const found = Object.entries(POLES_DB)
-    .filter(([id]) => id.startsWith(q) || id === q)
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .slice(0, 8);
-
-  if (found.length === 0) {
-    res.innerHTML = '<div style="font-size:12px;color:var(--g6);padding:6px 0">⚠️ Poste <strong>' + q + '</strong> no encontrado en la base de datos (' + Object.keys(POLES_DB).length + ' postes cargados)</div>';
-    return;
-  }
-
-  res.innerHTML = '';
-  found.forEach(([id, coords]) => {
-    const div = document.createElement('div');
-    div.style.cssText = 'background:var(--bll);border:1.5px solid var(--bl);border-radius:var(--rsm);padding:10px 12px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:8px';
-    div.innerHTML = `
-      <div>
-        <div style="font-size:14px;font-weight:700;color:var(--bl)">Poste N° ${id}</div>
-        <div style="font-size:11px;color:var(--g7);margin-top:2px">📍 ${coords}</div>
-      </div>
-      <div style="display:flex;gap:6px;flex-shrink:0">
-        <button onclick="openMaps('${coords}')" style="background:var(--bl);color:white;border:none;border-radius:var(--rsm);padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer">🗺️ Maps</button>
-      </div>`;
-    res.appendChild(div);
-  });
-}
-
-function usarCoordsPoste(coords) {
-  document.getElementById('f-coords').value = coords;
-  // Clear search
-  document.getElementById('form-poste-input').value = '';
-  document.getElementById('form-poste-results').innerHTML = '';
-  // Flash confirmation
-  const coordsInput = document.getElementById('f-coords');
-  coordsInput.style.borderColor = 'var(--gr)';
-  coordsInput.style.boxShadow = '0 0 0 3px rgba(26,122,74,0.2)';
-  setTimeout(() => { coordsInput.style.borderColor = ''; coordsInput.style.boxShadow = ''; }, 1500);
-}
-
-
-
-
-
-
-function guardarScriptUrl() {
-  const url = document.getElementById('script-url-input').value.trim();
-  if (!url || !url.startsWith('https://script.google.com')) {
-    mostrarToast('⚠️ URL inválida — debe ser de script.google.com', 'var(--rd)'); return;
-  }
-  _store.setItem('apps_script_url', url);
-  document.getElementById('script-url-status').textContent = '✅ URL guardada: ' + url.slice(0,50) + '...';
-  document.getElementById('script-url-status').style.color = 'var(--gr)';
-  mostrarToast('✅ URL de Apps Script guardada', 'var(--gr)');
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-  const savedUrl = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
-  const inp = document.getElementById('script-url-input');
-  if (inp && savedUrl) {
-    inp.value = savedUrl;
-    document.getElementById('script-url-status').textContent = '✅ URL configurada: ' + savedUrl.slice(0,50) + '...';
-    document.getElementById('script-url-status').style.color = 'var(--gr)';
-  }
-});
-
-// ===== GESTIÓN DE PINES =====
-let _newRol = 'inspector';
-
-function setNewRol(rol) {
-  _newRol = rol;
-  $('new-rol-insp').className = 'tb2' + (rol==='inspector'?' n':'');
-  $('new-rol-tec').className  = 'tb2' + (rol==='tecnico'?' n':'');
-}
-
-function renderPinsList() {
-  const pins = getPins();
-  const container = $('pins-list');
-  container.innerHTML = '';
-
-  Object.entries(pins).forEach(function([key, user]) {
-    const rolColor = user.rol==='inspector' ? 'var(--or)' : 'var(--bl)';
-    const rolBg    = user.rol==='inspector' ? 'var(--orl)' : 'var(--bll)';
-    const div = document.createElement('div');
-    div.style.cssText = 'background:var(--wh);border-radius:var(--rmd);padding:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.08)';
-    div.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div>
-          <div style="font-size:14px;font-weight:700">${user.nombre}</div>
-          <span style="font-size:11px;font-weight:700;background:${rolBg};color:${rolColor};padding:2px 8px;border-radius:20px">${user.rol==='inspector'?'Inspector':'Técnico'}</span>
-        </div>
-        <button onclick="eliminarUsuarioPin('${key}')" 
-          style="background:var(--rdl);color:var(--rd);border:none;border-radius:var(--rsm);padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer">
-          🗑️ Eliminar
-        </button>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <div style="flex:1">
-          <div style="font-size:11px;color:var(--g6);margin-bottom:4px">PIN actual</div>
-          <div style="display:flex;gap:6px">
-            <input type="number" id="pin-input-${key}" value="${user.pin}" maxlength="4"
-              style="width:90px;border:1.5px solid var(--g3);border-radius:var(--rsm);padding:8px 10px;font-size:16px;font-weight:700;font-family:inherit;outline:none;letter-spacing:4px">
-            <button onclick="cambiarPin('${key}')"
-              style="background:var(--or);color:white;border:none;border-radius:var(--rsm);padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer">
-              ✓ Guardar
-            </button>
-          </div>
-        </div>
-      </div>`;
-    container.appendChild(div);
-  });
-}
-
-function cambiarPin(key) {
-  const input = $('pin-input-' + key);
-  const newPin = String(input.value).trim();
-  if (newPin.length !== 4 || isNaN(newPin)) {
-    mostrarToast('⚠️ El PIN debe tener exactamente 4 dígitos', 'var(--rd)');
-    return;
-  }
-  // Verificar que no esté en uso
-  const pins = getPins();
-  const enUso = Object.entries(pins).find(function([k, u]) { return u.pin === newPin && k !== key; });
-  if (enUso) {
-    mostrarToast('⚠️ Ese PIN ya está en uso por ' + enUso[1].nombre, 'var(--rd)');
-    return;
-  }
-  pins[key].pin = newPin;
-  _store.setItem('pins_config', JSON.stringify(pins));
-  mostrarToast('✅ PIN de ' + pins[key].nombre + ' actualizado a ' + newPin, 'var(--gr)');
-  renderPinsList();
-}
-
-function eliminarUsuarioPin(key) {
-  const pins = getPins();
-  const nombre = pins[key] ? pins[key].nombre : key;
-  if (Object.keys(pins).length <= 1) {
-    mostrarToast('⚠️ Debe haber al menos un usuario', 'var(--rd)');
-    return;
-  }
-  delete pins[key];
-  _store.setItem('pins_config', JSON.stringify(pins));
-  mostrarToast('🗑️ ' + nombre + ' eliminado', 'var(--or)');
-  renderPinsList();
-}
-
-function agregarUsuario() {
-  const nombre = $('new-nombre').value.trim();
-  const pin    = String($('new-pin').value).trim();
-
-  if (!nombre) { mostrarToast('⚠️ Escribe un nombre', 'var(--rd)'); return; }
-  if (pin.length !== 4 || isNaN(pin)) { mostrarToast('⚠️ El PIN debe tener 4 dígitos', 'var(--rd)'); return; }
-
-  const pins = getPins();
-  // Verificar PIN único
-  const enUso = Object.values(pins).find(function(u) { return u.pin === pin; });
-  if (enUso) { mostrarToast('⚠️ PIN ' + pin + ' ya está en uso por ' + enUso.nombre, 'var(--rd)'); return; }
-
-  const key = _newRol + '_' + Date.now();
-  pins[key] = { pin, nombre, rol: _newRol };
-  _store.setItem('pins_config', JSON.stringify(pins));
-
-  $('new-nombre').value = '';
-  $('new-pin').value = '';
-  mostrarToast('✅ ' + nombre + ' agregado con PIN ' + pin, 'var(--gr)');
-  renderPinsList();
-}
-
-// ===== SINCRONIZACIÓN DESDE SHEET AL INICIAR =====
-function sincronizarDesdeSheet() {
-  const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
-  if (!SCRIPT_URL) return;
-
-  fetch(SCRIPT_URL + '?action=registros', {redirect: 'follow'})
-    .then(r => r.text())
-    .then(function(text) {
-      try {
-        const data = JSON.parse(text);
-        if (data.error) { console.warn('Error sync:', data.error); return; }
-
-        const inspSheet  = (data.inspecciones || []).filter(i => i['Codigo ORM'] && !i['Codigo ORM'].startsWith('TEST'));
-        const ejecSheet  = (data.ejecuciones  || []).filter(e => e['Codigo ORM'] && !e['Codigo ORM'].startsWith('TEST'));
-        const codesInsp  = new Set(inspSheet.map(i => i['Codigo ORM']));
-        const codesEjec  = new Set(ejecSheet.map(e => e['Codigo ORM']));
-
-        let cambios = false;
-
-        // ── Eliminar del localStorage lo que ya no está en el Sheet ──
-        const antesInsp = state.inspected.length;
-        const antesEjec = state.executed.length;
-        state.inspected = state.inspected.filter(i => codesInsp.has(i.code));
-        state.executed  = state.executed.filter(e => codesEjec.has(e.code));
-        if (state.inspected.length !== antesInsp || state.executed.length !== antesEjec) {
-          cambios = true;
-          console.log('🗑️ Eliminados del local:', (antesInsp - state.inspected.length), 'insp,', (antesEjec - state.executed.length), 'ejec');
-        }
-
-        // ── Agregar/actualizar lo que está en el Sheet ──
-        inspSheet.forEach(function(insp) {
-          const code = insp['Codigo ORM'];
-          const idx = state.inspected.findIndex(i => i.code === code);
-          const obj = {
-            code,
-            fecha:     insp['Fecha Insp']       || '',
-            hora:      insp['Hora Insp']         || '',
-            fechaRep:  insp['Fecha Reporte']     || '',
-            lcl:       insp['LCL']               || '',
-            apoyo:     insp['Cod Apoyo']         || '',
-            coords:    insp['Coordenadas']        || '',
-            incl:      insp['Inclinado']          || 'N',
-            angulo:    insp['Angulo']             || '',
-            dms:       insp['Cumple DMS']         || 'N',
-            grua:      insp['Acceso Grua']        || 'Si',
-            acm:       insp['Acometidas']         || 0,
-            dhlp:      insp['DHLP']               || '',
-            dhlc:      insp['DHLC']               || '',
-            dvlp:      insp['DVLP']               || '',
-            det:       insp['Detalle Trabajos']   || '',
-            inspector: insp['Inspector']          || '',
-            fotoUrls: {
-              'Foto_Perfil':         insp['Foto Perfil']      || '',
-              'Foto_Vista_defrente': insp['Foto Vista']       || '',
-              'Foto_Panoramica':     insp['Foto Panoramica']  || '',
-              'Foto_deficiencia':    insp['Foto Deficiencia'] || '',
-              'Foto_Insp1':          insp['Foto Insp1']       || '',
-              'Foto_Insp2':          insp['Foto Insp2']       || '',
-              'Croquis':             insp['Croquis']          || '',
-              'Conformidad_cliente': insp['Conformidad']      || ''
-            },
-            _fromSheet: true
-          };
-          if (idx >= 0) {
-            // Actualizar datos existentes (preservar fotos si el Sheet no tiene)
-            if (!state.inspected[idx].fotoUrls || !state.inspected[idx].fotoUrls['Foto_Perfil']) {
-              state.inspected[idx] = obj;
-            } else {
-              state.inspected[idx].det = obj.det;
-              state.inspected[idx].grua = obj.grua;
-              state.inspected[idx].coords = obj.coords;
-            }
-            cambios = true;
-          } else {
-            state.inspected.push(obj);
-            cambios = true;
-          }
-        });
-
-        ejecSheet.forEach(function(ejec) {
-          const code = ejec['Codigo ORM'];
-          if (!state.executed.find(e => e.code === code)) {
-            state.executed.push({
-              code,
-              fecha:    ejec['Fecha Ejec']        || '',
-              fechaRep: ejec['Fecha Reporte']     || '',
-              tipo:     ejec['Tipo Poste BT']     || '',
-              det:      ejec['Detalle Ejecutado'] || '',
-              tecnico:  ejec['Tecnico']           || '',
-              fotoUrls: {
-                'Foto_despues1': ejec['Foto Despues 1'] || '',
-                'Foto_despues2': ejec['Foto Despues 2'] || '',
-                'Foto_despues3': ejec['Foto Despues 3'] || '',
-                'Foto_despues4': ejec['Foto Despues 4'] || ''
-              },
-              _fromSheet: true
-            });
-            cambios = true;
-          }
-        });
-
-        if (cambios) { save(); updateHome(); }
-
-      } catch(e) { console.warn('Error procesando sync:', e); }
-    })
-    .catch(e => console.warn('Error sync:', e));
-}
-
-function procesarSyncData(jsonStr) {
-  try {
-    const data = JSON.parse(jsonStr);
-    if (data.error) return;
-    let cambios = false;
-
-    (data.inspecciones || []).forEach(function(insp) {
-      const code = insp['Codigo ORM'];
-      if (!code || code.startsWith('TEST')) return;
-      if (state.inspected.find(i => i.code === code)) return;
-      state.inspected.push({
-        code,
-        fecha:     insp['Fecha Insp']      || '',
-        hora:      insp['Hora Insp']       || '',
-        fechaRep:  insp['Fecha Reporte']   || '',
-        lcl:       insp['LCL']             || '',
-        apoyo:     insp['Cod Apoyo']       || '',
-        coords:    insp['Coordenadas']     || '',
-        incl:      insp['Inclinado']       || 'N',
-        angulo:    insp['Angulo']          || '',
-        dms:       insp['Cumple DMS']      || 'N',
-        grua:      insp['Acceso Grua']     || 'Si',
-        acm:       insp['Acometidas']      || 0,
-        dhlp:      insp['DHLP']            || '',
-        dhlc:      insp['DHLC']            || '',
-        dvlp:      insp['DVLP']            || '',
-        det:       insp['Detalle Trabajos']|| '',
-        inspector: insp['Inspector']       || '',
-        fotoUrls: {
-          'Foto_Perfil':         insp['Foto Perfil']      || '',
-          'Foto_Vista_defrente': insp['Foto Vista']       || '',
-          'Foto_Panoramica':     insp['Foto Panoramica']  || '',
-          'Foto_deficiencia':    insp['Foto Deficiencia'] || '',
-          'Foto_Insp1':          insp['Foto Insp1']       || '',
-          'Foto_Insp2':          insp['Foto Insp2']       || '',
-          'Croquis':             insp['Croquis']          || '',
-          'Conformidad_cliente': insp['Conformidad']      || ''
-        },
-        _fromSheet: true
-      });
-      cambios = true;
-    });
-
-    (data.ejecuciones || []).forEach(function(ejec) {
-      const code = ejec['Codigo ORM'];
-      if (!code || code.startsWith('TEST')) return;
-      if (state.executed.find(e => e.code === code)) return;
-      state.executed.push({
-        code,
-        fecha:    ejec['Fecha Ejec']        || '',
-        fechaRep: ejec['Fecha Reporte']     || '',
-        tipo:     ejec['Tipo Poste BT']     || '',
-        det:      ejec['Detalle Ejecutado'] || '',
-        tecnico:  ejec['Tecnico']           || '',
-        fotoUrls: {
-          'Foto_despues1': ejec['Foto Despues 1'] || '',
-          'Foto_despues2': ejec['Foto Despues 2'] || '',
-          'Foto_despues3': ejec['Foto Despues 3'] || '',
-          'Foto_despues4': ejec['Foto Despues 4'] || ''
-        },
-        _fromSheet: true
-      });
-      cambios = true;
-    });
-
-    if (cambios) {
-      save();
-      updateHome();
-      mostrarToast('🔄 Datos sincronizados desde el servidor', 'var(--bl)');
-    }
-  } catch(e) {
-    console.warn('Error sync:', e);
-  }
-}
-
-// ===== SINCRONIZACIÓN CON APPSHEET DE PLUS =====
-function getSyncState(code) {
-  const synced = JSON.parse(_store.getItem('synced_plus') || '{}');
-  return synced[code] === true ? 'subido' : 'pendiente';
-}
-
-function toggleSync(code) {
-  const synced = JSON.parse(_store.getItem('synced_plus') || '{}');
-  if (synced[code]) {
-    delete synced[code];
-    mostrarToast('⏳ ' + code + ' marcado como pendiente', 'var(--or)');
-  } else {
-    synced[code] = true;
-    mostrarToast('✅ ' + code + ' marcado como subido a Plus', 'var(--gr)');
-  }
-  _store.setItem('synced_plus', JSON.stringify(synced));
-  // Refrescar lista actual
-  if (document.getElementById('sc-ejec').classList.contains('on')) renderEjecList('');
-  if (document.getElementById('sc-insp').classList.contains('on')) renderInspList('');
-}
-
-function mostrarToast(msg, color) {
-  const prev = document.getElementById('toast-msg');
-  if (prev) prev.remove();
-  const toast = document.createElement('div');
-  toast.id = 'toast-msg';
-  toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:' + color + ';color:white;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:700;z-index:999;box-shadow:0 4px 12px rgba(0,0,0,.2);white-space:nowrap';
-  toast.textContent = msg;
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 2500);
-}
-
-// ===== ELIMINAR INSPECCIÓN =====
-let _delCode = null;
-
-function pedirEliminar(code) {
-  _delCode = code;
-  const o = state.orms.find(x=>x['Codigo de ORM']===code)||{};
-  $('mo-del-msg').innerHTML = `Se eliminará la inspección de la ORM <strong>${code}</strong>${o['Distrito']?' — '+o['Distrito']:''}.<br><br>La ORM volverá a <strong>Pendiente de Inspección</strong>.`;
-  $('mo-del').classList.add('on');
-}
-
-function confirmarEliminar() {
-  if (!_delCode) return;
-  const code = _delCode;
-
-  state.inspected = state.inspected.filter(i => i.code !== code);
-  state.executed = state.executed.filter(e => e.code !== code);
-  save();
-
-  // Eliminar del Sheet via API
-  eliminarDelSheet(code);
-
-  closeMo('mo-del');
-  _delCode = null;
-  updateHome();
-  if (document.getElementById('sc-ejec').classList.contains('on')) renderEjecList('');
-  if (document.getElementById('sc-insp').classList.contains('on')) renderInspList('');
-  mostrarToast('✓ Inspección eliminada — ORM vuelve a pendiente', 'var(--gr)');
-}
-
-async function eliminarDelSheet(code) {
-  // Eliminar via Apps Script (tiene permisos de escritura)
-  try {
-    const url = 'https://script.google.com/macros/s/AKfycbz4YIdhQjkIWwDfVEWP5Qc-K2zpVocNi1ZikwCmE9bxwMA_o5OSwe-5SvflwbfwKXqc/exec?action=eliminarRegistro&code=' + encodeURIComponent(code);
-    const res = await fetch(url, { redirect: 'follow' });
-    const text = await res.text();
-    try {
-      const data = JSON.parse(text);
-      if (data.ok) {
-        console.log('✅ Eliminado del Sheet:', code);
-      } else {
-        console.warn('❌ Error eliminando del Sheet:', data.error);
-      }
-    } catch(e) {
-      console.warn('Respuesta no JSON al eliminar:', text.slice(0,100));
-    }
-  } catch(e) {
-    console.warn('Error eliminando del Sheet:', e);
-  }
-}
-
-
-
-// ── Editar descargo de inspección ──
-function toggleEditarDetalle() {
-  const det = $('det-det');
-  const edit = $('det-det-edit');
-  const btns = $('det-edit-btns');
-  const btn = $('btn-editar-det');
-  
-  edit.value = det.textContent;
-  det.style.display = 'none';
-  edit.style.display = 'block';
-  btns.style.display = 'flex';
-  btn.style.display = 'none';
-}
-
-function cancelarEditDetalle() {
-  const det = $('det-det');
-  const edit = $('det-det-edit');
-  const btns = $('det-edit-btns');
-  const btn = $('btn-editar-det');
-  
-  det.style.display = 'block';
-  edit.style.display = 'none';
-  btns.style.display = 'none';
-  btn.style.display = 'block';
-}
-
-function guardarEditDetalle() {
-  const code = $('det-code').textContent;
-  const nuevoDetalle = $('det-det-edit').value.trim();
-  if (!nuevoDetalle) { mostrarToast('⚠️ El detalle no puede estar vacío', 'var(--rd)'); return; }
-  
-  // Actualizar localmente
-  $('det-det').textContent = nuevoDetalle;
-  cancelarEditDetalle();
-  
-  // Actualizar en state
-  const idx = state.inspected.findIndex(i => i.code === code);
-  if (idx >= 0) {
-    state.inspected[idx].det = nuevoDetalle;
-    save();
-  }
-  
-  // Actualizar en Sheet via Apps Script
-  const url = APPS_SCRIPT_URL + '?action=editarDetalle&code=' + encodeURIComponent(code) + '&det=' + encodeURIComponent(nuevoDetalle);
-  fetch(url, { redirect: 'follow' })
-    .then(r => r.text())
-    .then(function(text) {
-      try {
-        const res = JSON.parse(text);
-        if (res.ok) mostrarToast('✅ Descargo actualizado', 'var(--gr)');
-        else mostrarToast('⚠️ Guardado localmente, error en servidor', 'var(--or)');
-      } catch(e) {
-        mostrarToast('✅ Guardado localmente', 'var(--gr)');
-      }
-    })
-    .catch(function() {
-      mostrarToast('✅ Guardado localmente', 'var(--gr)');
-    });
-}
-
-// ===== PANTALLA DETALLE ORM =====
-function abrirDetalle(code) {
-  const o = state.orms.find(x => x['Codigo de ORM'] === code) || {};
-  const insp = state.inspected.find(i => i.code === code);
-  const ejec = state.executed.find(e => e.code === code);
-
-  // Datos básicos
-  $('det-code').textContent = code;
-  $('det-code-badge').textContent = code;
-  $('det-dist').textContent = o['Distrito'] || '—';
-  $('det-sumi').textContent = o['Suministro'] || '—';
-  $('det-pet').textContent = (o['Petitorio'] || '—').slice(0, 120);
-
-  // Inspección
-  if (insp) {
-    $('det-insp-section').style.display = 'block';
-    $('det-inspector').textContent = insp.inspector || '—';
-    $('det-fecha-insp').textContent = insp.fecha || '—';
-    $('det-grua').textContent = insp.grua || '—';
-    $('det-coords').textContent = insp.coords || '—';
-    $('det-acm').textContent = insp.acm || '0';
-    $('det-det').textContent = insp.det || '—';
-
-    // Botón Maps
-    const mapsBtn = $('det-maps-btn');
-    if (insp.coords) {
-      mapsBtn.style.display = 'block';
-      mapsBtn.onclick = () => openMaps(insp.coords);
-    } else {
-      mapsBtn.style.display = 'none';
-    }
-
-    // Fotos inspección
-    renderFotosDetalle('det-fotos-insp', insp.fotoUrls || {}, [
-      {key:'Foto_Perfil', label:'Perfil'},
-      {key:'Foto_Vista_defrente', label:'Vista'},
-      {key:'Foto_Panoramica', label:'Panorámica'},
-      {key:'Foto_deficiencia', label:'Deficiencia'},
-      {key:'Foto_Insp1', label:'Insp. 1'},
-      {key:'Foto_Insp2', label:'Insp. 2'},
-      {key:'Croquis', label:'Croquis'},
-      {key:'Conformidad_cliente', label:'Conformidad'}
-    ]);
-  } else {
-    $('det-insp-section').style.display = 'none';
-  }
-
-  // Ejecución
-  if (ejec) {
-    $('det-ejec-section').style.display = 'block';
-    $('det-tecnico').textContent = ejec.tecnico || '—';
-    $('det-fecha-ejec').textContent = ejec.fecha || '—';
-    $('det-tipo-poste').textContent = ejec.tipo || '—';
-    $('det-det-ejec').textContent = ejec.det || '—';
-
-    // Fotos ejecución
-    renderFotosDetalle('det-fotos-ejec', ejec.fotoUrls || {}, [
-      {key:'Foto_despues1', label:'Después 1'},
-      {key:'Foto_despues2', label:'Después 2'},
-      {key:'Foto_despues3', label:'Después 3'},
-      {key:'Foto_despues4', label:'Después 4'}
-    ]);
-  } else {
-    $('det-ejec-section').style.display = 'none';
-  }
-
-  // Sin datos
-  $('det-sin-data').style.display = (!insp && !ejec) ? 'block' : 'none';
-
-  goTo('sc-detalle');
-
-  // Cargar datos frescos del Sheet
-  cargarDetalleDesdeSheet(code);
-}
-
-function renderFotosDetalle(containerId, fotoUrls, campos) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-
-  const fotos = campos.filter(c => fotoUrls[c.key] && fotoUrls[c.key].trim() !== '');
-
-  if (fotos.length === 0) {
-    container.innerHTML = '<div class="no-foto-msg">Sin fotos registradas</div>';
-    return;
-  }
-
-  container.innerHTML = '';
-  fotos.forEach(f => {
-    const url = fotoUrls[f.key];
-    const fileId = url.includes('id=') ? url.split('id=')[1].split('&')[0] :
-                   url.includes('/d/') ? url.split('/d/')[1].split('/')[0] : '';
-    const thumbUrl = fileId ? 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=s800' : url;
-    const dlUrl = fileId ? 'https://drive.google.com/uc?export=download&id=' + fileId : url;
-    const viewUrl = fileId ? 'https://drive.google.com/file/d/' + fileId + '/view' : url;
-
-    const div = document.createElement('div');
-    div.className = 'foto-item';
-    div.innerHTML = `
-      <img src="${thumbUrl}" referrerpolicy="no-referrer"
-        onerror="this.parentElement.style.display='none'"
-        onclick="abrirVisorFoto('${thumbUrl.replace(/&sz=s800/, '&sz=s1600')}','${f.label}','${dlUrl}','${viewUrl}')">
-      <div class="foto-item-label">
-        <span>${f.label}</span>
-        <a href="${dlUrl}" target="_blank" onclick="event.stopPropagation()">⬇</a>
-      </div>`;
-    container.appendChild(div);
-  });
-}
-
-function cargarDetalleDesdeSheet(code) {
-  const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
-  if (!SCRIPT_URL) return;
-
-  fetch(SCRIPT_URL + '?action=getInspeccion&orm=' + encodeURIComponent(code), {redirect:'follow'})
-    .then(r => r.text())
-    .then(function(text) {
-      try {
-        const data = JSON.parse(text);
-        if (!data.inspeccion) return;
-        const insp = data.inspeccion;
-
-        // Actualizar fotoUrls en state
-        const idx = state.inspected.findIndex(i => i.code === code);
-        if (idx >= 0) {
-          state.inspected[idx].fotoUrls = {
-            'Foto_Perfil':         insp['Foto Perfil']      || '',
-            'Foto_Vista_defrente': insp['Foto Vista']       || '',
-            'Foto_Panoramica':     insp['Foto Panoramica']  || '',
-            'Foto_deficiencia':    insp['Foto Deficiencia'] || '',
-            'Foto_Insp1':          insp['Foto Insp1']       || '',
-            'Foto_Insp2':          insp['Foto Insp2']       || '',
-            'Croquis':             insp['Croquis']          || '',
-            'Conformidad_cliente': insp['Conformidad']      || ''
-          };
-          save();
-
-          // Actualizar la vista si seguimos en la pantalla de detalle
-          if (document.getElementById('sc-detalle').classList.contains('on')) {
-            renderFotosDetalle('det-fotos-insp', state.inspected[idx].fotoUrls, [
-              {key:'Foto_Perfil', label:'Perfil'},
-              {key:'Foto_Vista_defrente', label:'Vista'},
-              {key:'Foto_Panoramica', label:'Panorámica'},
-              {key:'Foto_deficiencia', label:'Deficiencia'},
-              {key:'Foto_Insp1', label:'Insp. 1'},
-              {key:'Foto_Insp2', label:'Insp. 2'},
-              {key:'Croquis', label:'Croquis'},
-              {key:'Conformidad_cliente', label:'Conformidad'}
-            ]);
-          }
-        }
-      } catch(e) { console.warn('Error cargando detalle:', e); }
-    })
-    .catch(e => console.warn('Error fetch detalle:', e));
-}
-
-
-// ── Abrir lista filtrada desde stats del home ──
-function abrirListaFiltrada(tipo) {
-  const titleEl = document.getElementById('ejec-title');
-  const chipSync = document.getElementById('chip-sync');
-  
-  // Ocultar chip sync por defecto
-  if (chipSync) chipSync.style.display = 'none';
-  
-  if (tipo === 'ejecucion') {
-    if (titleEl) titleEl.textContent = 'Pend. Ejecución (Con grúa)';
-    goTo('sc-ejec');
-    setChip('grua');
-    setEjecFilter('grua');
-    renderEjecList('');
-  } else if (tipo === 'sin_acceso') {
-    if (titleEl) titleEl.textContent = 'Sin Acceso / Fibra de Vidrio';
-    goTo('sc-ejec');
-    setChip('sin');
-    setEjecFilter('sin');
-    renderEjecList('');
-  } else if (tipo === 'ejecutados') {
-    if (titleEl) titleEl.textContent = 'Órdenes Ejecutadas';
-    goTo('sc-ejec');
-    setChip('ejec');
-    setEjecFilter('ejecutados');
-    // Mostrar chip "Sin subir" solo para admin
-    if (chipSync && state.role === 'admin') chipSync.style.display = 'inline-flex';
-    renderEjecList('');
-  }
-}
-
-
-function setChip(id) {
-  ['all','grua','sin','dms','ejec','sync'].forEach(function(c) {
-    const el = document.getElementById('chip-' + c);
-    if (el) el.classList.remove('on');
-  });
-  const el = document.getElementById('chip-' + id);
-  if (el) el.classList.add('on');
-  // Ocultar chip sync cuando se cambia a otro filtro (excepto ejec para admin)
-  const chipSync = document.getElementById('chip-sync');
-  if (chipSync && id !== 'ejec' && id !== 'sync') chipSync.style.display = 'none';
-}
-function setTitle(t) {
-  const el = document.getElementById('ejec-title');
-  if (el) el.textContent = t;
-}
-
 
 // ===== DASHBOARD GERENCIA =====
 var dashPeriod = 'dia';
@@ -3401,9 +2645,8 @@ var dashPeriod = 'dia';
 function toggleDashSection(id) {
   const el = document.getElementById(id);
   if (!el) return;
-  const visible = el.style.display !== 'none';
-  el.style.display = visible ? 'none' : 'block';
-  if (!visible) renderDashboardDetalle();
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  renderDashboardDetalle();
 }
 
 function setPeriod(p) {
@@ -3423,160 +2666,119 @@ function renderDashboard() {
     if (!fechaStr) return false;
     try {
       const f = new Date(fechaStr);
-      if (dashPeriod === 'dia') {
-        return f.toDateString() === now.toDateString();
-      } else if (dashPeriod === 'semana') {
-        const diff = (now - f) / (1000*60*60*24);
-        return diff >= 0 && diff < 7;
-      } else {
-        return f.getMonth() === now.getMonth() && f.getFullYear() === now.getFullYear();
-      }
+      if (dashPeriod === 'dia') return f.toDateString() === now.toDateString();
+      if (dashPeriod === 'semana') { const diff=(now-f)/(1000*60*60*24); return diff>=0&&diff<7; }
+      return f.getMonth()===now.getMonth()&&f.getFullYear()===now.getFullYear();
     } catch(e) { return false; }
   }
 
   const inspPeriodo = inspList.filter(i => enPeriodo(i.fecha || i.fechaRep));
   const ejecPeriodo = ejecList.filter(e => enPeriodo(e.fecha || e.fechaRep));
 
-  $('d-insp-n').textContent = inspPeriodo.length;
-  $('d-ejec-n').textContent = ejecPeriodo.length;
-  $('d-total-n').textContent = state.orms.length;
+  const el1 = document.getElementById('d-insp-n');
+  const el2 = document.getElementById('d-ejec-n');
+  const el3 = document.getElementById('d-total-n');
+  if(el1) el1.textContent = inspPeriodo.length;
+  if(el2) el2.textContent = ejecPeriodo.length;
+  if(el3) el3.textContent = state.orms.length;
 
-  // Gráfico por distrito
   const distMap = {};
   inspPeriodo.forEach(function(i) {
     const orm = state.orms.find(o => o['Codigo de ORM'] === i.code);
     const dist = (orm && orm['Distrito']) || 'Sin distrito';
     distMap[dist] = (distMap[dist] || 0) + 1;
   });
-  const distBars = $('dist-bars');
+  const distBars = document.getElementById('dist-bars');
   const distEntries = Object.entries(distMap).sort((a,b) => b[1]-a[1]);
   const maxDist = distEntries.length ? distEntries[0][1] : 1;
-  if (distEntries.length === 0) {
-    distBars.innerHTML = '<div style="text-align:center;color:var(--g6);padding:16px">Sin datos aún</div>';
-  } else {
-    distBars.innerHTML = distEntries.map(function(d) {
+  if (distBars) {
+    distBars.innerHTML = distEntries.length ? distEntries.map(function(d) {
       const pct = Math.round((d[1]/maxDist)*100);
-      return '<div class="dash-bar-row"><div class="dash-bar-label" style="width:80px;font-size:11px">' + d[0].slice(0,10) + '</div><div class="dash-bar-track"><div class="dash-bar-fill" style="width:' + pct + '%;background:var(--or)"></div></div><div class="dash-bar-val">' + d[1] + '</div></div>';
-    }).join('');
+      return '<div class="dash-bar-row"><div class="dash-bar-label" style="width:80px;font-size:11px">' + d[0].slice(0,12) + '</div><div class="dash-bar-track"><div class="dash-bar-fill" style="width:'+pct+'%;background:var(--or)"></div></div><div class="dash-bar-val">'+d[1]+'</div></div>';
+    }).join('') : '<div style="text-align:center;color:var(--g6);padding:16px">Sin datos aún</div>';
   }
 }
 
 function renderDashboardDetalle() {
   const now = new Date();
-  const inspList = state.inspected || [];
-  const ejecList = state.executed || [];
-
   function enPeriodo(fechaStr) {
     if (!fechaStr) return false;
     try {
       const f = new Date(fechaStr);
       if (dashPeriod === 'dia') return f.toDateString() === now.toDateString();
-      if (dashPeriod === 'semana') { const diff = (now-f)/(1000*60*60*24); return diff>=0&&diff<7; }
+      if (dashPeriod === 'semana') { const diff=(now-f)/(1000*60*60*24); return diff>=0&&diff<7; }
       return f.getMonth()===now.getMonth()&&f.getFullYear()===now.getFullYear();
     } catch(e) { return false; }
   }
-
-  function fmtFechaCorta(fechaStr) {
-    if (!fechaStr) return '—';
-    try {
-      const f = new Date(fechaStr);
-      return f.toLocaleDateString('es-PE', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-    } catch(e) { return fechaStr; }
+  function fmtF(s) {
+    if (!s) return '—';
+    try { return new Date(s).toLocaleDateString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric'}); } catch(e){return s;}
   }
 
-  const inspPeriodo = inspList.filter(i => enPeriodo(i.fecha || i.fechaRep));
-  const ejecPeriodo = ejecList.filter(e => enPeriodo(e.fecha || e.fechaRep));
+  const inspPeriodo = (state.inspected||[]).filter(i=>enPeriodo(i.fecha||i.fechaRep));
+  const ejecPeriodo = (state.executed||[]).filter(e=>enPeriodo(e.fecha||e.fechaRep));
 
-  // ── Inspecciones: por inspector ──
-  const inspPorInspector = {};
-  inspPeriodo.forEach(function(i) {
-    const nombre = i.inspector || 'Sin asignar';
-    if (!inspPorInspector[nombre]) inspPorInspector[nombre] = [];
-    inspPorInspector[nombre].push(i);
-  });
-  const inspInspEl = $('dash-insp-por-inspector');
-  if (inspInspEl) {
-    const entries = Object.entries(inspPorInspector).sort((a,b)=>b[1].length-a[1].length);
-    inspInspEl.innerHTML = entries.length ? entries.map(function(e) {
-      return '<div class="dash-det-row"><span class="dash-det-name">👤 ' + e[0] + '</span><span class="dash-det-count">' + e[1].length + '</span></div>';
-    }).join('') : '<div style="text-align:center;color:var(--g6);padding:12px">Sin datos</div>';
-  }
+  // Inspecciones por inspector
+  const byInsp = {};
+  inspPeriodo.forEach(function(i){ const n=i.inspector||'Sin asignar'; byInsp[n]=(byInsp[n]||0)+1; });
+  const iInspEl = document.getElementById('dash-insp-por-inspector');
+  if(iInspEl) iInspEl.innerHTML = Object.entries(byInsp).sort((a,b)=>b[1]-a[1]).map(function(e){
+    return '<div class="dash-det-row"><span class="dash-det-name">👤 '+e[0]+'</span><span class="dash-det-count">'+e[1]+'</span></div>';
+  }).join('') || '<div style="text-align:center;color:var(--g6);padding:12px">Sin datos</div>';
 
-  // ── Inspecciones: por día ──
-  const inspPorDia = {};
-  inspPeriodo.forEach(function(i) {
-    const f = new Date(i.fecha || i.fechaRep || '');
-    const key = f.toLocaleDateString('es-PE', {weekday:'short',day:'2-digit',month:'2-digit'});
-    inspPorDia[key] = (inspPorDia[key]||0) + 1;
-  });
-  const inspDiaEl = $('dash-insp-por-dia');
-  const inspDiaEntries = Object.entries(inspPorDia).sort();
-  const maxInspDia = inspDiaEntries.length ? Math.max(...inspDiaEntries.map(e=>e[1])) : 1;
-  if (inspDiaEl) {
-    inspDiaEl.innerHTML = inspDiaEntries.length ? inspDiaEntries.map(function(e) {
-      const pct = Math.round((e[1]/maxInspDia)*100);
-      return '<div class="dash-bar-row"><div class="dash-bar-label" style="width:70px;font-size:11px">' + e[0] + '</div><div class="dash-bar-track"><div class="dash-bar-fill" style="width:'+pct+'%;background:var(--or)"></div></div><div class="dash-bar-val">'+e[1]+'</div></div>';
-    }).join('') : '<div style="text-align:center;color:var(--g6);padding:12px">Sin datos</div>';
-  }
+  // Inspecciones por día
+  const byDiaI = {};
+  inspPeriodo.forEach(function(i){ const k=fmtF(i.fecha||i.fechaRep); byDiaI[k]=(byDiaI[k]||0)+1; });
+  const iDiaEl = document.getElementById('dash-insp-por-dia');
+  const iDiaEnt = Object.entries(byDiaI).sort();
+  const maxI = iDiaEnt.length ? Math.max(...iDiaEnt.map(e=>e[1])) : 1;
+  if(iDiaEl) iDiaEl.innerHTML = iDiaEnt.map(function(e){
+    const pct=Math.round((e[1]/maxI)*100);
+    return '<div class="dash-bar-row"><div class="dash-bar-label" style="width:75px;font-size:11px">'+e[0]+'</div><div class="dash-bar-track"><div class="dash-bar-fill" style="width:'+pct+'%;background:var(--or)"></div></div><div class="dash-bar-val">'+e[1]+'</div></div>';
+  }).join('') || '<div style="text-align:center;color:var(--g6);padding:12px">Sin datos</div>';
 
-  // ── Inspecciones: listado ──
-  const inspListEl = $('dash-insp-lista');
-  if (inspListEl) {
-    inspListEl.innerHTML = inspPeriodo.length ? inspPeriodo.map(function(i) {
-      const orm = state.orms.find(o=>o['Codigo de ORM']===i.code)||{};
-      return '<div class="dash-orm-row" onclick="abrirDetalle('' + i.code + '')">' +
-        '<div class="dash-orm-code">' + i.code + '</div>' +
-        '<div class="dash-orm-meta">👤 ' + (i.inspector||'—') + ' · 📅 ' + fmtFechaCorta(i.fecha) + '</div>' +
-        '<div class="dash-orm-meta">📍 ' + (orm['Distrito']||'—') + ' · ' + (orm['PetitorioCorto']||'—').slice(0,50) + '</div>' +
-        '</div>';
-    }).join('') : '<div style="text-align:center;color:var(--g6);padding:12px">Sin inspecciones en este período</div>';
-  }
+  // Listado inspecciones
+  const iListEl = document.getElementById('dash-insp-lista');
+  if(iListEl) iListEl.innerHTML = inspPeriodo.map(function(i){
+    const orm=state.orms.find(o=>o['Codigo de ORM']===i.code)||{};
+    return '<div class="dash-orm-row" onclick="abrirDetalle(''+i.code+'')">'+
+      '<div class="dash-orm-code">'+i.code+'</div>'+
+      '<div class="dash-orm-meta">👤 '+(i.inspector||'—')+' · 📅 '+fmtF(i.fecha)+'</div>'+
+      '<div class="dash-orm-meta">📍 '+(orm['Distrito']||'—')+'</div>'+
+      '</div>';
+  }).join('') || '<div style="text-align:center;color:var(--g6);padding:12px">Sin inspecciones en este período</div>';
 
-  // ── Ejecuciones: por técnico ──
-  const ejecPorTecnico = {};
-  ejecPeriodo.forEach(function(e) {
-    const nombre = e.tecnico || 'Sin asignar';
-    if (!ejecPorTecnico[nombre]) ejecPorTecnico[nombre] = [];
-    ejecPorTecnico[nombre].push(e);
-  });
-  const ejecTecEl = $('dash-ejec-por-tecnico');
-  if (ejecTecEl) {
-    const entries = Object.entries(ejecPorTecnico).sort((a,b)=>b[1].length-a[1].length);
-    ejecTecEl.innerHTML = entries.length ? entries.map(function(e) {
-      return '<div class="dash-det-row"><span class="dash-det-name">🔧 ' + e[0] + '</span><span class="dash-det-count-gr">' + e[1].length + '</span></div>';
-    }).join('') : '<div style="text-align:center;color:var(--g6);padding:12px">Sin datos</div>';
-  }
+  // Ejecuciones por técnico
+  const byTec = {};
+  ejecPeriodo.forEach(function(e){ const n=e.tecnico||'Sin asignar'; byTec[n]=(byTec[n]||0)+1; });
+  const eTecEl = document.getElementById('dash-ejec-por-tecnico');
+  if(eTecEl) eTecEl.innerHTML = Object.entries(byTec).sort((a,b)=>b[1]-a[1]).map(function(e){
+    return '<div class="dash-det-row"><span class="dash-det-name">🔧 '+e[0]+'</span><span class="dash-det-count-gr">'+e[1]+'</span></div>';
+  }).join('') || '<div style="text-align:center;color:var(--g6);padding:12px">Sin datos</div>';
 
-  // ── Ejecuciones: por día ──
-  const ejecPorDia = {};
-  ejecPeriodo.forEach(function(e) {
-    const f = new Date(e.fecha||e.fechaRep||'');
-    const key = f.toLocaleDateString('es-PE',{weekday:'short',day:'2-digit',month:'2-digit'});
-    ejecPorDia[key] = (ejecPorDia[key]||0)+1;
-  });
-  const ejecDiaEl = $('dash-ejec-por-dia');
-  const ejecDiaEntries = Object.entries(ejecPorDia).sort();
-  const maxEjecDia = ejecDiaEntries.length ? Math.max(...ejecDiaEntries.map(e=>e[1])) : 1;
-  if (ejecDiaEl) {
-    ejecDiaEl.innerHTML = ejecDiaEntries.length ? ejecDiaEntries.map(function(e) {
-      const pct = Math.round((e[1]/maxEjecDia)*100);
-      return '<div class="dash-bar-row"><div class="dash-bar-label" style="width:70px;font-size:11px">'+e[0]+'</div><div class="dash-bar-track"><div class="dash-bar-fill" style="width:'+pct+'%;background:var(--gr)"></div></div><div class="dash-bar-val">'+e[1]+'</div></div>';
-    }).join('') : '<div style="text-align:center;color:var(--g6);padding:12px">Sin datos</div>';
-  }
+  // Ejecuciones por día
+  const byDiaE = {};
+  ejecPeriodo.forEach(function(e){ const k=fmtF(e.fecha||e.fechaRep); byDiaE[k]=(byDiaE[k]||0)+1; });
+  const eDiaEnt = Object.entries(byDiaE).sort();
+  const maxE = eDiaEnt.length ? Math.max(...eDiaEnt.map(e=>e[1])) : 1;
+  const eDiaEl = document.getElementById('dash-ejec-por-dia');
+  if(eDiaEl) eDiaEl.innerHTML = eDiaEnt.map(function(e){
+    const pct=Math.round((e[1]/maxE)*100);
+    return '<div class="dash-bar-row"><div class="dash-bar-label" style="width:75px;font-size:11px">'+e[0]+'</div><div class="dash-bar-track"><div class="dash-bar-fill" style="width:'+pct+'%;background:var(--gr)"></div></div><div class="dash-bar-val">'+e[1]+'</div></div>';
+  }).join('') || '<div style="text-align:center;color:var(--g6);padding:12px">Sin datos</div>';
 
-  // ── Ejecuciones: listado ──
-  const ejecListEl = $('dash-ejec-lista');
-  if (ejecListEl) {
-    ejecListEl.innerHTML = ejecPeriodo.length ? ejecPeriodo.map(function(e) {
-      const orm = state.orms.find(o=>o['Codigo de ORM']===e.code)||{};
-      return '<div class="dash-orm-row" onclick="abrirDetalle('' + e.code + '')">' +
-        '<div class="dash-orm-code">' + e.code + '</div>' +
-        '<div class="dash-orm-meta">🔧 ' + (e.tecnico||'—') + ' · 📅 ' + fmtFechaCorta(e.fecha) + '</div>' +
-        '<div class="dash-orm-meta">📍 ' + (orm['Distrito']||'—') + ' · ' + (e.det||'—').slice(0,50) + '</div>' +
-        '</div>';
-    }).join('') : '<div style="text-align:center;color:var(--g6);padding:12px">Sin ejecuciones en este período</div>';
-  }
+  // Listado ejecuciones
+  const eListEl = document.getElementById('dash-ejec-lista');
+  if(eListEl) eListEl.innerHTML = ejecPeriodo.map(function(e){
+    const orm=state.orms.find(o=>o['Codigo de ORM']===e.code)||{};
+    return '<div class="dash-orm-row" onclick="abrirDetalle(''+e.code+'')">'+
+      '<div class="dash-orm-code">'+e.code+'</div>'+
+      '<div class="dash-orm-meta">🔧 '+(e.tecnico||'—')+' · 📅 '+fmtF(e.fecha)+'</div>'+
+      '<div class="dash-orm-meta">📍 '+(orm['Distrito']||'—')+' · '+(e.det||'—').slice(0,50)+'</div>'+
+      '</div>';
+  }).join('') || '<div style="text-align:center;color:var(--g6);padding:12px">Sin ejecuciones en este período</div>';
 }
+
 
 // ===== BUSCADOR POR NÚMERO DE POSTE =====
 
