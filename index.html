@@ -1,11 +1,24 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<script>
+// Limpiar service workers y caché viejo
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(function(regs) {
+    regs.forEach(function(reg) { reg.unregister(); });
+  });
+}
+if ('caches' in window) {
+  caches.keys().then(function(keys) {
+    keys.forEach(function(k) { caches.delete(k); });
+  });
+}
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>ORM Cobra</title>
+<title>ORM Cobra v1781739992</title>
 <style>
 :root{--or:#E8600A;--orl:#FFF3EB;--orm:#F5A36B;--gr:#1A7A4A;--grl:#E6F5ED;--grm:#4CAF7D;--bl:#1565C0;--bll:#E3F0FF;--rd:#C62828;--rdl:#FDECEA;--pu:#6A1B9A;--pul:#F3E5F5;--g0:#F8F9FA;--g1:#F1F3F4;--g2:#E8EAED;--g3:#DADCE0;--g4:#BDC1C6;--g6:#80868B;--g7:#5F6368;--g9:#202124;--wh:#FFFFFF;--rsm:8px;--rmd:12px;--rlg:18px}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -438,6 +451,7 @@ html {
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta name="version" content="1781740091">
 </head>
 <body>
 
@@ -1231,7 +1245,8 @@ function enterApp() {
 
 // ===== HOME =====
 function updateHome() {
-  const inspPend = state.orms.filter(o=>['Asignado','En ejecución'].includes(o['Estado inspección']) && !state.inspected.find(i=>i.code===o['Codigo de ORM']));
+  const ormsActivas = state.orms.filter(function(o){ return (o.tipo||'postes')===tipoActivo; });
+  const inspPend = ormsActivas.filter(o=>['Asignado','En ejecución','Pendiente'].includes(o['Estado inspección']) && !state.inspected.find(i=>i.code===o['Codigo de ORM']));
   const ejecPend = state.inspected.filter(i=>!state.executed.find(e=>e.code===i.code));
   const sinAcc = ejecPend.filter(i=>i.grua==='No').length;
   $('cnt-insp').textContent = inspPend.length;
@@ -1330,7 +1345,7 @@ function renderDistTabs() {
 }
 function renderInspList(q) {
   const list=$('insp-list'); list.innerHTML='';
-  let orms=state.orms.filter(o=>['Asignado','En ejecución'].includes(o['Estado inspección'])&&!state.inspected.find(i=>i.code===o['Codigo de ORM']));
+  let orms=state.orms.filter(o=>['Asignado','En ejecución','Pendiente'].includes(o['Estado inspección'])&&!state.inspected.find(i=>i.code===o['Codigo de ORM'])&&(o.tipo||'postes')===tipoActivo);
   if(currentDistFilter!=='all') orms=orms.filter(o=>o['Distrito']===currentDistFilter);
   if(q) { const ql=q.toLowerCase(); orms=orms.filter(o=>(o['Codigo de ORM']||'').includes(ql)||(o['Suministro']||'').includes(ql)||(o['Petitorio']||'').toLowerCase().includes(ql)); }
   if(orms.length===0){list.innerHTML='<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><p>No hay ORMs pendientes</p></div>';return;}
@@ -2514,20 +2529,7 @@ function limpiarCoords(c) {
 
 // ─── handleDrop y handleCSV para nuevos tipos ───
 var _origHandleDrop = null;
-document.addEventListener('DOMContentLoaded', function() {
-  // Extender el input de CSV para soportar XLSX
-  var csvInput = document.getElementById('csv-input');
-  if (csvInput) {
-    csvInput.addEventListener('change', function(e) {
-      if (importTipoActivo !== 'postes') {
-        importarExcelTipo(e.target.files[0]);
-        e.target.value = '';
-        return;
-      }
-      handleCSV(e); // función original
-    }, true);
-  }
-});
+// Manejo de archivo: handleArchivoImport(this) en el input HTML;
 
 // ─── Importar Excel ───
 function importarExcelTipo(file) {
@@ -2635,7 +2637,12 @@ function setNuevaOrmTipo(tipo,btn){
 function abrirNuevaOrm(){
   ['no-codigo','no-distrito','no-suministro','no-poste','no-petitorio','no-domicilio','no-coords'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   nuevaOrmTipo='postes';
-  var fb=document.querySelector('.nueva-orm-tipo-btn'); if(fb){fb.style.background='var(--orl)';fb.style.color='var(--or)';fb.style.borderColor='var(--or)';}
+  // Resetear botones de tipo
+  var btns = document.querySelectorAll('.nueva-orm-tipo-btn');
+  if(btns && btns.length) {
+    btns.forEach(function(b){ b.style.background='var(--wh)'; b.style.color='var(--g6)'; b.style.borderColor='var(--g3)'; });
+    btns[0].style.background='var(--orl)'; btns[0].style.color='var(--or)'; btns[0].style.borderColor='var(--or)';
+  }
   goTo('sc-nueva-orm');
 }
 function getGPSnuevaOrm(){
