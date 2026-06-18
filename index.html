@@ -275,6 +275,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .btn-eliminar:active{background:var(--rd);color:white}
 .btn-corregir{background:var(--bll);color:var(--bl);border:2px solid var(--bl);border-radius:var(--rsm);padding:12px 16px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;margin-top:10px;width:100%}
 .btn-corregir:active{background:var(--bl);color:white}
+.foto-edit-actions{display:flex;gap:4px;padding:4px 6px;background:var(--wh);border-top:1px solid var(--g2)}
+.foto-edit-actions button{flex:1;padding:4px 2px;font-size:10px;font-weight:700;border:none;border-radius:4px;cursor:pointer}
+.fea-ver{background:var(--bll);color:var(--bl)}
+.fea-rep{background:#fff3e0;color:var(--or)}
+.fea-quit{background:var(--rdl);color:var(--rd)}
 /* MODAL CONFIRMACIÓN */
 .mo-confirm{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;padding:20px}
 .mo-confirm.on{display:flex}
@@ -1070,6 +1075,17 @@ html {
     </div>
   </div>
 </div>
+<div class="mo-confirm" id="mo-quitar-foto">
+  <div class="mo-confirm-box">
+    <div class="mo-confirm-icon">🖼️</div>
+    <div class="mo-confirm-title">¿Quitar esta foto?</div>
+    <div class="mo-confirm-sub">¿Deseas quitar esta foto del registro?<br>El archivo en Google Drive no se borrará.</div>
+    <div class="mo-confirm-btns">
+      <button class="btn-cancel-del" onclick="cancelarQuitarFoto()">Cancelar</button>
+      <button class="btn-confirm-del" onclick="confirmarQuitarFoto()">Quitar</button>
+    </div>
+  </div>
+</div>
 <div class="mo" id="mo-insp">
   <div class="mb"><div class="mi">✅</div><div class="mt2">¡Inspección guardada!</div><div class="ms" id="mo-insp-msg">ORM pasó a Pendiente ejecución.</div><button class="mbtn" onclick="closeMo('mo-insp');goTo('sc-ejec')">Ver pendientes de ejecución</button></div>
 </div>
@@ -1166,7 +1182,7 @@ let state = {
   executed: JSON.parse(_store.getItem('executed')||'[]'),
   currentOrm: null,
   togIncl: 'N', togDms: 'N', gruaVal: 'Si', cntAcm: 0,
-  ejecFilter: 'all', dashPeriod: 'dia', _editMode: null, _editCode: null
+  ejecFilter: 'all', dashPeriod: 'dia', _editMode: null, _editCode: null, _fotosQuitadas: new Set()
 };
 
 // ===== HELPERS =====
@@ -1656,9 +1672,10 @@ function guardar() {
   ];
 
   // Preservar fotos existentes si estamos editando
-  const fotosExistentes = state._editMode === 'insp'
-    ? (state.inspected.find(i => i.code === code) || {}).fotoUrls || {}
+  let fotosExistentes = state._editMode === 'insp'
+    ? Object.assign({}, (state.inspected.find(i => i.code === code) || {}).fotoUrls || {})
     : {};
+  if (state._editMode === 'insp') state._fotosQuitadas.forEach(k => delete fotosExistentes[k]);
 
   // Guardar en estado local
   if (state._editMode === 'insp') {
@@ -2236,6 +2253,102 @@ async function subirFotoDriveAPI(codigoORM, nombreFoto, base64Data, mimeType) {
   }
 }
 
+const _camposInspEdit = [
+  {num:1, storeKey:'Foto_Perfil',         label:'Perfil'},
+  {num:2, storeKey:'Foto_Vista_defrente', label:'Vista defrente'},
+  {num:3, storeKey:'Foto_Panoramica',     label:'Panorámica'},
+  {num:4, storeKey:'Foto_deficiencia',    label:'Deficiencia'},
+  {num:5, storeKey:'Foto_Insp1',          label:'Insp. 1'},
+  {num:6, storeKey:'Foto_Insp2',          label:'Insp. 2'},
+  {num:7, storeKey:'Croquis',             label:'Croquis'},
+  {num:8, storeKey:'Conformidad_cliente', label:'Conformidad'}
+];
+const _camposEjecEdit = [
+  {num:1, storeKey:'Foto_despues1', label:'Foto después 1'},
+  {num:2, storeKey:'Foto_despues2', label:'Foto después 2'},
+  {num:3, storeKey:'Foto_despues3', label:'Foto después 3'},
+  {num:4, storeKey:'Foto_despues4', label:'Foto después 4'}
+];
+
+function renderFotosEditables(containerId, fotoUrls, campos, inputPrefix) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  campos.forEach(function(f) {
+    const url = (fotoUrls || {})[f.storeKey] || '';
+    const inputId = inputPrefix + f.num;
+    const wrapperId = 'foto-edit-wrap-' + f.storeKey;
+    const wrapper = document.createElement('div');
+    wrapper.id = wrapperId;
+    wrapper.style.cssText = 'border-radius:10px;overflow:hidden;background:var(--g1);border:1.5px solid var(--g2)';
+
+    if (url && url.trim() !== '' && !state._fotosQuitadas.has(f.storeKey)) {
+      const fileId = url.includes('id=') ? url.split('id=')[1].split('&')[0]
+                   : url.includes('/d/') ? url.split('/d/')[1].split('/')[0] : '';
+      const thumbUrl = fileId ? 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=s800' : url;
+      const fullUrl  = fileId ? 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=s1600' : url;
+      const dlUrl    = fileId ? 'https://drive.google.com/uc?export=download&id=' + fileId : url;
+      const viewUrl  = fileId ? 'https://drive.google.com/file/d/' + fileId + '/view' : url;
+      wrapper.innerHTML =
+        '<img src="' + thumbUrl + '" referrerpolicy="no-referrer" style="width:100%;height:100px;object-fit:cover;display:block" onerror="this.style.display=\'none\'">' +
+        '<div style="padding:3px 6px;font-size:10px;font-weight:700;color:var(--g7);background:var(--wh)">' + f.label + '</div>' +
+        '<div class="foto-edit-actions">' +
+          '<button class="fea-ver" onclick="abrirVisorFoto(\'' + fullUrl + '\',\'' + f.label + '\',\'' + dlUrl + '\',\'' + viewUrl + '\')">👁 Ver</button>' +
+          '<button class="fea-rep" onclick="document.getElementById(\'' + inputId + '\').click()">🔄 Reemplazar</button>' +
+          '<button class="fea-quit" onclick="pedirQuitarFoto(\'' + f.storeKey + '\',\'' + wrapperId + '\',\'' + f.label + '\',\'' + inputId + '\')">🗑 Quitar</button>' +
+        '</div>';
+    } else {
+      wrapper.innerHTML =
+        '<div onclick="document.getElementById(\'' + inputId + '\').click()" style="height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:4px">' +
+          '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--g5)" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M3 9a2 2 0 012-2h1l2-3h4l2 3h1a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg>' +
+          '<div style="font-size:11px;font-weight:700;color:var(--g6)">' + f.label + '</div>' +
+          '<div style="font-size:10px;color:var(--g5)">Toca para agregar</div>' +
+        '</div>';
+    }
+    container.appendChild(wrapper);
+  });
+}
+
+function pedirQuitarFoto(storeKey, wrapperId, label, inputId) {
+  _quitarFotoKey       = storeKey;
+  _quitarFotoWrapperId = wrapperId;
+  _quitarFotoLabel     = label;
+  _quitarFotoInputId   = inputId;
+  $('mo-quitar-foto').classList.add('on');
+}
+
+function cancelarQuitarFoto() {
+  closeMo('mo-quitar-foto');
+  _quitarFotoKey       = null;
+  _quitarFotoWrapperId = null;
+  _quitarFotoLabel     = null;
+  _quitarFotoInputId   = null;
+}
+
+function confirmarQuitarFoto() {
+  closeMo('mo-quitar-foto');
+  if (!_quitarFotoKey) return;
+  quitarFotoEdicion(_quitarFotoKey, _quitarFotoWrapperId, _quitarFotoLabel, _quitarFotoInputId);
+  _quitarFotoKey       = null;
+  _quitarFotoWrapperId = null;
+  _quitarFotoLabel     = null;
+  _quitarFotoInputId   = null;
+}
+
+function quitarFotoEdicion(storeKey, wrapperId, label, inputId) {
+  state._fotosQuitadas.add(storeKey);
+  const wrap = document.getElementById(wrapperId);
+  if (wrap) {
+    wrap.innerHTML =
+      '<div onclick="document.getElementById(\'' + (inputId||'') + '\').click()" style="height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:4px">' +
+        '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--g5)" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M3 9a2 2 0 012-2h1l2-3h4l2 3h1a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg>' +
+        '<div style="font-size:11px;font-weight:700;color:var(--g6)">' + label + '</div>' +
+        '<div style="font-size:10px;color:var(--g5)">Toca para agregar</div>' +
+      '</div>';
+  }
+  mostrarToast('Foto quitada — se eliminará del registro al guardar', 'var(--or)');
+}
+
 function editarInsp(code) {
   const insp = state.inspected.find(i => i.code === code);
   const o    = state.orms.find(x => x['Codigo de ORM'] === code);
@@ -2273,12 +2386,21 @@ function editarInsp(code) {
   setTog('dms',  insp.dms  || 'N');
   setGrua(insp.grua || 'Si');
 
-  for(let i=1;i<=8;i++){
-    const s=$('sl-'+i); s.classList.remove('ok');
-    delete s.dataset.b64; delete s.dataset.mime;
-    const img=s.querySelector('img');if(img)img.remove();
-    const b=s.querySelector('.prm');if(b)b.remove();
-    $('pi-'+i).value='';
+  state._fotosQuitadas = new Set();
+  for(let i=1;i<=8;i++) $('pi-'+i).value='';
+
+  // Mostrar fotos editables encima de los slots originales
+  const fotoGrid = document.querySelector('#sc-form .pg');
+  if (fotoGrid) {
+    let editGrid = document.getElementById('edit-fotos-insp-grid');
+    if (!editGrid) {
+      editGrid = document.createElement('div');
+      editGrid.id = 'edit-fotos-insp-grid';
+      editGrid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px';
+      fotoGrid.parentNode.insertBefore(editGrid, fotoGrid);
+      fotoGrid.style.display = 'none';
+    }
+    renderFotosEditables('edit-fotos-insp-grid', insp.fotoUrls || {}, _camposInspEdit, 'pi-');
   }
 
   const btnSave = document.querySelector('#sc-form .bsv');
@@ -2317,13 +2439,23 @@ function editarEjec(code) {
   $('ef-tipo').value      = ejec.tipo     || '';
   $('ef-detalle').value   = ejec.det      || '';
 
-  for(let i=1;i<=4;i++){
-    const s=$('se-'+i); s.classList.remove('ok');
-    delete s.dataset.b64; delete s.dataset.mime;
-    const img=s.querySelector('img');if(img)img.remove();
-    const b=s.querySelector('.prm');if(b)b.remove();
-    $('pe-'+i).value='';
+  state._fotosQuitadas = new Set();
+  for(let i=1;i<=4;i++) $('pe-'+i).value='';
+
+  // Mostrar fotos de ejecución editables encima de los slots originales
+  const ejecFotoGrid = document.querySelector('#sc-ejec-form .pg');
+  if (ejecFotoGrid) {
+    let editGridEjec = document.getElementById('edit-fotos-ejec-grid');
+    if (!editGridEjec) {
+      editGridEjec = document.createElement('div');
+      editGridEjec.id = 'edit-fotos-ejec-grid';
+      editGridEjec.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px';
+      ejecFotoGrid.parentNode.insertBefore(editGridEjec, ejecFotoGrid);
+      ejecFotoGrid.style.display = 'none';
+    }
+    renderFotosEditables('edit-fotos-ejec-grid', ejec.fotoUrls || {}, _camposEjecEdit, 'pe-');
   }
+
   $('ef-fotos-insp-grid').innerHTML = '<div style="text-align:center;color:var(--g6);font-size:12px;padding:12px;grid-column:1/-1">⏳ Cargando fotos del inspector...</div>';
 
   const btnFin = document.querySelector('.bsv.gr-btn');
@@ -2369,14 +2501,18 @@ function guardarSoloRegistro(code, insp, urls) {
   .then(function(res) {
     console.log('[guardar] respuesta JSON:', JSON.stringify(res));
     console.log('Registro guardado:', res.ok ? '✅' : '❌', res);
-    state._editMode = null; state._editCode = null;
+    state._editMode = null; state._editCode = null; state._fotosQuitadas = new Set();
+    const eg = document.getElementById('edit-fotos-insp-grid');
+    if (eg) { eg.remove(); const pg = document.querySelector('#sc-form .pg'); if(pg) pg.style.display=''; }
     const btnSave = document.querySelector('#sc-form .bsv');
     if (btnSave) { btnSave.disabled=false; btnSave.textContent='💾 Guardar inspección'; }
     mostrarModalInsp(insp);
   })
   .catch(function(e) {
     console.error('[guardar] ERROR completo:', e);
-    state._editMode = null; state._editCode = null;
+    state._editMode = null; state._editCode = null; state._fotosQuitadas = new Set();
+    const eg = document.getElementById('edit-fotos-insp-grid');
+    if (eg) { eg.remove(); const pg = document.querySelector('#sc-form .pg'); if(pg) pg.style.display=''; }
     const btnSave = document.querySelector('#sc-form .bsv');
     if (btnSave) { btnSave.disabled=false; btnSave.textContent='💾 Guardar inspección'; }
     mostrarModalInsp(insp);
@@ -2716,9 +2852,10 @@ function finalizarEjec() {
   console.log('[ejec] Fotos a subir:', fotosEjec.length);
 
   // Preservar fotos existentes si estamos editando
-  const fotosEjecExistentes = state._editMode === 'ejec'
-    ? (state.executed.find(e => e.code === code) || {}).fotoUrls || {}
+  let fotosEjecExistentes = state._editMode === 'ejec'
+    ? Object.assign({}, (state.executed.find(e => e.code === code) || {}).fotoUrls || {})
     : {};
+  if (state._editMode === 'ejec') state._fotosQuitadas.forEach(k => delete fotosEjecExistentes[k]);
 
   if (state._editMode === 'ejec') {
     const idx = state.executed.findIndex(e => e.code === code);
@@ -2761,13 +2898,17 @@ function finalizarEjec() {
     })
     .then(function(res) {
       console.log('[ejec] respuesta JSON:', JSON.stringify(res));
-      state._editMode = null; state._editCode = null;
+      state._editMode = null; state._editCode = null; state._fotosQuitadas = new Set();
+      const ege = document.getElementById('edit-fotos-ejec-grid');
+      if (ege) { ege.remove(); const pge = document.querySelector('#sc-ejec-form .pg'); if(pge) pge.style.display=''; }
       if (btnFin) { btnFin.disabled=false; btnFin.textContent='👍 Finalizar ejecución'; }
       $('mo-ejec').classList.add('on'); updateHome();
     })
     .catch(function(e) {
       console.error('[ejec] ERROR:', e);
-      state._editMode = null; state._editCode = null;
+      state._editMode = null; state._editCode = null; state._fotosQuitadas = new Set();
+      const ege = document.getElementById('edit-fotos-ejec-grid');
+      if (ege) { ege.remove(); const pge = document.querySelector('#sc-ejec-form .pg'); if(pge) pge.style.display=''; }
       if (btnFin) { btnFin.disabled=false; btnFin.textContent='👍 Finalizar ejecución'; }
       $('mo-ejec').classList.add('on'); updateHome();
     });
@@ -3263,6 +3404,10 @@ function mostrarToast(msg, color) {
 
 // ===== ELIMINAR INSPECCIÓN =====
 let _delCode = null;
+let _quitarFotoKey = null;
+let _quitarFotoWrapperId = null;
+let _quitarFotoLabel = null;
+let _quitarFotoInputId = null;
 
 function pedirEliminar(code) {
   _delCode = code;
