@@ -693,6 +693,9 @@ function mapearColumnasTrabajos_(rows, tipo, archivoOrigen) {
         identificador, coordFinal, estadoCoord, jsonExtra, coordRaw;
 
     if (esReubicacion) {
+      Logger.log('KEYS=' + JSON.stringify(Object.keys(r)));
+      Logger.log('OT_RAW=' + r['Número de orden de trabajo']);
+      Logger.log('OT_KEYS=' + Object.keys(r).join('|'));
       poste         = r['# POSTE']            || r['POSTE']    || '';
       distrito      = r['DISTRIRO']           || r['DISTRITO'] || ''; // typo en Excel original
       sed           = r['SED']                || '';
