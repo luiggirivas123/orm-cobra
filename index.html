@@ -1361,9 +1361,9 @@ async function cargarTrabajosDesdeSheet() {
     const resp = await fetch(SCRIPT_URL + '?action=obtenerTrabajos', { redirect: 'follow' });
     if (!resp.ok) return;
     const data = await resp.json();
-    if (!data.rows || !data.rows.length) return;
+    if (!data.trabajos || !data.trabajos.length) return;
     const yaExistentes = new Set(state.orms.map(o => o['Codigo de ORM']));
-    data.rows.forEach(r => {
+    data.trabajos.forEach(r => {
       if (!yaExistentes.has(r['Codigo de ORM'])) {
         r['PetitorioCorto'] = (r['Petitorio'] || '').slice(0, 110);
         state.orms.push(r);
@@ -1372,7 +1372,7 @@ async function cargarTrabajosDesdeSheet() {
     });
     updateHome();
     renderInspList('');
-    console.log('[trabajos] cargados:', data.rows.length);
+    console.log('[trabajos] cargados:', data.trabajos.length);
   } catch(e) {
     console.warn('[trabajos] no se pudo cargar:', e.message);
   }
