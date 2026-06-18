@@ -1719,22 +1719,23 @@ function guardar() {
       leidas++;
       if (leidas === pendientes) {
         // Todas leídas, comenzar subida
-        subirFotosUnaAUna(code, insp, fotosParaSubir, btnSave);
+        subirFotosUnaAUna(code, insp, fotosParaSubir, btnSave, fotosExistentes);
       }
     };
     reader.onerror = function() {
       leidas++;
       if (leidas === pendientes) {
-        subirFotosUnaAUna(code, insp, fotosParaSubir, btnSave);
+        subirFotosUnaAUna(code, insp, fotosParaSubir, btnSave, fotosExistentes);
       }
     };
     reader.readAsDataURL(inp.files[0]);
   });
 }
 
-function subirFotosUnaAUna(code, insp, fotos, btnSave) {
+function subirFotosUnaAUna(code, insp, fotos, btnSave, fotosExistentes) {
+  fotosExistentes = fotosExistentes || {};
   if (!fotos || fotos.length === 0) {
-    guardarSoloRegistro(code, insp, {});
+    guardarSoloRegistro(code, insp, fotosExistentes);
     if (btnSave) { btnSave.disabled=false; btnSave.textContent='💾 Guardar inspección'; }
     return;
   }
@@ -1751,17 +1752,17 @@ function subirFotosUnaAUna(code, insp, fotos, btnSave) {
           _store.setItem('google_access_token', response.access_token);
           _store.setItem('google_token_expires', String(Date.now() + (response.expires_in * 1000)));
           actualizarEstadoGoogleAuth();
-          subirFotosUnaAUna(code, insp, fotos, btnSave);
+          subirFotosUnaAUna(code, insp, fotos, btnSave, fotosExistentes);
         } else {
-          // Sin token: guardar sin fotos
-          guardarSoloRegistro(code, insp, {});
+          // Sin token: conservar fotos existentes
+          guardarSoloRegistro(code, insp, fotosExistentes);
           if (btnSave) { btnSave.disabled=false; btnSave.textContent='💾 Guardar inspección'; }
           mostrarToast('⚠️ Conecta Google Drive para subir fotos', 'var(--or)');
         }
       };
       googleTokenClient.requestAccessToken({prompt: ''});
     } else {
-      guardarSoloRegistro(code, insp, {});
+      guardarSoloRegistro(code, insp, fotosExistentes);
       if (btnSave) { btnSave.disabled=false; btnSave.textContent='💾 Guardar inspección'; }
     }
     return;
