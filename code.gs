@@ -695,10 +695,7 @@ function mapearColumnasTrabajos_(rows, tipo, archivoOrigen) {
       eecc          = r['EECC']               || '';
       subtipo       = r['CLASIF DEFICIENCIA'] || r['CLASIF']   || '';
       prioridad     = r['PRIORIDAD']          || '';
-      identificador = r['IDENTIFICADOR']
-                  || r['ID']
-                  || r['Número de orden de trabajo']
-                  || '';
+     identificador = 'TEST123';
 
       var latDMS = String(r['LATITUD']  || r['LAT']  || '').trim();
       var lonDMS = String(r['LONGITUD'] || r['LON']  || '').trim();
