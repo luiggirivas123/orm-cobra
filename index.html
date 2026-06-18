@@ -7,6 +7,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>ORM Cobra</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 :root{--or:#E8600A;--orl:#FFF3EB;--orm:#F5A36B;--gr:#1A7A4A;--grl:#E6F5ED;--grm:#4CAF7D;--bl:#1565C0;--bll:#E3F0FF;--rd:#C62828;--rdl:#FDECEA;--pu:#6A1B9A;--pul:#F3E5F5;--g0:#F8F9FA;--g1:#F1F3F4;--g2:#E8EAED;--g3:#DADCE0;--g4:#BDC1C6;--g6:#80868B;--g7:#5F6368;--g9:#202124;--wh:#FFFFFF;--rsm:8px;--rmd:12px;--rlg:18px}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -54,8 +56,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
 /* BOTTOM NAV */
 .bn{background:var(--wh);border-top:1px solid var(--g2);display:flex;position:fixed;bottom:0;left:0;right:0;z-index:100;height:68px}
-.ni{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px;font-weight:600;color:var(--g4);cursor:pointer;border:none;background:none;padding:0}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:11px;font-weight:600;color:var(--g4);cursor:pointer;border:none;background:none;padding:0}
 .ni.on{color:var(--or)}
+/* MAPA OPERATIVO */
+.mf-btn{flex-shrink:0;padding:6px 12px;border:1.5px solid var(--g3);border-radius:20px;background:var(--wh);font-size:12px;font-weight:600;color:var(--g7);cursor:pointer;white-space:nowrap}
+.mf-btn.active{background:var(--or);color:white;border-color:var(--or)}
 .ni svg{width:26px;height:26px}
 .nbadge{position:absolute;top:2px;background:var(--or);color:white;border-radius:10px;font-size:10px;font-weight:700;padding:2px 6px;min-width:18px;text-align:center}
 .niw{position:relative}
@@ -550,6 +555,25 @@ html {
       </div>
     </div>
   </div>
+  <!-- Admin: importar trabajos multi-actividad -->
+  <div id="admin-import-section" style="display:none;padding:0 16px;margin-bottom:10px">
+    <button onclick="mostrarPreviewImport()" style="width:100%;background:#7c3aed;border:none;border-radius:var(--rmd);padding:14px;font-size:15px;font-weight:600;color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+      📥 Importar Trabajos (RETENIDAS · PROTECCIONES · REUBICACIONES)
+    </button>
+  </div>
+
+  <!-- Modal preview importación -->
+  <div id="mo-import-preview" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;overflow-y:auto;padding:20px">
+    <div style="background:var(--wh);border-radius:var(--rmd);margin:0 auto;max-width:520px;padding:20px">
+      <div style="font-size:17px;font-weight:700;margin-bottom:14px">📋 Preview — Importar Trabajos</div>
+      <div id="import-preview-body" style="font-size:13px;color:var(--g7);min-height:80px">⏳ Consultando fuentes…</div>
+      <div style="display:flex;gap:10px;margin-top:16px">
+        <button onclick="$('mo-import-preview').style.display='none'" style="flex:1;padding:12px;border:1.5px solid var(--g3);border-radius:var(--rsm);background:var(--wh);font-size:14px;cursor:pointer">Cancelar</button>
+        <button id="btn-confirmar-import" onclick="confirmarImportacion()" disabled style="flex:2;padding:12px;background:#7c3aed;color:white;border:none;border-radius:var(--rsm);font-size:14px;font-weight:700;cursor:pointer;opacity:.5">Aplicar importación</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Google Auth Bar - visible para inspector y técnico también -->
   <div id="google-auth-bar" class="google-auth-bar" style="display:none">
     <div class="google-auth-info">
@@ -624,6 +648,7 @@ html {
   <button class="ni" onclick="goTo('sc-insp')" id="bn-insp"><div class="niw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><span class="nbadge" id="bn-insp-cnt">—</span></div>Inspección</button>
   <button class="ni" onclick="goTo('sc-ejec')" id="bn-ejec"><div class="niw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg><span class="nbadge" style="background:var(--bl)" id="bn-ejec-cnt">—</span></div>Ejecución</button>
   <button class="ni" id="bn-dash" onclick="goTo('sc-dash')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg>Dashboard</button>
+  <button class="ni" id="bn-mapa" onclick="goTo('sc-mapa');initMapa()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Mapa</button>
 </div>
 </div>
 
@@ -887,11 +912,15 @@ html {
       <div class="ps" onclick="tp('pe-2')" id="se-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M3 9a2 2 0 012-2h1l2-3h4l2 3h1a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg><div class="pn">Foto después 2</div></div>
       <div class="ps" onclick="tp('pe-3')" id="se-3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M3 9a2 2 0 012-2h1l2-3h4l2 3h1a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg><div class="pn">Foto después 3</div></div>
       <div class="ps" onclick="tp('pe-4')" id="se-4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M3 9a2 2 0 012-2h1l2-3h4l2 3h1a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg><div class="pn">Foto después 4</div></div>
+      <div class="ps" onclick="tp('pe-5')" id="se-5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M3 9a2 2 0 012-2h1l2-3h4l2 3h1a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg><div class="pn">Foto Plano</div></div>
+      <div class="ps" onclick="tp('pe-6')" id="se-6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M3 9a2 2 0 012-2h1l2-3h4l2 3h1a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg><div class="pn">Foto Boleta</div></div>
     </div>
     <input type="file" accept="image/*"  class="pfi" id="pe-1" onchange="hp(this,'se-1')">
     <input type="file" accept="image/*"  class="pfi" id="pe-2" onchange="hp(this,'se-2')">
     <input type="file" accept="image/*"  class="pfi" id="pe-3" onchange="hp(this,'se-3')">
     <input type="file" accept="image/*"  class="pfi" id="pe-4" onchange="hp(this,'se-4')">
+    <input type="file" accept="image/*"  class="pfi" id="pe-5" onchange="hp(this,'se-5')">
+    <input type="file" accept="image/*"  class="pfi" id="pe-6" onchange="hp(this,'se-6')">
   </div>
   <div style="height:90px"></div>
 </div>
@@ -1102,6 +1131,35 @@ html {
   <div class="mb"><div class="mi">👍</div><div class="mt2">¡Trabajo finalizado!</div><div class="ms">ORM marcada como Ejecutada. Datos listos para subir a AppSheet de Plus.</div><button class="mbtn" style="background:var(--gr)" onclick="closeMo('mo-ejec');goTo('sc-home')">Volver al inicio</button></div>
 </div>
 
+<!-- ===== MAPA OPERATIVO ===== -->
+<div class="sc" id="sc-mapa">
+  <div class="sh">
+    <div style="display:flex;align-items:center;gap:10px;padding:16px;background:var(--wh);border-bottom:1px solid var(--g2)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--or)" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      <span style="font-size:17px;font-weight:700;color:var(--g9)">Mapa Operativo</span>
+      <button onclick="initMapa()" style="margin-left:auto;background:var(--g1);border:1.5px solid var(--g3);border-radius:var(--rsm);padding:6px 12px;font-size:13px;color:var(--g7);cursor:pointer">↻ Actualizar</button>
+    </div>
+    <div id="mapa-filtros" style="display:flex;gap:6px;padding:10px 14px;overflow-x:auto;background:var(--wh);border-bottom:1px solid var(--g2)">
+      <button class="mf-btn active" onclick="filtrarMapa(this,'all')">Todos</button>
+      <button class="mf-btn" onclick="filtrarMapa(this,'ORM')">ORM</button>
+      <button class="mf-btn" onclick="filtrarMapa(this,'RETENIDA')">Retenidas</button>
+      <button class="mf-btn" onclick="filtrarMapa(this,'PROTECCION')">Protecciones</button>
+      <button class="mf-btn" onclick="filtrarMapa(this,'REUBICACION')">Reubicaciones</button>
+      <button class="mf-btn" onclick="filtrarMapa(this,'EJECUTADO')">Ejecutados</button>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;padding:8px 14px;background:var(--g1);font-size:11px;color:var(--g7)">
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f97316;margin-right:4px"></span>ORM</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#d97706;margin-right:4px"></span>Retenida</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#2563eb;margin-right:4px"></span>Protección</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#059669;margin-right:4px"></span>Reubicación</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#6b7280;margin-right:4px"></span>Ejecutado</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#dc2626;margin-right:4px"></span>Tú</span>
+    </div>
+  </div>
+  <div id="leaflet-map" style="flex:1;min-height:400px;z-index:1"></div>
+  <div style="height:70px"></div>
+</div>
+
 <script>
 // ===== DATA =====
 // POLES_DB: ya NO se carga completa al inicio.
@@ -1258,6 +1316,7 @@ async function cargarOrmsManual() {
     data.rows.forEach(r => {
       if (!yaExistentes.has(r['Codigo de ORM'])) {
         r['PetitorioCorto'] = (r['Petitorio'] || '').slice(0, 110);
+        if (!r['TIPO_TRABAJO']) r['TIPO_TRABAJO'] = 'ORM';
         state.orms.push(r);
       }
     });
@@ -1267,6 +1326,173 @@ async function cargarOrmsManual() {
   } catch(e) {
     console.warn('[orm-manual] no se pudo cargar:', e.message);
   }
+}
+
+// ===== MULTI-ACTIVIDAD =====
+
+function _tipoBadge(tipo) {
+  if (!tipo || tipo === 'ORM') return '';
+  const cfg = {
+    'RETENIDA':   {color:'#92400e', bg:'#fef3c7', label:'RETENIDA'},
+    'PROTECCION': {color:'#1e40af', bg:'#dbeafe', label:'PROTECCIÓN'},
+    'REUBICACION':{color:'#065f46', bg:'#d1fae5', label:'REUBICACIÓN'}
+  };
+  const c = cfg[tipo] || {color:'#374151', bg:'#f3f4f6', label: tipo};
+  return `<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:${c.bg};color:${c.color};letter-spacing:.4px;flex-shrink:0;white-space:nowrap">${c.label}</span>`;
+}
+
+async function cargarTrabajosDesdeSheet() {
+  try {
+    const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
+    const resp = await fetch(SCRIPT_URL + '?action=obtenerTrabajos', { redirect: 'follow' });
+    if (!resp.ok) return;
+    const data = await resp.json();
+    if (!data.rows || !data.rows.length) return;
+    const yaExistentes = new Set(state.orms.map(o => o['Codigo de ORM']));
+    data.rows.forEach(r => {
+      if (!yaExistentes.has(r['Codigo de ORM'])) {
+        r['PetitorioCorto'] = (r['Petitorio'] || '').slice(0, 110);
+        state.orms.push(r);
+        yaExistentes.add(r['Codigo de ORM']);
+      }
+    });
+    updateHome();
+    renderInspList('');
+    console.log('[trabajos] cargados:', data.rows.length);
+  } catch(e) {
+    console.warn('[trabajos] no se pudo cargar:', e.message);
+  }
+}
+
+async function mostrarPreviewImport() {
+  $('mo-import-preview').style.display = 'flex';
+  $('import-preview-body').innerHTML = '⏳ Consultando fuentes de datos…';
+  const btn = $('btn-confirmar-import');
+  btn.disabled = true; btn.style.opacity = '.5';
+  try {
+    const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
+    const resp = await fetch(SCRIPT_URL + '?action=previewTrabajos', { redirect: 'follow' });
+    const data = await resp.json();
+    if (!data.ok) throw new Error(data.error || 'Error en preview');
+    const { retenidas, protecciones, reubicaciones, nuevos, actualizados, sinCoord } = data;
+    $('import-preview-body').innerHTML = `
+      <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px">
+        <tr style="background:var(--g1);font-weight:600">
+          <th style="padding:8px;text-align:left">Fuente</th>
+          <th style="text-align:center">Leídos</th>
+          <th style="text-align:center">COBRA+PEND.</th>
+        </tr>
+        <tr><td style="padding:6px 8px">RETENIDAS</td><td style="text-align:center">${retenidas.total}</td><td style="text-align:center;font-weight:700;color:#92400e">${retenidas.validos}</td></tr>
+        <tr style="background:var(--g1)"><td style="padding:6px 8px">PROTECCIONES</td><td style="text-align:center">${protecciones.total}</td><td style="text-align:center;font-weight:700;color:#1e40af">${protecciones.validos}</td></tr>
+        <tr><td style="padding:6px 8px">REUBICACIONES</td><td style="text-align:center">${reubicaciones.total}</td><td style="text-align:center;font-weight:700;color:#065f46">${reubicaciones.validos}</td></tr>
+      </table>
+      <div style="background:var(--g1);border-radius:8px;padding:10px;font-size:13px;line-height:1.8">
+        <div>✅ <strong>Nuevos a importar:</strong> ${nuevos}</div>
+        <div>⏭️ <strong>Ya existentes (sin tocar):</strong> ${actualizados}</div>
+        <div>📍 <strong>Sin coord en Excel (buscando en BD Postes):</strong> ${sinCoord}</div>
+      </div>`;
+    btn.disabled = (nuevos === 0);
+    btn.style.opacity = nuevos === 0 ? '.5' : '1';
+  } catch(e) {
+    $('import-preview-body').innerHTML = `<span style="color:var(--rd)">❌ Error: ${e.message}</span>`;
+  }
+}
+
+async function confirmarImportacion() {
+  const btn = $('btn-confirmar-import');
+  btn.disabled = true; btn.textContent = '⏳ Importando…';
+  try {
+    const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
+    const resp = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action: 'importarTrabajos' }),
+      redirect: 'follow'
+    });
+    const data = await resp.json();
+    if (!data.ok) throw new Error(data.error || 'Error al importar');
+    $('mo-import-preview').style.display = 'none';
+    mostrarToast(`✅ ${data.importados} trabajos importados correctamente`, 'var(--gr)');
+    await cargarTrabajosDesdeSheet();
+  } catch(e) {
+    mostrarToast(`❌ Error: ${e.message}`, 'var(--rd)');
+    btn.disabled = false; btn.textContent = 'Aplicar importación';
+  }
+}
+
+// ===== MAPA OPERATIVO =====
+let _mapaInstance = null;
+let _mapaMarkers  = [];
+let _mapaFiltroActivo = 'all';
+let _mapaUserMarker   = null;
+
+function initMapa() {
+  const contenedor = document.getElementById('leaflet-map');
+  if (!contenedor) return;
+  if (!_mapaInstance) {
+    _mapaInstance = L.map('leaflet-map', { zoomControl: true }).setView([-12.046, -77.0428], 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors', maxZoom: 19
+    }).addTo(_mapaInstance);
+  }
+  renderMapaMarkers(_mapaFiltroActivo);
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(function(pos) {
+      const lat = pos.coords.latitude, lng = pos.coords.longitude;
+      if (_mapaUserMarker) _mapaInstance.removeLayer(_mapaUserMarker);
+      _mapaUserMarker = L.circleMarker([lat, lng], {
+        radius:10, fillColor:'#dc2626', color:'#fff', weight:3, opacity:1, fillOpacity:0.9
+      }).addTo(_mapaInstance).bindPopup('<b>📍 Tu ubicación actual</b>');
+      _mapaInstance.setView([lat, lng], 13);
+    }, function(){}, { enableHighAccuracy: true });
+  }
+  setTimeout(function(){ _mapaInstance.invalidateSize(); }, 200);
+}
+
+function renderMapaMarkers(filtro) {
+  if (!_mapaInstance) return;
+  _mapaFiltroActivo = filtro;
+  _mapaMarkers.forEach(function(m){ _mapaInstance.removeLayer(m); });
+  _mapaMarkers = [];
+  const colores = {
+    'ORM':'#f97316', 'RETENIDA':'#d97706',
+    'PROTECCION':'#2563eb', 'REUBICACION':'#059669', 'EJECUTADO':'#6b7280'
+  };
+  const ejecutadosCodes = new Set(state.executed.map(e => e.code));
+  state.orms.forEach(function(o) {
+    const tipo = o['TIPO_TRABAJO'] || 'ORM';
+    const esEjec = ejecutadosCodes.has(o['Codigo de ORM']);
+    const tipoDisplay = esEjec ? 'EJECUTADO' : tipo;
+    if (filtro !== 'all' && tipoDisplay !== filtro) return;
+    const coordStr = o['COORD_PROGRAMADA'] || o['Coordenadas'] || '';
+    if (!coordStr) return;
+    const partes = coordStr.split(',').map(function(x){ return parseFloat(x.trim()); });
+    if (partes.length < 2 || isNaN(partes[0]) || isNaN(partes[1])) return;
+    const color = colores[tipoDisplay] || '#374151';
+    const displayCode = o['IDENTIFICADOR'] || o['Codigo de ORM'] || '—';
+    const mapsUrl = `https://www.google.com/maps?q=${partes[0]},${partes[1]}`;
+    const marker = L.circleMarker([partes[0], partes[1]], {
+      radius:8, fillColor:color, color:'#fff', weight:2, opacity:1, fillOpacity:0.85
+    }).addTo(_mapaInstance);
+    marker.bindPopup(`
+      <div style="font-size:13px;min-width:180px">
+        <div style="font-weight:700;margin-bottom:4px">${displayCode}</div>
+        <div style="margin-bottom:4px">${_tipoBadge(tipo)}</div>
+        <div style="color:#555;margin-bottom:2px">📍 ${o['Distrito']||'—'}</div>
+        <div style="color:#555;margin-bottom:8px">Estado: ${o['Estado inspección']||'—'}</div>
+        <a href="${mapsUrl}" target="_blank"
+          style="display:block;text-align:center;background:#1d4ed8;color:white;padding:6px 10px;border-radius:6px;text-decoration:none;font-weight:600;font-size:12px">
+          🗺️ Abrir en Google Maps
+        </a>
+      </div>`);
+    _mapaMarkers.push(marker);
+  });
+}
+
+function filtrarMapa(btn, tipo) {
+  document.querySelectorAll('.mf-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  renderMapaMarkers(tipo);
 }
 
 function abrirNuevaOrm() {
@@ -1384,6 +1610,7 @@ function enterApp() {
   // Mostrar/ocultar secciones por rol
   $('admin-csv-section').style.display = state.role==='admin'?'block':'none';
   $('admin-pin-btn').style.display = state.role==='admin'?'block':'none';
+  $('admin-import-section').style.display = state.role==='admin'?'block':'none';
   $('bn-dash').style.display = state.role==='admin'?'flex':'none'; $('bn-dash').style.flexDirection='column';
   $('btn-nueva-orm-wrap').style.display = (state.role==='admin'||state.role==='inspector')?'block':'none';
   // Inspector: ve inspección y ejecución para ver sus inspeccionadas
@@ -1396,6 +1623,7 @@ function enterApp() {
   updateHome();
   goTo('sc-home');
   cargarOrmsManual();
+  cargarTrabajosDesdeSheet();
   // Postes: NO se precargan. Se consultan al vuelo via Apps Script (buscarPoste)
   // Sincronizar inmediatamente desde el Sheet
   sincronizarDesdeSheet();
@@ -1426,8 +1654,9 @@ function updateHome() {
     const o=state.orms.find(x=>x['Codigo de ORM']===i.code)||{};
     const done=state.executed.find(e=>e.code===i.code);
     const puedeEliminar = (state.role==='admin'||state.role==='inspector') && !done;
+    const displayCode = o['IDENTIFICADOR'] || i.code;
     hl.innerHTML+=`<div class="oc ${done?'ejec':tipoORM(o)}" onclick="abrirDetalle('${i.code}')">
-      <div class="oh"><div class="ocode">${i.code}</div><span class="obadge ${done?'b-ejec':'b-eje2'}">${done?'Ejecutado':'Inspeccionado'}</span></div>
+      <div class="oh"><div class="ocode">${displayCode}</div>${_tipoBadge(o['TIPO_TRABAJO'])}<span class="obadge ${done?'b-ejec':'b-eje2'}">${done?'Ejecutado':'Inspeccionado'}</span></div>
       <div class="osumi">Suministro: ${o['Suministro']||'—'}</div>
       <div class="opet">${(o['PetitorioCorto']||'—')}</div>
       <div class="ometa"><div class="odist">${o['Distrito']||'—'}</div><div class="ofecha">${i.fechaRep||i.fecha||'—'}</div></div>
@@ -1519,8 +1748,9 @@ function renderInspList(q) {
       onclick="event.stopPropagation();toggleSync('${o['Codigo de ORM']}')" title="${syncStateInsp==='subido'?'Subido a AppSheet — clic para desmarcar':'Pendiente de subir a AppSheet — clic para marcar'}">
       ${syncStateInsp==='subido'?'✅ Subido a Plus':'⏳ Pendiente subir a Plus'}
     </button>`;
+    const displayCode = o['IDENTIFICADOR'] || o['Codigo de ORM'] || '—';
     list.innerHTML+=`<div class="oc ${urg}" onclick="openForm('${o['Codigo de ORM']}')">
-      <div class="oh"><div class="ocode">${o['Codigo de ORM']||'—'}</div>${dias!==null?`<span class="obadge ${dias>180?'b-urg':'b-pend'}">${o['Estado inspección']}</span>`:`<span class="obadge b-pend">${o['Estado inspección']}</span>`}</div>
+      <div class="oh"><div class="ocode">${displayCode}</div>${_tipoBadge(o['TIPO_TRABAJO'])}${dias!==null?`<span class="obadge ${dias>180?'b-urg':'b-pend'}">${o['Estado inspección']}</span>`:`<span class="obadge b-pend">${o['Estado inspección']}</span>`}</div>
       <div class="osumi">Suministro: ${o['Suministro']||'—'} · Reg: ${fmtDate(o['Fecha registro'])} ${antiguedadBadge(o['Fecha registro'])}</div>
       <div class="opet">${o['PetitorioCorto']||'—'}</div>
       <div class="ometa"><div class="odist">${o['Distrito']||'—'}</div><div class="ofecha">Vence: ${fmtDate(o['Fecha vencimiento'])}</div></div>
@@ -1533,7 +1763,7 @@ function renderInspList(q) {
 function openForm(code) {
   const o=state.orms.find(x=>x['Codigo de ORM']===code); if(!o) return;
   state.currentOrm=o;
-  $('fd-code').textContent=o['Codigo de ORM'];
+  $('fd-code').textContent=o['IDENTIFICADOR'] || o['Codigo de ORM'];
   $('fd-dist').textContent=o['Distrito']||'—';
   $('fd-pet').textContent=o['Petitorio']||'—';
   $('fd-sumi').textContent=o['Suministro']||'—';
@@ -2313,7 +2543,9 @@ const _camposEjecEdit = [
   {num:1, storeKey:'Foto_despues1', label:'Foto después 1'},
   {num:2, storeKey:'Foto_despues2', label:'Foto después 2'},
   {num:3, storeKey:'Foto_despues3', label:'Foto después 3'},
-  {num:4, storeKey:'Foto_despues4', label:'Foto después 4'}
+  {num:4, storeKey:'Foto_despues4', label:'Foto después 4'},
+  {num:5, storeKey:'Foto_Plano',    label:'Foto Plano'},
+  {num:6, storeKey:'Foto_Boleta',   label:'Foto Boleta'}
 ];
 
 function renderFotosEditables(containerId, fotoUrls, campos, inputPrefix) {
@@ -2521,6 +2753,10 @@ function guardarSoloRegistro(code, insp, urls) {
     data: {
       code: str(code), suministro: str(orm['Suministro']), distrito: str(orm['Distrito']),
       petitorio: str(orm['Petitorio']), motivo: str(orm['Motivo']),
+      tipoTrabajo: str(orm['TIPO_TRABAJO'] || 'ORM'),
+      poste: str(orm['POSTE'] || ''),
+      ot: str(orm['OT'] || ''),
+      idTrabajo: str(orm['Codigo de ORM'] || ''),
       inspector: str(insp.inspector), fecha: str(insp.fecha), hora: str(insp.hora),
       fechaRep: str(insp.fechaRep), lcl: str(insp.lcl), apoyo: str(insp.apoyo),
       coords: str(insp.coords), incl: str(insp.incl), angulo: str(insp.angulo),
@@ -2629,11 +2865,12 @@ function renderEjecList(q) {
       onclick="event.stopPropagation();toggleSync('${code}')" title="${syncState==='subido'?'Subido a AppSheet de Plus — clic para desmarcar':'Pendiente de subir a AppSheet de Plus — clic para marcar como subido'}">
       ${syncState==='subido'?'✅ Subido a Plus':'⏳ Pendiente subir a Plus'}
     </button>`;
+    const displayCodeEjec = orm['IDENTIFICADOR'] || code;
     list.innerHTML+=`<div class="oc ${tipo}" onclick="openEjecForm('${code}')">
-      <div class="oh"><div class="ocode">${code}</div><span class="obadge ${tipoBadge}" style="${insp.grua==='DMS'?'background:var(--pul);color:var(--pu)':''}">${tipoLabel}</span></div>
+      <div class="oh"><div class="ocode">${displayCodeEjec}</div>${_tipoBadge(orm['TIPO_TRABAJO'])}<span class="obadge ${tipoBadge}" style="${insp.grua==='DMS'?'background:var(--pul);color:var(--pu)':''}">${tipoLabel}</span></div>
       <div class="osumi">Suministro: ${orm['Suministro']||'—'} · Inspector: ${insp.inspector||'—'}</div>
       <div class="opet">${orm['PetitorioCorto']||orm['Petitorio']?.slice(0,110)||'—'}</div>
-      <div class="ometa"><div class="odist">${orm['Distrito']||'—'}</div><div class="ofecha">Insp: ${insp.fecha||'—'}</div></div>
+      <div class="ometa"><div class="odist">${orm['Distrito']||'—'}</div><div class="ofecha">Insp: ${insp.fecha || orm['FECHA_INSPECCION'] || '—'}</div></div>
       ${syncBtn}
       ${mapsBtn}
       ${editBtnInsp}
@@ -2886,7 +3123,8 @@ function finalizarEjec() {
   // Recopilar fotos de ejecución
   const fotosEjec = [];
   [{slotId:'se-1',nombre:'Foto_despues1'},{slotId:'se-2',nombre:'Foto_despues2'},
-   {slotId:'se-3',nombre:'Foto_despues3'},{slotId:'se-4',nombre:'Foto_despues4'}
+   {slotId:'se-3',nombre:'Foto_despues3'},{slotId:'se-4',nombre:'Foto_despues4'},
+   {slotId:'se-5',nombre:'Foto_Plano'},{slotId:'se-6',nombre:'Foto_Boleta'}
   ].forEach(f => {
     const slot = document.getElementById(f.slotId);
     if (!slot) return;
@@ -2923,6 +3161,7 @@ function finalizarEjec() {
       data: {
         code,
         tecnico: ejec.tecnico,
+        tipoTrabajo: ((state.currentOrm||{})['TIPO_TRABAJO'] || 'ORM'),
         fecha: ejec.fecha,
         fechaRep: ejec.fechaRep,
         tipo: ejec.tipo,
