@@ -1,0 +1,13 @@
+## OAuth Google
+
+Cliente OAuth activo:
+
+ORM Cobra
+
+No usar:
+
+ORM Cobra Netlify
+
+Dominio autorizado:
+
+https://luiggirivas123.github.io
