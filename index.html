@@ -1684,15 +1684,22 @@ async function subirFotoDriveDirecto(codigoORM, nombre, base64Data, mimeType, to
     mimeType: mimeType || 'image/jpeg'
   });
 
-  // Construir multipart body
-  const body = '--' + boundary + '\r\n' +
-    'Content-Type: application/json\r\n\r\n' +
-    metadata + '\r\n' +
-    '--' + boundary + '\r\n' +
-    'Content-Type: ' + (mimeType || 'image/jpeg') + '\r\n' +
-    'Content-Transfer-Encoding: base64\r\n\r\n' +
-    base64Data + '\r\n' +
-    '--' + boundary + '--';
+  // Convertir base64 a bytes binarios
+  const byteChars = atob(base64Data);
+  const byteArr = new Uint8Array(byteChars.length);
+  for (let i = 0; i < byteChars.length; i++) byteArr[i] = byteChars.charCodeAt(i);
+  const blob = new Blob([byteArr], {type: mimeType || 'image/jpeg'});
+
+  // Construir multipart body con Blob (sin Content-Transfer-Encoding)
+  const body = new Blob([
+    '--' + boundary + '\r\n',
+    'Content-Type: application/json\r\n\r\n',
+    metadata + '\r\n',
+    '--' + boundary + '\r\n',
+    'Content-Type: ' + (mimeType || 'image/jpeg') + '\r\n\r\n',
+    blob,
+    '\r\n--' + boundary + '--'
+  ], {type: 'multipart/related; boundary=' + boundary});
 
   console.log('[subir] Subiendo archivo:', nombre + '.jpg', '| inspFolderId:', inspFolderId);
 
@@ -3017,25 +3024,28 @@ function confirmarEliminar() {
   mostrarToast('✓ Inspección eliminada — ORM vuelve a pendiente', 'var(--gr)');
 }
 
-async function eliminarDelSheet(code) {
-  // Buscar y eliminar fila en Inspecciones
-  try {
-    const url = 'https://sheets.googleapis.com/v4/spreadsheets/1jYHm5nx6MzXzVppG-drTGZdTD7S8UIrC7Vl2iTjmlVQ/values/Inspecciones!A:A?key=AIzaSyCSOb4VzWkwke0QimyQK3XsW7I5b_igkRI';
-    const res = await fetch(url);
-    const data = await res.json();
-    if (!data.values) return;
-    
-    // Encontrar la fila
-    const rowIdx = data.values.findIndex(r => r[0] === code);
-    if (rowIdx < 0) return;
-    
-    // Limpiar la fila (no podemos eliminar filas con API key sola, necesita OAuth)
-    // En su lugar, marcamos como eliminada
-    const clearUrl = 'https://sheets.googleapis.com/v4/spreadsheets/1jYHm5nx6MzXzVppG-drTGZdTD7S8UIrC7Vl2iTjmlVQ/values/Inspecciones!A' + (rowIdx+1) + ':AE' + (rowIdx+1) + ':clear?key=AIzaSyCSOb4VzWkwke0QimyQK3XsW7I5b_igkRI';
-    await fetch(clearUrl, { method: 'POST', headers: {'Content-Type':'application/json'} });
-  } catch(e) {
-    console.warn('Error eliminando del Sheet:', e);
-  }
+function eliminarDelSheet(code) {
+  const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
+  const payload = { action: 'eliminarRegistro', code: code };
+  console.log('[eliminar] URL:', SCRIPT_URL);
+  console.log('[eliminar] payload:', JSON.stringify(payload));
+
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    headers: {'Content-Type': 'text/plain;charset=utf-8'},
+    body: JSON.stringify(payload),
+    redirect: 'follow'
+  })
+  .then(r => {
+    console.log('[eliminar] response.status:', r.status, '| ok:', r.ok);
+    return r.json();
+  })
+  .then(function(res) {
+    console.log('[eliminar] respuesta JSON:', JSON.stringify(res));
+  })
+  .catch(function(e) {
+    console.error('[eliminar] ERROR:', e);
+  });
 }
 
 
