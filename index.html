@@ -1750,6 +1750,7 @@ async function obtenerOCrearCarpeta(nombre, parentId, token) {
   // 1. Antes de buscar
   console.log('[carpeta] BUSCANDO:', nombre, '| parentId:', parentId);
 
+
   const searchResp = await fetch(
     "https://www.googleapis.com/drive/v3/files?q=" +
     encodeURIComponent("name='" + nombre + "' and '" + parentId + "' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false") +
@@ -1780,6 +1781,7 @@ async function obtenerOCrearCarpeta(nombre, parentId, token) {
 
   // 4. Antes de crear
   console.log('[carpeta] NO EXISTE, CREANDO:', nombre, '| parentId:', parentId);
+
 
   const createResp = await fetch(
     'https://www.googleapis.com/drive/v3/files',
