@@ -684,26 +684,22 @@ function mapearColumnasTrabajos_(rows, tipo, archivoOrigen) {
   var esReubicacion = tipo.toUpperCase().indexOf('REUBICAC') !== -1;
   archivoOrigen = String(archivoOrigen || '');
 
-  if (esReubicacion && rows.length > 0) {
-    Logger.log('COLUMNAS=' + JSON.stringify(Object.keys(rows[0] || {})));
-  }
-
   return rows.map(function(r) {
     var poste, distrito, sed, eecc, subtipo, prioridad,
         identificador, coordFinal, estadoCoord, jsonExtra, coordRaw;
 
     if (esReubicacion) {
-      Logger.log('KEYS=' + JSON.stringify(Object.keys(r)));
-      Logger.log('OT_RAW=' + r['Número de orden de trabajo']);
-      Logger.log('OT_KEYS=' + Object.keys(r).join('|'));
-      poste         = r['# POSTE']            || r['POSTE']    || '';
-      distrito      = r['DISTRIRO']           || r['DISTRITO'] || ''; // typo en Excel original
-      sed           = r['SED']                || '';
-      eecc          = r['EECC']               || '';
-      subtipo       = r['CLASIF DEFICIENCIA'] || r['CLASIF']   || '';
-      prioridad     = r['PRIORIDAD']          || '';
-      identificador = String(r['Número de orden de trabajo'] || '').trim();
-      Logger.log('OT=' + String(r['Número de orden de trabajo'] || ''));
+      identificador = String(
+        r['Numero de orden de trabajo'] ||
+        r['Número de orden de trabajo'] ||
+        ''
+      ).trim();
+      poste         = r['# POSTE']  || r['POSTE']    || '';
+      distrito      = r['DISTRITO'] || '';
+      sed           = r['SED']      || '';
+      eecc          = r['EECC']     || '';
+      subtipo       = r['CLASIF DEFICIENCIA'] || r['CLASIF'] || '';
+      prioridad     = r['PRIORIDAD'] || '';
 
       var latDMS = String(r['LATITUD']  || r['LAT']  || '').trim();
       var lonDMS = String(r['LONGITUD'] || r['LON']  || '').trim();
