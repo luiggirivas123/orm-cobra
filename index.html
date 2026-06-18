@@ -586,6 +586,31 @@ html {
 
   <div class="sec-title">Últimas ORMs cargadas</div>
   <div class="lc" id="home-list"></div>
+  <div id="btn-nueva-orm-wrap" style="display:none;padding:0 16px 16px">
+    <button onclick="abrirNuevaOrm()" style="width:100%;padding:12px;background:var(--or);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer">➕ Nueva ORM manual</button>
+  </div>
+</div>
+
+<div class="mo" id="mo-nueva-orm">
+  <div class="mo-box">
+    <div class="mo-title">Nueva ORM Manual</div>
+    <div class="mo-body">
+      <label class="flbl">Código ORM *</label>
+      <input class="finp" id="nw-code" placeholder="Ej: 2041858100" type="text">
+      <label class="flbl">Suministro</label>
+      <input class="finp" id="nw-sumi" placeholder="Ej: 12345678" type="text">
+      <label class="flbl">Distrito *</label>
+      <input class="finp" id="nw-dist" placeholder="Ej: Miraflores" type="text">
+      <label class="flbl">Petitorio *</label>
+      <input class="finp" id="nw-pet" placeholder="Descripción del trabajo" type="text">
+      <label class="flbl">Motivo</label>
+      <input class="finp" id="nw-mot" placeholder="Motivo de la ORM" type="text">
+    </div>
+    <div class="mo-btns">
+      <button class="mbtn" style="background:var(--g3);color:var(--g7)" onclick="closeMo('mo-nueva-orm')">Cancelar</button>
+      <button class="mbtn" style="background:var(--or)" id="btn-guardar-orm" onclick="guardarNuevaOrm()">Guardar ORM</button>
+    </div>
+  </div>
 </div>
 <div class="bn">
   <button class="ni on" onclick="goTo('sc-home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>Inicio</button>
@@ -1179,6 +1204,86 @@ function save() {
   _store.setItem('executed', JSON.stringify(state.executed));
 }
 
+async function cargarOrmsManual() {
+  try {
+    const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
+    const resp = await fetch(SCRIPT_URL + '?action=obtenerOrmsManual', { redirect: 'follow' });
+    if (!resp.ok) return;
+    const data = await resp.json();
+    if (!data.rows || !data.rows.length) return;
+    const yaExistentes = new Set(state.orms.map(o => o['Codigo de ORM']));
+    data.rows.forEach(r => {
+      if (!yaExistentes.has(r['Codigo de ORM'])) {
+        r['PetitorioCorto'] = (r['Petitorio'] || '').slice(0, 110);
+        state.orms.push(r);
+      }
+    });
+    updateHome();
+    renderInspList('');
+    console.log('[orm-manual] cargadas:', data.rows.length);
+  } catch(e) {
+    console.warn('[orm-manual] no se pudo cargar:', e.message);
+  }
+}
+
+function abrirNuevaOrm() {
+  ['nw-code','nw-sumi','nw-dist','nw-pet','nw-mot'].forEach(id => $(id).value = '');
+  $('mo-nueva-orm').classList.add('on');
+}
+
+async function guardarNuevaOrm() {
+  const code     = ($('nw-code').value || '').trim().toUpperCase();
+  const distrito = ($('nw-dist').value || '').trim();
+  const petitorio= ($('nw-pet').value  || '').trim();
+
+  if (!code)      { mostrarToast('⚠️ El Código ORM es obligatorio', 'var(--rd)'); return; }
+  if (!distrito)  { mostrarToast('⚠️ El Distrito es obligatorio',   'var(--rd)'); return; }
+  if (!petitorio) { mostrarToast('⚠️ El Petitorio es obligatorio',  'var(--rd)'); return; }
+
+  if (state.orms.find(o => (o['Codigo de ORM']||'').trim().toUpperCase() === code)) {
+    mostrarToast('⚠️ Ya existe una ORM con ese código', 'var(--rd)'); return;
+  }
+
+  const btn = $('btn-guardar-orm');
+  btn.disabled = true;
+  btn.textContent = 'Guardando…';
+
+  const nuevaOrm = {
+    'Codigo de ORM':     code,
+    'Suministro':        ($('nw-sumi').value || '').trim(),
+    'Distrito':          distrito.toUpperCase(),
+    'Petitorio':         petitorio,
+    'PetitorioCorto':    petitorio.slice(0, 110),
+    'Motivo':            ($('nw-mot').value  || '').trim(),
+    'Estado inspección': 'Asignado',
+    'Origen':            'MANUAL',
+    'Fecha registro':    today()
+  };
+
+  try {
+    const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
+    const resp = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      redirect: 'follow',
+      body: JSON.stringify({ action: 'guardarOrmManual', data: nuevaOrm })
+    });
+    const txt = await resp.text();
+    console.log('[orm-manual] respuesta Apps Script:', txt);
+  } catch(e) {
+    console.warn('[orm-manual] error al guardar en Sheets:', e.message);
+    mostrarToast('⚠️ ORM creada localmente, sin sincronizar', 'var(--yw)');
+  }
+
+  state.orms.push(nuevaOrm);
+  closeMo('mo-nueva-orm');
+  updateHome();
+  renderInspList('');
+  mostrarToast('✓ ORM ' + code + ' creada — aparece en Pendientes', 'var(--gr)');
+  btn.disabled = false;
+  btn.textContent = 'Guardar ORM';
+}
+
 // ===== NAVEGACIÓN =====
 function goTo(id) {
   document.querySelectorAll('.sc').forEach(s=>s.classList.remove('on'));
@@ -1237,6 +1342,7 @@ function enterApp() {
   $('admin-csv-section').style.display = state.role==='admin'?'block':'none';
   $('admin-pin-btn').style.display = state.role==='admin'?'block':'none';
   $('bn-dash').style.display = state.role==='admin'?'flex':'none'; $('bn-dash').style.flexDirection='column';
+  $('btn-nueva-orm-wrap').style.display = (state.role==='admin'||state.role==='inspector')?'block':'none';
   // Inspector: ve inspección y ejecución para ver sus inspeccionadas
   // Técnico: ve solo ejecución (ejecutados)
   if(state.role==='tecnico') {
@@ -1246,6 +1352,7 @@ function enterApp() {
   }
   updateHome();
   goTo('sc-home');
+  cargarOrmsManual();
   loadPolesFromSheet();
   // Sincronizar inmediatamente desde el Sheet
   sincronizarDesdeSheet();
