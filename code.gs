@@ -684,6 +684,10 @@ function mapearColumnasTrabajos_(rows, tipo, archivoOrigen) {
   var esReubicacion = tipo.toUpperCase().indexOf('REUBICAC') !== -1;
   archivoOrigen = String(archivoOrigen || '');
 
+  if (esReubicacion && rows.length > 0) {
+    Logger.log('COLUMNAS=' + JSON.stringify(Object.keys(rows[0] || {})));
+  }
+
   return rows.map(function(r) {
     var poste, distrito, sed, eecc, subtipo, prioridad,
         identificador, coordFinal, estadoCoord, jsonExtra, coordRaw;
@@ -695,12 +699,8 @@ function mapearColumnasTrabajos_(rows, tipo, archivoOrigen) {
       eecc          = r['EECC']               || '';
       subtipo       = r['CLASIF DEFICIENCIA'] || r['CLASIF']   || '';
       prioridad     = r['PRIORIDAD']          || '';
-     identificador =
-    r['IDENTIFICADOR']
- || r['ID']
- || r['Número de orden de trabajo']
- || r['_EMPTY']
- || '';
+      identificador = String(r['Número de orden de trabajo'] || '').trim();
+      Logger.log('OT=' + String(r['Número de orden de trabajo'] || ''));
 
       var latDMS = String(r['LATITUD']  || r['LAT']  || '').trim();
       var lonDMS = String(r['LONGITUD'] || r['LON']  || '').trim();
@@ -760,7 +760,7 @@ function mapearColumnasTrabajos_(rows, tipo, archivoOrigen) {
       PRIORIDAD:        String(prioridad).trim(),
       JSON_EXTRA:       jsonExtra
     };
-  }).filter(function(r) { return r.IDENTIFICADOR !== ''; });
+  }).filter(function(r) { return String(r.IDENTIFICADOR || '').trim() !== ''; });
 }
 
 // ── 6: Limpiar coord decimal (quitar comillas envolventes) ────────
