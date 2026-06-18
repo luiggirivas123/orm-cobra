@@ -2438,19 +2438,56 @@ function finalizarEjec() {
       fotosEjec.push({ nombre: f.nombre, base64: b64, mime });
     }
   });
-  console.log('Fotos ejecución a subir:', fotosEjec.length);
+  console.log('[ejec] Fotos a subir:', fotosEjec.length);
 
   state.executed.push(ejec); save();
 
   const btnFin = document.querySelector('.bsv.gr-btn');
   if (btnFin) { btnFin.disabled = true; btnFin.textContent = '⏳ Finalizando...'; }
 
-  if (typeof google === 'undefined' || !google.script || !google.script.run || fotosEjec.length === 0) {
-    if (typeof google !== 'undefined' && google.script && google.script.run) {
-      google.script.run.guardarRegistro({ tipo:'ejecucion', data:{ code, tecnico:ejec.tecnico, fecha:ejec.fecha, fechaRep:ejec.fechaRep, tipo:ejec.tipo, det:ejec.det, fotos:{} }});
-    }
-    if (btnFin) { btnFin.disabled=false; btnFin.textContent='👍 Finalizar ejecución'; }
-    $('mo-ejec').classList.add('on'); updateHome(); return;
+  function guardarEjecucionFetch(urlsEjec) {
+    const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
+    const payload = {
+      action: 'guardarRegistro',
+      tipo: 'ejecucion',
+      data: {
+        code,
+        tecnico: ejec.tecnico,
+        fecha: ejec.fecha,
+        fechaRep: ejec.fechaRep,
+        tipo: ejec.tipo,
+        det: ejec.det,
+        fotos: urlsEjec || {}
+      }
+    };
+    console.log('[ejec] URL:', SCRIPT_URL);
+    console.log('[ejec] payload:', JSON.stringify(payload));
+
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify(payload),
+      redirect: 'follow'
+    })
+    .then(r => {
+      console.log('[ejec] response.status:', r.status, '| ok:', r.ok);
+      return r.json();
+    })
+    .then(function(res) {
+      console.log('[ejec] respuesta JSON:', JSON.stringify(res));
+      if (btnFin) { btnFin.disabled=false; btnFin.textContent='👍 Finalizar ejecución'; }
+      $('mo-ejec').classList.add('on'); updateHome();
+    })
+    .catch(function(e) {
+      console.error('[ejec] ERROR:', e);
+      if (btnFin) { btnFin.disabled=false; btnFin.textContent='👍 Finalizar ejecución'; }
+      $('mo-ejec').classList.add('on'); updateHome();
+    });
+  }
+
+  if (fotosEjec.length === 0) {
+    guardarEjecucionFetch({});
+    return;
   }
 
   const urlsEjec = {}; let eIdx = 0;
@@ -2458,18 +2495,24 @@ function finalizarEjec() {
     if (eIdx >= fotosEjec.length) {
       const eI = state.executed.findIndex(e => e.code === code);
       if (eI >= 0) { state.executed[eI].fotoUrls = urlsEjec; save(); }
-      google.script.run
-        .withSuccessHandler(function() { if(btnFin){btnFin.disabled=false;btnFin.textContent='👍 Finalizar ejecución';} $('mo-ejec').classList.add('on'); updateHome(); })
-        .withFailureHandler(function() { if(btnFin){btnFin.disabled=false;btnFin.textContent='👍 Finalizar ejecución';} $('mo-ejec').classList.add('on'); updateHome(); })
-        .guardarRegistro({ tipo:'ejecucion', data:{ code, tecnico:ejec.tecnico, fecha:ejec.fecha, fechaRep:ejec.fechaRep, tipo:ejec.tipo, det:ejec.det, fotos:urlsEjec }});
+      guardarEjecucionFetch(urlsEjec);
       return;
     }
     const foto = fotosEjec[eIdx];
     if (btnFin) btnFin.textContent = `⏳ Subiendo foto ${eIdx+1}/${fotosEjec.length}...`;
-    google.script.run
-      .withSuccessHandler(function(r) { if(r&&r.url) urlsEjec[foto.nombre]=r.url; eIdx++; subirSiguienteEjec(); })
-      .withFailureHandler(function() { eIdx++; subirSiguienteEjec(); })
-      .subirUnaFoto(code, 'Ejecucion', foto.nombre, foto.base64, foto.mime);
+    comprimirFoto(foto.base64, foto.mime, function(b64comp) {
+      subirFotoDriveDirecto(code, foto.nombre, b64comp, foto.mime,
+        _store.getItem('google_access_token'), '1z5BGDGFAh7PwLHRmE73WWCDDZ-l0m9AT')
+        .then(function(url) {
+          if (url) { urlsEjec[foto.nombre] = url; console.log('[ejec] ✅ Foto subida:', foto.nombre); }
+          else { console.warn('[ejec] ❌ Foto no subida:', foto.nombre); }
+          eIdx++; subirSiguienteEjec();
+        })
+        .catch(function(e) {
+          console.error('[ejec] ❌ Error foto:', foto.nombre, e);
+          eIdx++; subirSiguienteEjec();
+        });
+    });
   }
   subirSiguienteEjec();
 }
