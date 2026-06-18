@@ -1168,18 +1168,38 @@ function save() {
 
 // ===== NAVEGACIÓN =====
 function goTo(id) {
+  // 1. Ocultar todas las pantallas
+  document.querySelectorAll('.sc').forEach(function(s){ s.classList.remove('on'); });
+  // 2. Mostrar la pantalla destino
+  var el = document.getElementById(id);
+  if (!el) { 
+    // Fallback: mostrar home si no se encuentra la pantalla
+    var home = document.getElementById('sc-home');
+    if (home) home.classList.add('on');
+    return; 
+  }
+  el.classList.add('on');
+  try { window.scrollTo(0,0); } catch(e) {}
+  // 3. Inicializar contenido (cada función en su propio try/catch)
+  if (id === 'sc-home') { try { updateHome(); } catch(e) { console.warn('updateHome:', e); } }
+  if (id === 'sc-insp') { 
+    try { renderDistTabs(); } catch(e) { console.warn('renderDistTabs:', e); }
+    try { renderInspList(''); } catch(e) { console.warn('renderInspList:', e); }
+  }
+  if (id === 'sc-ejec') { try { renderEjecList(''); } catch(e) { console.warn('renderEjecList:', e); } }
+  if (id === 'sc-dash') { try { renderDash(); } catch(e) { console.warn('renderDash:', e); } }
+  if (id === 'sc-pins') { try { renderPinsList(); } catch(e) { console.warn('renderPinsList:', e); } }
+  if (id === 'sc-mapa') { 
+    setTimeout(function(){ 
+      try { inicializarMapa(); cargarPinesEnMapa(); } catch(e) { console.warn('mapa:', e); }
+    }, 300); 
+  }
+  // Actualizar nav bar activo
   try {
-    document.querySelectorAll('.sc').forEach(function(s){ s.classList.remove('on'); });
-    var el = document.getElementById(id);
-    if (!el) { console.warn('goTo: elemento no encontrado:', id); return; }
-    el.classList.add('on');
-    try { window.scrollTo(0,0); } catch(e) {}
-    if (id==='sc-home') updateHome();
-    if (id==='sc-insp') { renderDistTabs(); renderInspList(''); }
-    if (id==='sc-ejec') renderEjecList('');
-    if (id==='sc-dash') renderDash();
-    if (id==='sc-mapa') { setTimeout(function(){ if(typeof inicializarMapa==='function'){ inicializarMapa(); cargarPinesEnMapa(); } }, 250); }
-  } catch(err) { console.error('goTo error en', id, ':', err); }
+    var navMap = {'sc-home':'bn-home','sc-insp':'bn-insp','sc-ejec':'bn-ejec','sc-mapa':'bn-mapa','sc-dash':'bn-dash'};
+    document.querySelectorAll('.ni').forEach(function(b){ b.classList.remove('on'); });
+    if (navMap[id]) { var nb = document.getElementById(navMap[id]); if(nb) nb.classList.add('on'); }
+  } catch(e) {}
 }
 
 // ===== LOGIN =====
