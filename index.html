@@ -273,6 +273,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 /* ELIMINAR INSPECCIÓN */
 .btn-eliminar{background:var(--rdl);color:var(--rd);border:2px solid var(--rd);border-radius:var(--rsm);padding:12px 16px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;margin-top:10px;width:100%}
 .btn-eliminar:active{background:var(--rd);color:white}
+.btn-corregir{background:var(--bll);color:var(--bl);border:2px solid var(--bl);border-radius:var(--rsm);padding:12px 16px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;margin-top:10px;width:100%}
+.btn-corregir:active{background:var(--bl);color:white}
 /* MODAL CONFIRMACIÓN */
 .mo-confirm{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;padding:20px}
 .mo-confirm.on{display:flex}
@@ -1164,7 +1166,7 @@ let state = {
   executed: JSON.parse(_store.getItem('executed')||'[]'),
   currentOrm: null,
   togIncl: 'N', togDms: 'N', gruaVal: 'Si', cntAcm: 0,
-  ejecFilter: 'all', dashPeriod: 'dia'
+  ejecFilter: 'all', dashPeriod: 'dia', _editMode: null, _editCode: null
 };
 
 // ===== HELPERS =====
@@ -1388,6 +1390,8 @@ function updateHome() {
       <div class="osumi">Suministro: ${o['Suministro']||'—'}</div>
       <div class="opet">${(o['PetitorioCorto']||'—')}</div>
       <div class="ometa"><div class="odist">${o['Distrito']||'—'}</div><div class="ofecha">${i.fechaRep||i.fecha||'—'}</div></div>
+      <button class="btn-corregir" onclick="event.stopPropagation();editarInsp('${i.code}')">✏️ Corregir inspección</button>
+      ${done?`<button class="btn-corregir" onclick="event.stopPropagation();editarEjec('${i.code}')">✏️ Corregir ejecución</button>`:''}
       ${puedeEliminar?`<button class="btn-eliminar" onclick="event.stopPropagation();pedirEliminar('${i.code}')">🗑️ Eliminar inspección</button>`:''}
     </div>`;
   });
@@ -1651,8 +1655,19 @@ function guardar() {
     {inputId:'pi-8', nombre:'Conformidad_cliente'}
   ];
 
+  // Preservar fotos existentes si estamos editando
+  const fotosExistentes = state._editMode === 'insp'
+    ? (state.inspected.find(i => i.code === code) || {}).fotoUrls || {}
+    : {};
+
   // Guardar en estado local
-  state.inspected.push(insp); save();
+  if (state._editMode === 'insp') {
+    const idx = state.inspected.findIndex(i => i.code === code);
+    if (idx >= 0) state.inspected[idx] = insp; else state.inspected.push(insp);
+  } else {
+    state.inspected.push(insp);
+  }
+  save();
 
   // Leer cada foto con FileReader y convertir a base64
   const fotosParaSubir = [];
@@ -1666,8 +1681,8 @@ function guardar() {
   });
 
   if (pendientes === 0) {
-    // Sin fotos, guardar solo registro
-    guardarSoloRegistro(code, insp, {});
+    // Sin fotos nuevas: conservar URLs anteriores si estamos editando
+    guardarSoloRegistro(code, insp, fotosExistentes);
     return;
   }
 
@@ -1742,9 +1757,11 @@ function subirFotosUnaAUna(code, insp, fotos, btnSave) {
 
   function siguiente() {
     if (idx >= fotos.length) {
+      // Merge: fotos nuevas sobreescriben solo las subidas, conservan el resto
+      const urlsFinales = Object.assign({}, fotosExistentes, urlsAcum);
       const iIdx = state.inspected.findIndex(i => i.code === code);
-      if (iIdx >= 0) { state.inspected[iIdx].fotoUrls = urlsAcum; save(); }
-      guardarSoloRegistro(code, insp, urlsAcum);
+      if (iIdx >= 0) { state.inspected[iIdx].fotoUrls = urlsFinales; save(); }
+      guardarSoloRegistro(code, insp, urlsFinales);
       if (btnSave) { btnSave.disabled=false; btnSave.textContent='💾 Guardar inspección'; }
       return;
     }
@@ -2219,12 +2236,109 @@ async function subirFotoDriveAPI(codigoORM, nombreFoto, base64Data, mimeType) {
   }
 }
 
+function editarInsp(code) {
+  const insp = state.inspected.find(i => i.code === code);
+  const o    = state.orms.find(x => x['Codigo de ORM'] === code);
+  if (!insp || !o) { mostrarToast('No se encontró la inspección', 'var(--rd)'); return; }
+
+  state._editMode = 'insp';
+  state._editCode = code;
+  state.currentOrm = o;
+
+  $('fd-code').textContent    = o['Codigo de ORM'];
+  $('fd-dist').textContent    = o['Distrito']||'—';
+  $('fd-pet').textContent     = o['Petitorio']||'—';
+  $('fd-sumi').textContent    = o['Suministro']||'—';
+  $('fd-sed').textContent     = o['SED 01']||'—';
+  $('fd-alim').textContent    = o['ALIM 01']||'—';
+  $('fd-motivo').textContent  = o['Motivo']||'—';
+  $('fd-freg').textContent    = o['Fecha registro']||'—';
+  $('fd-nombre').textContent  = o['Nombre']||'—';
+  $('fd-dom').textContent     = o['Domicilio']||'—';
+  $('form-code-badge').textContent = o['Codigo de ORM'];
+
+  $('f-fecha').value     = insp.fecha     || today();
+  $('f-hora').value      = insp.hora      || '';
+  $('f-fecha-rep').value = insp.fechaRep  || today();
+  $('f-lcl').value       = insp.lcl       || code;
+  $('f-apoyo').value     = insp.apoyo     || '';
+  $('f-coords').value    = insp.coords    || '';
+  $('f-dhlp').value      = insp.dhlp      || '';
+  $('f-dhlc').value      = insp.dhlc      || '';
+  $('f-dvlp').value      = insp.dvlp      || '';
+  $('f-det').value       = insp.det       || '';
+  state.cntAcm = insp.acm || 0;
+  $('cnt-acm').textContent = state.cntAcm;
+  setTog('incl', insp.incl || 'N');
+  setTog('dms',  insp.dms  || 'N');
+  setGrua(insp.grua || 'Si');
+
+  for(let i=1;i<=8;i++){
+    const s=$('sl-'+i); s.classList.remove('ok');
+    delete s.dataset.b64; delete s.dataset.mime;
+    const img=s.querySelector('img');if(img)img.remove();
+    const b=s.querySelector('.prm');if(b)b.remove();
+    $('pi-'+i).value='';
+  }
+
+  const btnSave = document.querySelector('#sc-form .bsv');
+  if (btnSave) btnSave.textContent = '💾 Actualizar inspección';
+
+  goTo('sc-form');
+}
+
+function editarEjec(code) {
+  const ejec = state.executed.find(e => e.code === code);
+  const insp  = state.inspected.find(i => i.code === code)||{};
+  const o     = state.orms.find(x => x['Codigo de ORM'] === code)||{};
+  if (!ejec) { mostrarToast('No se encontró la ejecución', 'var(--rd)'); return; }
+
+  state._editMode = 'ejec';
+  state._editCode = code;
+  state.currentOrm = o;
+  state.currentOrm._code = code;
+
+  $('ef-code').textContent       = code;
+  $('ef-code-badge').textContent = code;
+  $('ef-dist').textContent       = o['Distrito']||'—';
+  $('ef-det-prog').textContent   = insp.det||o['Petitorio']||'—';
+  $('ef-grua').textContent       = insp.grua||'—';
+  $('ef-dms').textContent        = insp.dms==='Y'?'Sí':'No';
+  $('ef-acm').textContent        = insp.acm||0;
+  $('ef-inspector').textContent  = insp.inspector||'—';
+  $('ef-fecha-insp').textContent = insp.fecha||'—';
+  $('ef-detalle-insp').textContent = insp.det||'—';
+  const ec_val = insp.coords||o['Coordenadas']||'';
+  $('ef-coords').textContent = ec_val||'—';
+  $('ef-maps-btn').style.display = ec_val?'flex':'none';
+
+  $('ef-fecha').value     = ejec.fecha    || today();
+  $('ef-fecha-rep').value = ejec.fechaRep || today();
+  $('ef-tipo').value      = ejec.tipo     || '';
+  $('ef-detalle').value   = ejec.det      || '';
+
+  for(let i=1;i<=4;i++){
+    const s=$('se-'+i); s.classList.remove('ok');
+    delete s.dataset.b64; delete s.dataset.mime;
+    const img=s.querySelector('img');if(img)img.remove();
+    const b=s.querySelector('.prm');if(b)b.remove();
+    $('pe-'+i).value='';
+  }
+  $('ef-fotos-insp-grid').innerHTML = '<div style="text-align:center;color:var(--g6);font-size:12px;padding:12px;grid-column:1/-1">⏳ Cargando fotos del inspector...</div>';
+
+  const btnFin = document.querySelector('.bsv.gr-btn');
+  if (btnFin) btnFin.textContent = '💾 Actualizar ejecución';
+
+  goTo('sc-ejec-form');
+  cargarInspeccionDesdeSheet(code);
+}
+
 function guardarSoloRegistro(code, insp, urls) {
   const orm = state.currentOrm || {};
   const str = v => (v !== null && v !== undefined) ? String(v) : '';
 
   const payload = {
-    action: 'guardarInspeccion',
+    action: state._editMode === 'insp' ? 'actualizarInspeccion' : 'guardarInspeccion',
     tipo: 'inspeccion',
     data: {
       code: str(code), suministro: str(orm['Suministro']), distrito: str(orm['Distrito']),
@@ -2255,10 +2369,16 @@ function guardarSoloRegistro(code, insp, urls) {
   .then(function(res) {
     console.log('[guardar] respuesta JSON:', JSON.stringify(res));
     console.log('Registro guardado:', res.ok ? '✅' : '❌', res);
+    state._editMode = null; state._editCode = null;
+    const btnSave = document.querySelector('#sc-form .bsv');
+    if (btnSave) { btnSave.disabled=false; btnSave.textContent='💾 Guardar inspección'; }
     mostrarModalInsp(insp);
   })
   .catch(function(e) {
     console.error('[guardar] ERROR completo:', e);
+    state._editMode = null; state._editCode = null;
+    const btnSave = document.querySelector('#sc-form .bsv');
+    if (btnSave) { btnSave.disabled=false; btnSave.textContent='💾 Guardar inspección'; }
     mostrarModalInsp(insp);
   });
 }
@@ -2319,6 +2439,8 @@ function renderEjecList(q) {
     const coords_e = insp.coords || orm['Coordenadas'] || '';
     const mapsBtn = coords_e ? `<button class="maps-btn" onclick="event.stopPropagation();openMaps('${coords_e}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Abrir en Google Maps</button>` : '';
     const delBtnEjec = (state.role==='admin'||state.role==='inspector') ? `<button class="btn-eliminar" onclick="event.stopPropagation();pedirEliminar('${code}')">🗑️ Eliminar inspección</button>` : '';
+    const editBtnInsp = `<button class="btn-corregir" onclick="event.stopPropagation();editarInsp('${code}')">✏️ Corregir inspección</button>`;
+    const editBtnEjec = state.executed.find(e=>e.code===code) ? `<button class="btn-corregir" onclick="event.stopPropagation();editarEjec('${code}')">✏️ Corregir ejecución</button>` : '';
     const syncState = getSyncState(code);
     const syncBtn = `<button class="sync-badge ${syncState==='subido'?'sync-subido':'sync-pendiente'}" 
       onclick="event.stopPropagation();toggleSync('${code}')" title="${syncState==='subido'?'Subido a AppSheet de Plus — clic para desmarcar':'Pendiente de subir a AppSheet de Plus — clic para marcar como subido'}">
@@ -2331,6 +2453,8 @@ function renderEjecList(q) {
       <div class="ometa"><div class="odist">${orm['Distrito']||'—'}</div><div class="ofecha">Insp: ${insp.fecha||'—'}</div></div>
       ${syncBtn}
       ${mapsBtn}
+      ${editBtnInsp}
+      ${editBtnEjec}
       ${delBtnEjec}
     </div>`;
   });
@@ -2591,7 +2715,18 @@ function finalizarEjec() {
   });
   console.log('[ejec] Fotos a subir:', fotosEjec.length);
 
-  state.executed.push(ejec); save();
+  // Preservar fotos existentes si estamos editando
+  const fotosEjecExistentes = state._editMode === 'ejec'
+    ? (state.executed.find(e => e.code === code) || {}).fotoUrls || {}
+    : {};
+
+  if (state._editMode === 'ejec') {
+    const idx = state.executed.findIndex(e => e.code === code);
+    if (idx >= 0) state.executed[idx] = ejec; else state.executed.push(ejec);
+  } else {
+    state.executed.push(ejec);
+  }
+  save();
 
   const btnFin = document.querySelector('.bsv.gr-btn');
   if (btnFin) { btnFin.disabled = true; btnFin.textContent = '⏳ Finalizando...'; }
@@ -2599,7 +2734,7 @@ function finalizarEjec() {
   function guardarEjecucionFetch(urlsEjec) {
     const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
     const payload = {
-      action: 'guardarRegistro',
+      action: state._editMode === 'ejec' ? 'actualizarEjecucion' : 'guardarRegistro',
       tipo: 'ejecucion',
       data: {
         code,
@@ -2626,27 +2761,30 @@ function finalizarEjec() {
     })
     .then(function(res) {
       console.log('[ejec] respuesta JSON:', JSON.stringify(res));
+      state._editMode = null; state._editCode = null;
       if (btnFin) { btnFin.disabled=false; btnFin.textContent='👍 Finalizar ejecución'; }
       $('mo-ejec').classList.add('on'); updateHome();
     })
     .catch(function(e) {
       console.error('[ejec] ERROR:', e);
+      state._editMode = null; state._editCode = null;
       if (btnFin) { btnFin.disabled=false; btnFin.textContent='👍 Finalizar ejecución'; }
       $('mo-ejec').classList.add('on'); updateHome();
     });
   }
 
   if (fotosEjec.length === 0) {
-    guardarEjecucionFetch({});
+    guardarEjecucionFetch(fotosEjecExistentes);
     return;
   }
 
   const urlsEjec = {}; let eIdx = 0;
   function subirSiguienteEjec() {
     if (eIdx >= fotosEjec.length) {
+      const urlsEjecFinales = Object.assign({}, fotosEjecExistentes, urlsEjec);
       const eI = state.executed.findIndex(e => e.code === code);
-      if (eI >= 0) { state.executed[eI].fotoUrls = urlsEjec; save(); }
-      guardarEjecucionFetch(urlsEjec);
+      if (eI >= 0) { state.executed[eI].fotoUrls = urlsEjecFinales; save(); }
+      guardarEjecucionFetch(urlsEjecFinales);
       return;
     }
     const foto = fotosEjec[eIdx];
