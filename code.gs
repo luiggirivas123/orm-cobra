@@ -725,7 +725,7 @@ function mapearColumnasTrabajos_(rows, tipo, archivoOrigen) {
       eecc          = r['EECC']               || '';
       subtipo       = r['CLASIF DEFICIENCIA'] || r['CLASIF']   || '';
       prioridad     = r['PRIORIDAD']          || '';
-      identificador = r['IDENTIFICADOR']      || r['ID']       || '';
+      identificador = r['IDENTIFICADOR'] || r['ID'] || r['CODIGO DE POSTE'] || '';
 
       coordRaw = limpiarCoordDecimal_(r['REFERENCIA DE UBICACIÓN'] || r['COORDENADAS'] || '');
       if (coordRaw) {
