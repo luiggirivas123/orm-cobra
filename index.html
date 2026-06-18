@@ -1664,17 +1664,18 @@ function subirFotosUnaAUna(code, insp, fotos, btnSave) {
   siguiente();
 }
 
-async function subirFotoDriveDirecto(codigoORM, nombre, base64Data, mimeType, token, rootFolderId) {
-  console.log('[subir] INICIO:', codigoORM, nombre, '| rootFolderId:', rootFolderId);
+async function subirFotoDriveDirecto(codigoORM, nombre, base64Data, mimeType, token, rootFolderId, subCarpeta) {
+  subCarpeta = subCarpeta || 'Inspeccion';
+  console.log('[subir] INICIO:', codigoORM, nombre, '| rootFolderId:', rootFolderId, '| subCarpeta:', subCarpeta);
 
   // 1. Obtener/crear carpeta de la ORM
   const ormFolderId = await obtenerOCrearCarpeta(codigoORM, rootFolderId, token);
   console.log('[subir] ormFolderId:', ormFolderId);
   if (!ormFolderId) throw new Error('No se pudo crear carpeta ORM');
 
-  const inspFolderId = await obtenerOCrearCarpeta('Inspeccion', ormFolderId, token);
-  console.log('[subir] inspFolderId:', inspFolderId);
-  if (!inspFolderId) throw new Error('No se pudo crear carpeta Inspeccion');
+  const inspFolderId = await obtenerOCrearCarpeta(subCarpeta, ormFolderId, token);
+  console.log('[subir] inspFolderId (' + subCarpeta + '):', inspFolderId);
+  if (!inspFolderId) throw new Error('No se pudo crear carpeta ' + subCarpeta);
 
   // 2. Subir archivo via multipart
   const boundary = 'orm_cobra_' + Date.now();
@@ -2525,7 +2526,7 @@ function finalizarEjec() {
     if (btnFin) btnFin.textContent = `⏳ Subiendo foto ${eIdx+1}/${fotosEjec.length}...`;
     comprimirFoto(foto.base64, foto.mime, function(b64comp) {
       subirFotoDriveDirecto(code, foto.nombre, b64comp, foto.mime,
-        _store.getItem('google_access_token'), '1z5BGDGFAh7PwLHRmE73WWCDDZ-l0m9AT')
+        _store.getItem('google_access_token'), '1z5BGDGFAh7PwLHRmE73WWCDDZ-l0m9AT', 'Ejecucion')
         .then(function(url) {
           if (url) { urlsEjec[foto.nombre] = url; console.log('[ejec] ✅ Foto subida:', foto.nombre); }
           else { console.warn('[ejec] ❌ Foto no subida:', foto.nombre); }
