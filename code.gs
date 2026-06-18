@@ -695,7 +695,10 @@ function mapearColumnasTrabajos_(rows, tipo, archivoOrigen) {
       eecc          = r['EECC']               || '';
       subtipo       = r['CLASIF DEFICIENCIA'] || r['CLASIF']   || '';
       prioridad     = r['PRIORIDAD']          || '';
-      identificador = r['IDENTIFICADOR']      || r['ID']       || '';
+      identificador = r['IDENTIFICADOR']
+                  || r['ID']
+                  || r['Número de orden de trabajo']
+                  || '';
 
       var latDMS = String(r['LATITUD']  || r['LAT']  || '').trim();
       var lonDMS = String(r['LONGITUD'] || r['LON']  || '').trim();
@@ -708,13 +711,14 @@ function mapearColumnasTrabajos_(rows, tipo, archivoOrigen) {
       }
 
       jsonExtra = JSON.stringify({
-        Caso:              String(r['Caso']              || r['CASO']              || ''),
-        Area_Responsable:  String(r['Area_Responsable']  || r['AREA_RESPONSABLE']  || ''),
-        Fecha_Venc_Legal:  String(r['Fecha_Venc_Legal']  || r['FECHA_VENC_LEGAL']  || ''),
-        Petitorio_Tecnico: String(r['Petitorio_Tecnico'] || r['PETITORIO_TECNICO'] || ''),
-        Estado_ORM:        String(r['Estado_ORM']        || r['ESTADO_ORM']        || ''),
-        fuente:            'EXCEL',
-        archivo_origen:    archivoOrigen
+        Caso:           String(r['Caso: Número de caso']                              || ''),
+        Estado_ORM:     String(r['Estado de ORM']                                     || ''),
+        Tipo_Orden:     String(r['Tipo Orden']                                         || ''),
+        Num_OT:         String(r['Número de orden de trabajo']                         || ''),
+        Num_Suministro: String(r['Número Suministro']                                  || ''),
+        Detalle_Cuenta: String(r['Detalles para Cuenta de Número de orden de trabajo'] || ''),
+        fuente:         'EXCEL',
+        archivo_origen: archivoOrigen
       });
 
     } else {
