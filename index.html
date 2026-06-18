@@ -682,6 +682,15 @@ html {
     <div class="ir"><span class="ik">Fecha registro</span><span class="iv" id="fd-freg">—</span></div>
     <div class="ir"><span class="ik">Nombre</span><span class="iv" id="fd-nombre">—</span></div>
     <div class="ir"><span class="ik">Domicilio</span><span class="iv" id="fd-dom">—</span></div>
+    <div class="ir" id="fd-coord-prog-wrap">
+      <span class="ik">Coord. Programada</span>
+      <span class="iv" id="fd-coord-prog" style="font-size:12px;color:var(--g7)">—</span>
+    </div>
+    <button class="maps-btn" id="fd-ir-poste" style="display:none;margin:2px 0 8px"
+      onclick="openMaps(document.getElementById('fd-coord-prog').textContent)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      📍 Ir al poste
+    </button>
   </div>
   <div class="fs">
     <div class="fst">📅 Fecha y hora</div>
@@ -714,10 +723,10 @@ html {
       <div class="fi"><div class="fl"><span class="rd-dot"></span>Cód. Apoyo</div><input type="number" id="f-apoyo" placeholder="0"></div>
     </div>
     <div class="fi">
-      <div class="fl"><span class="rd-dot"></span>Coordenadas GPS</div>
+      <div class="fl"><span class="rd-dot"></span>Coordenada Real (Campo)</div>
       <div class="gw">
         <input type="text" id="f-coords" placeholder="-11.920144, -77.085095">
-        <button class="gb2" onclick="getGPS()">📍 GPS</button>
+        <button class="gb2" onclick="getGPS()">📍 Obtener ubicación actual</button>
       </div>
     </div>
     <div class="fi">
@@ -1121,7 +1130,25 @@ function buscarPosteViaScriptDebounced(q, callback, delay) {
 
 function loadPolesFromSheet() {
   // Función retenida por compatibilidad — ya no carga nada.
-  console.log('[postes] carga masiva deshabilitada. Usa buscarPosteViaScript() para búsquedas puntuales.');
+  console.log('[postes] carga masiva deshabilitada. Usa obtenerCoordenadasPoste() para búsquedas puntuales.');
+}
+
+// ── Función reutilizable para los 4 tipos de trabajo ──────────────────────────
+// obtenerCoordenadasPoste(poste, callback)
+//   poste    → número de poste exacto (string o number)
+//   callback → fn({ poste, coords }) con coords ya limpias (sin º)
+//              o null si no se encontró
+function obtenerCoordenadasPoste(poste, callback) {
+  poste = String(poste || '').trim();
+  if (!poste) { callback(null); return; }
+  buscarPosteViaScript(poste, function(results) {
+    // Busca coincidencia exacta; si no, acepta prefijo
+    var exact = null;
+    for (var i = 0; i < results.length; i++) {
+      if (results[i].poste === poste) { exact = results[i]; break; }
+    }
+    callback(exact || results[0] || null);
+  });
 }
 
 
@@ -1516,6 +1543,22 @@ function openForm(code) {
   $('fd-freg').textContent=o['Fecha registro']||'—';
   $('fd-nombre').textContent=o['Nombre']||'—';
   $('fd-dom').textContent=o['Domicilio']||'—';
+  // Coord. Programada: del Excel/ORM o lookup por poste
+  var coordProg = o['COORD_PROGRAMADA'] || o['Coordenadas'] || '';
+  $('fd-coord-prog').textContent = coordProg || '—';
+  $('fd-ir-poste').style.display = coordProg ? 'flex' : 'none';
+  if (!coordProg && o['POSTE']) {
+    $('fd-coord-prog').textContent = '⏳ Buscando...';
+    obtenerCoordenadasPoste(o['POSTE'], function(result) {
+      if (result && result.coords) {
+        o['COORD_PROGRAMADA'] = result.coords;
+        $('fd-coord-prog').textContent = result.coords;
+        $('fd-ir-poste').style.display = 'flex';
+      } else {
+        $('fd-coord-prog').textContent = '⚠ Sin coordenadas';
+      }
+    });
+  }
   $('form-code-badge').textContent=o['Codigo de ORM'];
   // Reset fields
   const t=today(); $('f-fecha').value=t; $('f-hora').value=new Date().toTimeString().slice(0,5); $('f-fecha-rep').value=t;
@@ -1544,9 +1587,12 @@ function setTog(k,v) {
 function setGrua(v){state.gruaVal=v;['si','no','dms'].forEach(id=>$('gr-'+id).classList.remove('on'));const m={Si:'si',No:'no',DMS:'dms'};$('gr-'+m[v]).classList.add('on');}
 function changeC(d){state.cntAcm=Math.max(0,state.cntAcm+d);$('cnt-acm').textContent=state.cntAcm;}
 function getGPS(){
-  const btn=document.querySelector('.gb2');btn.textContent='...';
-  if(navigator.geolocation){navigator.geolocation.getCurrentPosition(p=>{$('f-coords').value=p.coords.latitude.toFixed(6)+', '+p.coords.longitude.toFixed(6);btn.textContent='📍 GPS';},()=>{btn.textContent='📍 GPS';});}
-  else{btn.textContent='📍 GPS';}
+  const btn=document.querySelector('.gb2');btn.textContent='⏳ Localizando...';
+  if(navigator.geolocation){navigator.geolocation.getCurrentPosition(p=>{
+    $('f-coords').value=p.coords.latitude.toFixed(6)+', '+p.coords.longitude.toFixed(6);
+    btn.textContent='📍 Obtener ubicación actual';
+  },()=>{btn.textContent='📍 Obtener ubicación actual';});}
+  else{btn.textContent='📍 Obtener ubicación actual';}
 }
 function tp(inputId) {
   // Mostrar selector: Cámara o Galería
@@ -1642,6 +1688,7 @@ function guardar() {
     lcl: $('f-lcl').value,
     apoyo: $('f-apoyo').value,
     coords: $('f-coords').value,
+    coordProg: state.currentOrm ? (state.currentOrm['COORD_PROGRAMADA'] || state.currentOrm['Coordenadas'] || '') : '',
     incl: state.togIncl,
     angulo: $('f-angulo').value,
     dms: state.togDms,
@@ -2479,7 +2526,8 @@ function guardarSoloRegistro(code, insp, urls) {
       coords: str(insp.coords), incl: str(insp.incl), angulo: str(insp.angulo),
       dms: str(insp.dms), grua: str(insp.grua), acm: str(insp.acm),
       dhlp: str(insp.dhlp), dhlc: str(insp.dhlc), dvlp: str(insp.dvlp),
-      det: str(insp.det), fotos: urls || {}
+      det: str(insp.det), fotos: urls || {},
+      coordProg: str(insp.coordProg)
     }
   };
 
@@ -3017,7 +3065,7 @@ function buscarPosteForm(q) {
         (extras ? '<div style="font-size:11px;color:var(--g7);margin-top:2px">' + extras + '</div>' : '') +
         '<div style="font-size:11px;color:var(--g7);margin-top:2px">📍 ' + p.coords + '</div>' +
         '<div style="display:flex;gap:6px;margin-top:8px">' +
-          '<button onclick="usarCoordsPoste(\'' + p.coords + '\')" style="background:var(--gr);color:white;border:none;border-radius:var(--rsm);padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer">✓ Usar coords</button>' +
+          '<button onclick="usarCoordsPoste(\'' + p.coords + '\',\'' + p.poste + '\')" style="background:var(--gr);color:white;border:none;border-radius:var(--rsm);padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer">📍 Coord. Programada</button>' +
           '<button onclick="openMaps(\'' + p.coords + '\')" style="background:var(--bl);color:white;border:none;border-radius:var(--rsm);padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer">🗺️ Maps</button>' +
         '</div>';
       res.appendChild(div);
@@ -3025,16 +3073,20 @@ function buscarPosteForm(q) {
   });
 }
 
-function usarCoordsPoste(coords) {
-  document.getElementById('f-coords').value = coords;
-  // Clear search
-  document.getElementById('form-poste-input').value = '';
+function usarCoordsPoste(coords, poste) {
+  // Guarda como COORD_PROGRAMADA en el objeto actual y actualiza la UI
+  if (state.currentOrm) state.currentOrm['COORD_PROGRAMADA'] = coords;
+  var display = document.getElementById('fd-coord-prog');
+  var btn     = document.getElementById('fd-ir-poste');
+  if (display) {
+    display.textContent = coords;
+    display.style.color = 'var(--gr)';
+    setTimeout(function() { display.style.color = ''; }, 1500);
+  }
+  if (btn) btn.style.display = 'flex';
+  // Guarda el número de poste en el campo buscador si fue seleccionado
+  if (poste) document.getElementById('form-poste-input').value = poste;
   document.getElementById('form-poste-results').innerHTML = '';
-  // Flash confirmation
-  const coordsInput = document.getElementById('f-coords');
-  coordsInput.style.borderColor = 'var(--gr)';
-  coordsInput.style.boxShadow = '0 0 0 3px rgba(26,122,74,0.2)';
-  setTimeout(() => { coordsInput.style.borderColor = ''; coordsInput.style.boxShadow = ''; }, 1500);
 }
 
 
