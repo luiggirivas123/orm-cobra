@@ -1420,14 +1420,13 @@ async function ejecutarPreviewImport() {
     _importArchivo = file.name;
 
     const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
-    const params = new URLSearchParams({
-      action:        'previewTrabajos',
-      tipo:          tipo,
-      archivoOrigen: file.name,
-      data:          JSON.stringify(rows)
-    });
     body.innerHTML = '⏳ Consultando backend…';
-    const resp = await fetch(SCRIPT_URL + '?' + params.toString(), { redirect: 'follow' });
+    const resp = await fetch(SCRIPT_URL, {
+      method:  'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body:    JSON.stringify({ action: 'previewTrabajos', tipo: tipo, archivoOrigen: file.name, data: JSON.stringify(rows) }),
+      redirect: 'follow'
+    });
     const data = await resp.json();
     if (data.error) throw new Error(data.error);
 

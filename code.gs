@@ -79,8 +79,8 @@ function doGet(e) {
       result = editarDetalle(e.parameter.code || '', e.parameter.det || '');
     }
     else if (action === 'obtenerTrabajos')  { result = obtenerTrabajosHandler_(e); }
-    else if (action === 'previewTrabajos')  { result = previewTrabajosHandler_(e); }
-    else if (action === 'importarTrabajos') { result = aplicarTrabajosHandler_(e); }
+    else if (action === 'previewTrabajos')  { result = previewTrabajosHandler_(e.parameter); }
+    else if (action === 'importarTrabajos') { result = aplicarTrabajosHandler_(e.parameter); }
     else if (action === 'actualizarODM')    { result = actualizarOdmHandler_(e); }
     else {
       result = {error: 'Acción desconocida: ' + action};
@@ -140,6 +140,12 @@ function doPost(e) {
     }
     else if (action === 'eliminarRegistro') {
       result = eliminarRegistro(String(body.code || ''));
+    }
+    else if (action === 'previewTrabajos') {
+      result = previewTrabajosHandler_(body);
+    }
+    else if (action === 'importarTrabajos') {
+      result = aplicarTrabajosHandler_(body);
     }
     else if (action === 'ping') {
       result = {ok: true, time: new Date().toISOString()};
@@ -546,11 +552,11 @@ function obtenerTrabajosHandler_(e) {
 }
 
 // ── 2: Preview de importación sin guardar ────────────────────────
-function previewTrabajosHandler_(e) {
+function previewTrabajosHandler_(param) {
   try {
-    var tipo          = String(e.parameter.tipo          || '');
-    var archivoOrigen = String(e.parameter.archivoOrigen || '');
-    var rows          = JSON.parse(e.parameter.data || '[]');
+    var tipo          = String(param.tipo          || '');
+    var archivoOrigen = String(param.archivoOrigen || '');
+    var rows          = JSON.parse(param.data      || '[]');
     var mapped        = mapearColumnasTrabajos_(rows, tipo, archivoOrigen);
     return { preview: mapped.slice(0, 20), total: mapped.length };
   } catch(err) {
@@ -560,11 +566,11 @@ function previewTrabajosHandler_(e) {
 }
 
 // ── 3: Importar trabajos a hoja TRABAJOS ─────────────────────────
-function aplicarTrabajosHandler_(e) {
+function aplicarTrabajosHandler_(param) {
   try {
-    var tipo          = String(e.parameter.tipo          || '');
-    var archivoOrigen = String(e.parameter.archivoOrigen || '');
-    var rows          = JSON.parse(e.parameter.data || '[]');
+    var tipo          = String(param.tipo          || '');
+    var archivoOrigen = String(param.archivoOrigen || '');
+    var rows          = JSON.parse(param.data      || '[]');
     var mapped        = mapearColumnasTrabajos_(rows, tipo, archivoOrigen);
 
     // Normalizar tipo a singular
