@@ -696,7 +696,7 @@ html {
     </div>
   </div>
   <div class="fs">
-    <div class="fst">🔍 Buscar número de poste <span id="poles-count-badge" style="font-size:10px;background:var(--bll);color:var(--bl);padding:2px 8px;border-radius:20px;font-weight:600;text-transform:none;letter-spacing:0">cargando...</span></div>
+    <div class="fst">🔍 Buscar número de poste <span id="poles-count-badge" style="font-size:10px;background:var(--bll);color:var(--bl);padding:2px 8px;border-radius:20px;font-weight:600;text-transform:none;letter-spacing:0">consulta en línea</span></div>
     <div class="fi">
       <div class="fl">N° de poste (busca en base de datos)</div>
       <div class="poste-input-wrap" style="margin-bottom:0">
@@ -1095,35 +1095,33 @@ html {
 
 <script>
 // ===== DATA =====
-// POLES_DB: se carga desde Google Sheets via Apps Script
-// Mientras carga, usa el fallback con los postes ya conocidos
-let POLES_DB = {};
+// POLES_DB: ya NO se carga completa al inicio.
+// Todas las búsquedas de postes van directamente a Apps Script (acción buscarPoste).
+let POLES_DB = {};   // mantenido por compatibilidad, siempre vacío
 let polesLoaded = false;
 
-function loadPolesFromSheet() {
+// Consulta puntual a Apps Script: recibe un query (número completo o prefijo)
+// Apps Script lee la hoja BD POSTES y devuelve solo las filas que coinciden.
+// callback(results) donde results = [{poste, coords, distrito, alim, ...}] o []
+let _posteScriptTimer = null;
+function buscarPosteViaScript(q, callback) {
   const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
-  if (!SCRIPT_URL) {
-    polesLoaded = true;
-    return;
-  }
-  
-  fetch(SCRIPT_URL + '?action=postes', {redirect: 'follow'})
-    .then(r => r.text())
-    .then(function(text) {
-      try {
-        const data = JSON.parse(text);
-        if (data && !data.error) {
-          POLES_DB = data;
-          polesLoaded = true;
-          const badge = document.getElementById('poles-count-badge');
-          if (badge) badge.textContent = Object.keys(POLES_DB).length + ' postes';
-          console.log('Postes cargados via Apps Script:', Object.keys(POLES_DB).length);
-        }
-      } catch(e) {
-        console.warn('Error parseando postes:', e);
-      }
-    })
-    .catch(e => console.warn('Error cargando postes:', e));
+  if (!SCRIPT_URL) { callback([]); return; }
+  fetch(SCRIPT_URL + '?action=buscarPoste&q=' + encodeURIComponent((q||'').trim()), { redirect: 'follow' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) { callback(data && data.results ? data.results : []); })
+    .catch(function() { callback([]); });
+}
+
+// Versión debounced para inputs de texto (evita spam a Apps Script)
+function buscarPosteViaScriptDebounced(q, callback, delay) {
+  clearTimeout(_posteScriptTimer);
+  _posteScriptTimer = setTimeout(function() { buscarPosteViaScript(q, callback); }, delay || 450);
+}
+
+function loadPolesFromSheet() {
+  // Función retenida por compatibilidad — ya no carga nada.
+  console.log('[postes] carga masiva deshabilitada. Usa buscarPosteViaScript() para búsquedas puntuales.');
 }
 
 
@@ -1371,7 +1369,7 @@ function enterApp() {
   updateHome();
   goTo('sc-home');
   cargarOrmsManual();
-  loadPolesFromSheet();
+  // Postes: NO se precargan. Se consultan al vuelo via Apps Script (buscarPoste)
   // Sincronizar inmediatamente desde el Sheet
   sincronizarDesdeSheet();
   // Re-sincronizar después de 3 segundos por si la primera falla
@@ -2996,41 +2994,34 @@ function closeMo(id){$(id).classList.remove('on');}
 
 
 
-// ===== BUSCADOR DE POSTE EN FORMULARIO (usa POLES_DB de Google Sheets) =====
+// ===== BUSCADOR DE POSTE EN FORMULARIO (consulta Apps Script, sin carga masiva) =====
 function buscarPosteForm(q) {
   const res = document.getElementById('form-poste-results');
   q = (q || '').trim();
   if (q.length < 3) { res.innerHTML = ''; return; }
 
-  if (!polesLoaded || Object.keys(POLES_DB).length === 0) {
-    res.innerHTML = '<div style="font-size:12px;color:var(--g6);padding:6px 0">⏳ Cargando base de datos de postes...</div>';
-    loadPolesFromSheet();
-    return;
-  }
-  // Busca por número de poste exacto o que empiece con el valor ingresado
-  const found = Object.entries(POLES_DB)
-    .filter(([id]) => id.startsWith(q) || id === q)
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .slice(0, 8);
+  res.innerHTML = '<div style="font-size:12px;color:var(--g6);padding:6px 0">🔍 Buscando poste <strong>' + q + '</strong>...</div>';
 
-  if (found.length === 0) {
-    res.innerHTML = '<div style="font-size:12px;color:var(--g6);padding:6px 0">⚠️ Poste <strong>' + q + '</strong> no encontrado en la base de datos (' + Object.keys(POLES_DB).length + ' postes cargados)</div>';
-    return;
-  }
-
-  res.innerHTML = '';
-  found.forEach(([id, coords]) => {
-    const div = document.createElement('div');
-    div.style.cssText = 'background:var(--bll);border:1.5px solid var(--bl);border-radius:var(--rsm);padding:10px 12px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:8px';
-    div.innerHTML = `
-      <div>
-        <div style="font-size:14px;font-weight:700;color:var(--bl)">Poste N° ${id}</div>
-        <div style="font-size:11px;color:var(--g7);margin-top:2px">📍 ${coords}</div>
-      </div>
-      <div style="display:flex;gap:6px;flex-shrink:0">
-        <button onclick="openMaps('${coords}')" style="background:var(--bl);color:white;border:none;border-radius:var(--rsm);padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer">🗺️ Maps</button>
-      </div>`;
-    res.appendChild(div);
+  buscarPosteViaScriptDebounced(q, function(results) {
+    if (results.length === 0) {
+      res.innerHTML = '<div style="font-size:12px;color:var(--g6);padding:6px 0">⚠️ Poste <strong>' + q + '</strong> no encontrado en la base de datos</div>';
+      return;
+    }
+    res.innerHTML = '';
+    results.forEach(function(p) {
+      const div = document.createElement('div');
+      div.style.cssText = 'background:var(--bll);border:1.5px solid var(--bl);border-radius:var(--rsm);padding:10px 12px;margin-bottom:6px';
+      const extras = [p.distrito, p.alim].filter(Boolean).join(' · ');
+      div.innerHTML =
+        '<div style="font-size:14px;font-weight:700;color:var(--bl)">Poste N° ' + p.poste + '</div>' +
+        (extras ? '<div style="font-size:11px;color:var(--g7);margin-top:2px">' + extras + '</div>' : '') +
+        '<div style="font-size:11px;color:var(--g7);margin-top:2px">📍 ' + p.coords + '</div>' +
+        '<div style="display:flex;gap:6px;margin-top:8px">' +
+          '<button onclick="usarCoordsPoste(\'' + p.coords + '\')" style="background:var(--gr);color:white;border:none;border-radius:var(--rsm);padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer">✓ Usar coords</button>' +
+          '<button onclick="openMaps(\'' + p.coords + '\')" style="background:var(--bl);color:white;border:none;border-radius:var(--rsm);padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer">🗺️ Maps</button>' +
+        '</div>';
+      res.appendChild(div);
+    });
   });
 }
 
@@ -3626,55 +3617,65 @@ function togglePoste2() {
   if(open) setTimeout(()=>document.getElementById('poste2-input').focus(),100);
 }
 function buscarPoste2(q) {
-  const res=document.getElementById('poste2-results');
-  q=(q||'').trim();
-  if(q.length<3){res.innerHTML='<div class="pr-empty">Ingresa al menos 3 caracteres</div>';return;}
-  // Buscar primero en POLES_DB
-  if (Object.keys(POLES_DB).length > 0) {
-    const poleMatches = Object.entries(POLES_DB)
-      .filter(([id]) => id.startsWith(q) || id === q)
-      .slice(0, 4);
-    if (poleMatches.length > 0) {
-      res.innerHTML = '';
-      poleMatches.forEach(([id, coords]) => {
+  const res = document.getElementById('poste2-results');
+  q = (q || '').trim();
+  if (q.length < 3) { res.innerHTML = '<div class="pr-empty">Ingresa al menos 3 caracteres</div>'; return; }
+
+  res.innerHTML = '<div class="pr-empty">🔍 Buscando poste <strong>' + q + '</strong>...</div>';
+
+  buscarPosteViaScriptDebounced(q, function(results) {
+    res.innerHTML = '';
+
+    // Resultados de postes desde Apps Script
+    if (results.length > 0) {
+      results.forEach(function(p) {
         const d = document.createElement('div');
         d.className = 'poste-result-card';
         d.style.borderLeftColor = 'var(--bl)';
-        d.innerHTML = `<div class="pr-code" style="color:var(--bl)">Poste N° ${id}</div>
-          <div style="font-size:11px;color:var(--g6);margin-bottom:8px">📍 ${coords}</div>
-          <div class="pr-actions"><button class="pr-btn-map" onclick="openMaps('${coords}')">🗺️ Abrir en Maps</button></div>`;
+        const extras = [p.distrito, p.alim].filter(Boolean).join(' · ');
+        d.innerHTML =
+          '<div class="pr-code" style="color:var(--bl)">Poste N° ' + p.poste + '</div>' +
+          (extras ? '<div style="font-size:11px;color:var(--g6);margin-bottom:4px">' + extras + '</div>' : '') +
+          '<div style="font-size:11px;color:var(--g6);margin-bottom:8px">📍 ' + p.coords + '</div>' +
+          '<div class="pr-actions"><button class="pr-btn-map" onclick="openMaps(\'' + p.coords + '\')">🗺️ Abrir en Maps</button></div>';
         res.appendChild(d);
       });
+    }
+
+    // Fallback: buscar en state.orms (texto libre sobre código, suministro, petitorio)
+    const found = state.orms.filter(function(o) {
+      const pet  = (o['Petitorio']    || '').toLowerCase();
+      const sumi = (o['Suministro']   || '').toLowerCase();
+      const cod  = (o['Codigo de ORM']|| '').toLowerCase();
+      return pet.includes(q.toLowerCase()) || sumi.includes(q) || cod.includes(q);
+    }).slice(0, 8);
+
+    if (found.length === 0 && results.length === 0) {
+      res.innerHTML = '<div class="pr-empty">No encontrado</div>';
       return;
     }
-  }
-  const found=state.orms.filter(o=>{
-    const pet=(o['Petitorio']||'').toLowerCase();
-    const sumi=(o['Suministro']||'').toLowerCase();
-    const cod=(o['Codigo de ORM']||'').toLowerCase();
-    return pet.includes(q.toLowerCase())||sumi.includes(q)||cod.includes(q);
-  }).slice(0,8);
-  if(found.length===0){res.innerHTML='<div class="pr-empty">No encontrado</div>';return;}
-  res.innerHTML='';
-  found.forEach(o=>{
-    const insp=state.inspected.find(i=>i.code===o['Codigo de ORM']);
-    const coords=insp?insp.coords:(o['Coordenadas']||'');
-    const hasCoords=coords&&coords.trim()!=='';
-    const pet=(o['PetitorioCorto']||'').replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'),m=>`<span class="poste-highlight">${m}</span>`);
-    const estado=o['Estado inspección']||'';
-    const yaInsp=!!insp;
-    const div=document.createElement('div');
-    div.className='poste-result-card';
-    div.innerHTML=`
-      <div class="pr-code">${o['Codigo de ORM']||'—'}</div>
-      <div><span class="pr-dist">${o['Distrito']||'—'}</span> <span style="font-size:11px;color:var(--g6)">${estado}${yaInsp?' · ✓ Inspeccionado':''}</span></div>
-      <div class="pr-pet">${pet}</div>
-      ${hasCoords?`<div style="font-size:11px;color:var(--g6);margin-bottom:6px">📍 ${coords}</div>`:''}
-      <div class="pr-actions">
-        ${hasCoords?`<button class="pr-btn-map" onclick="openMaps('${coords}')">🗺️ Abrir en Maps</button>`:''}
-        ${!yaInsp&&['Asignado','En ejecución'].includes(estado)?`<button class="pr-btn-insp" onclick="openForm('${o['Codigo de ORM']}');togglePoste2()">📋 Inspeccionar</button>`:''}
-      </div>`;
-    res.appendChild(div);
+
+    found.forEach(function(o) {
+      const insp = state.inspected.find(function(i) { return i.code === o['Codigo de ORM']; });
+      const coords = insp ? insp.coords : (o['Coordenadas'] || '');
+      const hasCoords = coords && coords.trim() !== '';
+      const ql = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const pet = (o['PetitorioCorto'] || '').replace(new RegExp(ql, 'gi'), function(m) { return '<span class="poste-highlight">' + m + '</span>'; });
+      const estado = o['Estado inspección'] || '';
+      const yaInsp = !!insp;
+      const div = document.createElement('div');
+      div.className = 'poste-result-card';
+      div.innerHTML =
+        '<div class="pr-code">' + (o['Codigo de ORM'] || '—') + '</div>' +
+        '<div><span class="pr-dist">' + (o['Distrito'] || '—') + '</span> <span style="font-size:11px;color:var(--g6)">' + estado + (yaInsp ? ' · ✓ Inspeccionado' : '') + '</span></div>' +
+        '<div class="pr-pet">' + pet + '</div>' +
+        (hasCoords ? '<div style="font-size:11px;color:var(--g6);margin-bottom:6px">📍 ' + coords + '</div>' : '') +
+        '<div class="pr-actions">' +
+          (hasCoords ? '<button class="pr-btn-map" onclick="openMaps(\'' + coords + '\')">🗺️ Abrir en Maps</button>' : '') +
+          (!yaInsp && ['Asignado', 'En ejecución'].includes(estado) ? '<button class="pr-btn-insp" onclick="openForm(\'' + o['Codigo de ORM'] + '\');togglePoste2()">📋 Inspeccionar</button>' : '') +
+        '</div>';
+      res.appendChild(div);
+    });
   });
 }
 
@@ -3690,58 +3691,68 @@ function buscarPoste(q) {
   const res = document.getElementById('poste-results');
   q = (q || '').trim();
   if (q.length < 3) { res.innerHTML = '<div class="pr-empty">Ingresa al menos 3 caracteres</div>'; return; }
-  // Buscar primero en POLES_DB (número de poste exacto)
-  if (Object.keys(POLES_DB).length > 0) {
-    const poleMatches = Object.entries(POLES_DB)
-      .filter(([id]) => id.startsWith(q) || id === q)
-      .slice(0, 4);
-    if (poleMatches.length > 0) {
-      res.innerHTML = '<div style="font-size:11px;font-weight:700;color:var(--g6);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Postes encontrados</div>';
-      poleMatches.forEach(([id, coords]) => {
+
+  res.innerHTML = '<div class="pr-empty">🔍 Buscando poste <strong>' + q + '</strong>...</div>';
+
+  buscarPosteViaScriptDebounced(q, function(results) {
+    res.innerHTML = '';
+
+    // Resultados de postes desde Apps Script
+    if (results.length > 0) {
+      const hdr = document.createElement('div');
+      hdr.style.cssText = 'font-size:11px;font-weight:700;color:var(--g6);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px';
+      hdr.textContent = 'Postes encontrados';
+      res.appendChild(hdr);
+      results.forEach(function(p) {
         const d = document.createElement('div');
         d.className = 'poste-result-card';
         d.style.borderLeftColor = 'var(--bl)';
-        d.innerHTML = `<div class="pr-code" style="color:var(--bl)">Poste N° ${id}</div>
-          <div style="font-size:11px;color:var(--g6);margin-bottom:8px">📍 ${coords}</div>
-          <div class="pr-actions"><button class="pr-btn-map" onclick="openMaps('${coords}')">🗺️ Abrir en Maps</button></div>`;
+        const extras = [p.distrito, p.alim].filter(Boolean).join(' · ');
+        d.innerHTML =
+          '<div class="pr-code" style="color:var(--bl)">Poste N° ' + p.poste + '</div>' +
+          (extras ? '<div style="font-size:11px;color:var(--g6);margin-bottom:4px">' + extras + '</div>' : '') +
+          '<div style="font-size:11px;color:var(--g6);margin-bottom:8px">📍 ' + p.coords + '</div>' +
+          '<div class="pr-actions"><button class="pr-btn-map" onclick="openMaps(\'' + p.coords + '\')">🗺️ Abrir en Maps</button></div>';
         res.appendChild(d);
       });
+    }
+
+    // Fallback: buscar en state.orms (código, suministro, petitorio)
+    const found = state.orms.filter(function(o) {
+      const pet  = (o['Petitorio']    || '').toLowerCase();
+      const sumi = (o['Suministro']   || '').toLowerCase();
+      const cod  = (o['Codigo de ORM']|| '').toLowerCase();
+      return pet.includes(q.toLowerCase()) || sumi.includes(q) || cod.includes(q);
+    }).slice(0, 8);
+
+    if (found.length === 0 && results.length === 0) {
+      res.innerHTML = '<div class="pr-empty">No se encontraron resultados para <strong>' + q + '</strong></div>';
       return;
     }
-  }
-  // Si no hay postes, buscar en ORMs
-  const found = state.orms.filter(o => {
-    const pet = (o['Petitorio'] || '').toLowerCase();
-    const sumi = (o['Suministro'] || '').toLowerCase();
-    const cod = (o['Codigo de ORM'] || '').toLowerCase();
-    return pet.includes(q.toLowerCase()) || sumi.includes(q) || cod.includes(q);
-  }).slice(0, 8);
-  if (found.length === 0) { res.innerHTML = '<div class="pr-empty">No se encontraron ORMs con ese número de poste</div>'; return; }
-  res.innerHTML = '';
-  found.forEach(o => {
-    const insp = state.inspected.find(i => i.code === o['Codigo de ORM']);
-    const coords = insp ? insp.coords : (o['Coordenadas'] || '');
-    const hasCoords = coords && coords.trim() !== '';
-    // Highlight el término buscado en el petitorio
-    const pet = (o['PetitorioCorto'] || o['Petitorio'] || '').replace(
-      new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'),
-      m => `<span class="poste-highlight">${m}</span>`
-    );
-    const estado = o['Estado inspección'] || '';
-    const yaInsp = !!insp;
-    const div = document.createElement('div');
-    div.className = 'poste-result-card';
-    div.innerHTML = `
-      <div class="pr-code">${o['Codigo de ORM'] || '—'}</div>
-      <div><span class="pr-dist">${o['Distrito'] || '—'}</span> <span style="font-size:11px;color:var(--g6)">${estado}${yaInsp?' · ✓ Inspeccionado':''}</span></div>
-      <div class="pr-pet">${pet}</div>
-      ${hasCoords ? `<div style="font-size:11px;color:var(--g6);margin-bottom:6px">📍 ${coords}</div>` : ''}
-      <div class="pr-actions">
-        ${hasCoords ? `<button class="pr-btn-map" onclick="openMaps('${coords}')">🗺️ Abrir en Maps</button>` : ''}
-        ${!yaInsp && ['Asignado','En ejecución'].includes(estado) ? `<button class="pr-btn-insp" onclick="openForm('${o['Codigo de ORM']}');togglePoste()">📋 Inspeccionar</button>` : ''}
-      </div>
-    `;
-    res.appendChild(div);
+
+    found.forEach(function(o) {
+      const insp = state.inspected.find(function(i) { return i.code === o['Codigo de ORM']; });
+      const coords = insp ? insp.coords : (o['Coordenadas'] || '');
+      const hasCoords = coords && coords.trim() !== '';
+      const ql = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const pet = (o['PetitorioCorto'] || o['Petitorio'] || '').replace(
+        new RegExp(ql, 'gi'), function(m) { return '<span class="poste-highlight">' + m + '</span>'; }
+      );
+      const estado = o['Estado inspección'] || '';
+      const yaInsp = !!insp;
+      const div = document.createElement('div');
+      div.className = 'poste-result-card';
+      div.innerHTML =
+        '<div class="pr-code">' + (o['Codigo de ORM'] || '—') + '</div>' +
+        '<div><span class="pr-dist">' + (o['Distrito'] || '—') + '</span> <span style="font-size:11px;color:var(--g6)">' + estado + (yaInsp ? ' · ✓ Inspeccionado' : '') + '</span></div>' +
+        '<div class="pr-pet">' + pet + '</div>' +
+        (hasCoords ? '<div style="font-size:11px;color:var(--g6);margin-bottom:6px">📍 ' + coords + '</div>' : '') +
+        '<div class="pr-actions">' +
+          (hasCoords ? '<button class="pr-btn-map" onclick="openMaps(\'' + coords + '\')">🗺️ Abrir en Maps</button>' : '') +
+          (!yaInsp && ['Asignado', 'En ejecución'].includes(estado) ? '<button class="pr-btn-insp" onclick="openForm(\'' + o['Codigo de ORM'] + '\');togglePoste()">📋 Inspeccionar</button>' : '') +
+        '</div>';
+      res.appendChild(div);
+    });
   });
 }
 
