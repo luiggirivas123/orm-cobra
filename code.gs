@@ -689,22 +689,17 @@ function mapearColumnasTrabajos_(rows, tipo, archivoOrigen) {
         identificador, coordFinal, estadoCoord, jsonExtra, coordRaw;
 
     if (esReubicacion) {
-      identificador = String(
-        r['Numero de orden de trabajo'] ||
-        r['Número de orden de trabajo'] ||
-        ''
-      ).trim();
-      poste         = r['# POSTE']  || r['POSTE']    || '';
-      distrito      = r['DISTRITO'] || '';
-      sed           = r['SED']      || '';
-      eecc          = r['EECC']     || '';
-      subtipo       = r['CLASIF DEFICIENCIA'] || r['CLASIF'] || '';
-      prioridad     = r['PRIORIDAD'] || '';
+      identificador = String(r['__EMPTY']    || '').trim();
+      poste         = String(r['__EMPTY_9']  || '').trim();
+      distrito      = String(r['__EMPTY_4']  || '').trim();
+      sed           = String(r['__EMPTY_6']  || '').trim();
+      eecc          = String(r['__EMPTY_11'] || '').trim();
+      subtipo       = '';
+      prioridad     = '';
 
-      var latDMS = String(r['LATITUD']  || r['LAT']  || '').trim();
-      var lonDMS = String(r['LONGITUD'] || r['LON']  || '').trim();
-      if (latDMS && lonDMS) {
-        coordFinal  = dmsADecimal_(latDMS) + ',' + dmsADecimal_(lonDMS);
+      coordRaw = limpiarCoordDecimal_(r['__EMPTY_10'] || '');
+      if (coordRaw) {
+        coordFinal  = coordRaw;
         estadoCoord = 'EXCEL';
       } else {
         coordFinal  = resolverCoordsPoste_(poste);
@@ -712,12 +707,12 @@ function mapearColumnasTrabajos_(rows, tipo, archivoOrigen) {
       }
 
       jsonExtra = JSON.stringify({
-        Caso:           String(r['Caso: Número de caso']                              || ''),
-        Estado_ORM:     String(r['Estado de ORM']                                     || ''),
-        Tipo_Orden:     String(r['Tipo Orden']                                         || ''),
-        Num_OT:         String(r['Número de orden de trabajo']                         || ''),
-        Num_Suministro: String(r['Número Suministro']                                  || ''),
-        Detalle_Cuenta: String(r['Detalles para Cuenta de Número de orden de trabajo'] || ''),
+        Tipo_Orden:     String(r['__EMPTY_1'] || ''),
+        Caso:           String(r['__EMPTY_2'] || ''),
+        Num_Suministro: String(r['__EMPTY_3'] || ''),
+        Alimentador:    String(r['__EMPTY_5'] || ''),
+        Responsable:    String(r['__EMPTY_7'] || ''),
+        Tipo_Poste:     String(r['__EMPTY_8'] || ''),
         fuente:         'EXCEL',
         archivo_origen: archivoOrigen
       });
