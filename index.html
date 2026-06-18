@@ -9,6 +9,7 @@
 <title>ORM Cobra</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <style>
 :root{--or:#E8600A;--orl:#FFF3EB;--orm:#F5A36B;--gr:#1A7A4A;--grl:#E6F5ED;--grm:#4CAF7D;--bl:#1565C0;--bll:#E3F0FF;--rd:#C62828;--rdl:#FDECEA;--pu:#6A1B9A;--pul:#F3E5F5;--g0:#F8F9FA;--g1:#F1F3F4;--g2:#E8EAED;--g3:#DADCE0;--g4:#BDC1C6;--g6:#80868B;--g7:#5F6368;--g9:#202124;--wh:#FFFFFF;--rsm:8px;--rmd:12px;--rlg:18px}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -565,8 +566,21 @@ html {
   <!-- Modal preview importación -->
   <div id="mo-import-preview" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;overflow-y:auto;padding:20px">
     <div style="background:var(--wh);border-radius:var(--rmd);margin:0 auto;max-width:520px;padding:20px">
-      <div style="font-size:17px;font-weight:700;margin-bottom:14px">📋 Preview — Importar Trabajos</div>
-      <div id="import-preview-body" style="font-size:13px;color:var(--g7);min-height:80px">⏳ Consultando fuentes…</div>
+      <div style="font-size:17px;font-weight:700;margin-bottom:16px">📥 Importar Trabajos</div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:12px;font-weight:600;color:var(--g6);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px">Tipo de actividad</label>
+        <select id="import-tipo-select" style="width:100%;padding:10px;border:1.5px solid var(--g3);border-radius:var(--rsm);font-size:14px;background:var(--wh);color:var(--g9)">
+          <option value="RETENIDA">RETENIDAS</option>
+          <option value="PROTECCION">PROTECCIONES</option>
+          <option value="REUBICACION">REUBICACIONES</option>
+        </select>
+      </div>
+      <div style="margin-bottom:14px">
+        <label style="font-size:12px;font-weight:600;color:var(--g6);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px">Archivo Excel (.xlsx)</label>
+        <input type="file" id="import-file-input" accept=".xlsx,.xls" style="width:100%;font-size:13px;padding:6px 0;color:var(--g9)">
+      </div>
+      <button onclick="ejecutarPreviewImport()" style="width:100%;padding:11px;background:var(--g1);border:1.5px solid var(--g3);border-radius:var(--rsm);font-size:14px;font-weight:600;cursor:pointer;margin-bottom:14px;color:var(--g9)">🔍 Ver preview</button>
+      <div id="import-preview-body" style="font-size:13px;color:var(--g7);min-height:0"></div>
       <div style="display:flex;gap:10px;margin-top:16px">
         <button onclick="$('mo-import-preview').style.display='none'" style="flex:1;padding:12px;border:1.5px solid var(--g3);border-radius:var(--rsm);background:var(--wh);font-size:14px;cursor:pointer">Cancelar</button>
         <button id="btn-confirmar-import" onclick="confirmarImportacion()" disabled style="flex:2;padding:12px;background:#7c3aed;color:white;border:none;border-radius:var(--rsm);font-size:14px;font-weight:700;cursor:pointer;opacity:.5">Aplicar importación</button>
@@ -1364,37 +1378,103 @@ async function cargarTrabajosDesdeSheet() {
   }
 }
 
-async function mostrarPreviewImport() {
+// ── Estado compartido entre preview y confirmación ──
+var _importRows = [], _importTipo = '', _importArchivo = '';
+
+function mostrarPreviewImport() {
+  // Solo abre el modal — NO consulta ninguna API
   $('mo-import-preview').style.display = 'flex';
-  $('import-preview-body').innerHTML = '⏳ Consultando fuentes de datos…';
+  $('import-preview-body').innerHTML = '';
+  $('import-file-input').value = '';
   const btn = $('btn-confirmar-import');
+  btn.disabled = true; btn.style.opacity = '.5'; btn.textContent = 'Aplicar importación';
+  _importRows = []; _importTipo = ''; _importArchivo = '';
+}
+
+async function ejecutarPreviewImport() {
+  const fileInput = $('import-file-input');
+  const tipo      = $('import-tipo-select').value;
+  const btn       = $('btn-confirmar-import');
+  const body      = $('import-preview-body');
+
+  if (!fileInput.files || !fileInput.files.length) {
+    body.innerHTML = '<span style="color:var(--rd)">⚠️ Selecciona un archivo Excel primero.</span>';
+    return;
+  }
+  if (typeof XLSX === 'undefined') {
+    body.innerHTML = '<span style="color:var(--rd)">⚠️ Librería Excel no disponible. Verifica conexión a internet.</span>';
+    return;
+  }
+
+  body.innerHTML = '⏳ Leyendo archivo…';
   btn.disabled = true; btn.style.opacity = '.5';
+
   try {
+    const file = fileInput.files[0];
+    const ab   = await file.arrayBuffer();
+    const wb   = XLSX.read(ab, { type: 'array' });
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+
+    _importRows   = rows;
+    _importTipo   = tipo;
+    _importArchivo = file.name;
+
     const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
-    const resp = await fetch(SCRIPT_URL + '?action=previewTrabajos', { redirect: 'follow' });
+    const params = new URLSearchParams({
+      action:        'previewTrabajos',
+      tipo:          tipo,
+      archivoOrigen: file.name,
+      data:          JSON.stringify(rows)
+    });
+    body.innerHTML = '⏳ Consultando backend…';
+    const resp = await fetch(SCRIPT_URL + '?' + params.toString(), { redirect: 'follow' });
     const data = await resp.json();
-    if (!data.ok) throw new Error(data.error || 'Error en preview');
-    const { retenidas, protecciones, reubicaciones, nuevos, actualizados, sinCoord } = data;
-    $('import-preview-body').innerHTML = `
-      <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px">
-        <tr style="background:var(--g1);font-weight:600">
-          <th style="padding:8px;text-align:left">Fuente</th>
-          <th style="text-align:center">Leídos</th>
-          <th style="text-align:center">COBRA+PEND.</th>
-        </tr>
-        <tr><td style="padding:6px 8px">RETENIDAS</td><td style="text-align:center">${retenidas.total}</td><td style="text-align:center;font-weight:700;color:#92400e">${retenidas.validos}</td></tr>
-        <tr style="background:var(--g1)"><td style="padding:6px 8px">PROTECCIONES</td><td style="text-align:center">${protecciones.total}</td><td style="text-align:center;font-weight:700;color:#1e40af">${protecciones.validos}</td></tr>
-        <tr><td style="padding:6px 8px">REUBICACIONES</td><td style="text-align:center">${reubicaciones.total}</td><td style="text-align:center;font-weight:700;color:#065f46">${reubicaciones.validos}</td></tr>
-      </table>
-      <div style="background:var(--g1);border-radius:8px;padding:10px;font-size:13px;line-height:1.8">
-        <div>✅ <strong>Nuevos a importar:</strong> ${nuevos}</div>
-        <div>⏭️ <strong>Ya existentes (sin tocar):</strong> ${actualizados}</div>
-        <div>📍 <strong>Sin coord en Excel (buscando en BD Postes):</strong> ${sinCoord}</div>
-      </div>`;
-    btn.disabled = (nuevos === 0);
-    btn.style.opacity = nuevos === 0 ? '.5' : '1';
-  } catch(e) {
-    $('import-preview-body').innerHTML = `<span style="color:var(--rd)">❌ Error: ${e.message}</span>`;
+    if (data.error) throw new Error(data.error);
+
+    const { preview = [], total = 0 } = data;
+    const nExcel  = preview.filter(function(r){ return r.ESTADO_COORD === 'EXCEL';    }).length;
+    const nPoste  = preview.filter(function(r){ return r.ESTADO_COORD === 'POSTE';    }).length;
+    const nSin    = preview.filter(function(r){ return r.ESTADO_COORD === 'SIN_COORD';}).length;
+
+    const colorCoord = function(v) {
+      return v === 'EXCEL' ? '#065f46' : v === 'POSTE' ? '#1e40af' : '#b91c1c';
+    };
+
+    body.innerHTML =
+      '<div style="background:var(--g1);border-radius:8px;padding:10px;font-size:13px;line-height:2;margin-bottom:12px">' +
+        '<div>📄 <strong>Tipo:</strong> ' + tipo + '</div>' +
+        '<div>📂 <strong>Archivo:</strong> ' + file.name + '</div>' +
+        '<div>📊 <strong>Filas leídas:</strong> ' + rows.length + ' &nbsp;|&nbsp; <strong>Válidas:</strong> ' + total + '</div>' +
+        '<div>🟢 <strong>Coord Excel:</strong> ' + nExcel + ' &nbsp;·&nbsp; 📍 <strong>BD Postes:</strong> ' + nPoste + ' &nbsp;·&nbsp; ⚠️ <strong>Sin coord:</strong> ' + nSin + '</div>' +
+      '</div>' +
+      (preview.length ? (
+        '<div style="font-size:11px;color:var(--g6);margin-bottom:4px">Primeras ' + preview.length + ' filas:</div>' +
+        '<div style="overflow-x:auto;max-height:180px;overflow-y:auto;border:1px solid var(--g2);border-radius:6px">' +
+          '<table style="width:100%;border-collapse:collapse;font-size:11px">' +
+            '<tr style="background:var(--g1);font-weight:600;position:sticky;top:0">' +
+              '<th style="padding:5px 7px;text-align:left">IDENTIFICADOR</th>' +
+              '<th style="padding:5px 7px;text-align:left">POSTE</th>' +
+              '<th style="padding:5px 7px;text-align:left">DISTRITO</th>' +
+              '<th style="padding:5px 7px;text-align:center">COORD</th>' +
+            '</tr>' +
+            preview.map(function(r) {
+              return '<tr style="border-bottom:1px solid var(--g2)">' +
+                '<td style="padding:4px 7px">' + (r.IDENTIFICADOR||'') + '</td>' +
+                '<td style="padding:4px 7px">' + (r.POSTE||'') + '</td>' +
+                '<td style="padding:4px 7px">' + (r.DISTRITO||'') + '</td>' +
+                '<td style="padding:4px 7px;text-align:center;font-size:10px;font-weight:700;color:' + colorCoord(r.ESTADO_COORD) + '">' + (r.ESTADO_COORD||'') + '</td>' +
+              '</tr>';
+            }).join('') +
+          '</table>' +
+        '</div>'
+      ) : '');
+
+    btn.disabled    = (total === 0);
+    btn.style.opacity = total === 0 ? '.5' : '1';
+
+  } catch(err) {
+    body.innerHTML = '<span style="color:var(--rd)">❌ Error: ' + err.message + '</span>';
+    btn.disabled = true; btn.style.opacity = '.5';
   }
 }
 
@@ -1402,20 +1482,27 @@ async function confirmarImportacion() {
   const btn = $('btn-confirmar-import');
   btn.disabled = true; btn.textContent = '⏳ Importando…';
   try {
+    if (!_importRows.length) throw new Error('Sin datos. Ejecuta el preview primero.');
     const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
     const resp = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      headers: {'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({ action: 'importarTrabajos' }),
+      method:  'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body:    JSON.stringify({
+        action:        'importarTrabajos',
+        tipo:          _importTipo,
+        archivoOrigen: _importArchivo,
+        data:          JSON.stringify(_importRows)
+      }),
       redirect: 'follow'
     });
     const data = await resp.json();
     if (!data.ok) throw new Error(data.error || 'Error al importar');
     $('mo-import-preview').style.display = 'none';
-    mostrarToast(`✅ ${data.importados} trabajos importados correctamente`, 'var(--gr)');
+    _importRows = []; _importTipo = ''; _importArchivo = '';
+    mostrarToast('✅ ' + data.nuevos + ' nuevos importados. ' + data.duplicados + ' ya existían.', 'var(--gr)');
     await cargarTrabajosDesdeSheet();
-  } catch(e) {
-    mostrarToast(`❌ Error: ${e.message}`, 'var(--rd)');
+  } catch(err) {
+    mostrarToast('❌ Error: ' + err.message, 'var(--rd)');
     btn.disabled = false; btn.textContent = 'Aplicar importación';
   }
 }
