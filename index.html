@@ -1665,92 +1665,122 @@ function subirFotosUnaAUna(code, insp, fotos, btnSave) {
 }
 
 async function subirFotoDriveDirecto(codigoORM, nombre, base64Data, mimeType, token, rootFolderId) {
-  try {
-    // 1. Obtener/crear carpeta de la ORM
-    const ormFolderId = await obtenerOCrearCarpeta(codigoORM, rootFolderId, token);
-    if (!ormFolderId) throw new Error('No se pudo crear carpeta ORM');
-    
-    const inspFolderId = await obtenerOCrearCarpeta('Inspeccion', ormFolderId, token);
-    if (!inspFolderId) throw new Error('No se pudo crear carpeta Inspeccion');
+  console.log('[subir] INICIO:', codigoORM, nombre, '| rootFolderId:', rootFolderId);
 
-    // 2. Subir archivo via multipart
-    const boundary = 'orm_cobra_' + Date.now();
-    const metadata = JSON.stringify({
-      name: nombre + '.jpg',
-      parents: [inspFolderId],
-      mimeType: mimeType || 'image/jpeg'
-    });
+  // 1. Obtener/crear carpeta de la ORM
+  const ormFolderId = await obtenerOCrearCarpeta(codigoORM, rootFolderId, token);
+  console.log('[subir] ormFolderId:', ormFolderId);
+  if (!ormFolderId) throw new Error('No se pudo crear carpeta ORM');
 
-    // Construir multipart body
-    const body = '--' + boundary + '\r\n' +
-      'Content-Type: application/json\r\n\r\n' +
-      metadata + '\r\n' +
-      '--' + boundary + '\r\n' +
-      'Content-Type: ' + (mimeType || 'image/jpeg') + '\r\n' +
-      'Content-Transfer-Encoding: base64\r\n\r\n' +
-      base64Data + '\r\n' +
-      '--' + boundary + '--';
+  const inspFolderId = await obtenerOCrearCarpeta('Inspeccion', ormFolderId, token);
+  console.log('[subir] inspFolderId:', inspFolderId);
+  if (!inspFolderId) throw new Error('No se pudo crear carpeta Inspeccion');
 
-    const uploadResp = await fetch(
-      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + token,
-          'Content-Type': 'multipart/related; boundary=' + boundary
-        },
-        body: body
-      }
-    );
+  // 2. Subir archivo via multipart
+  const boundary = 'orm_cobra_' + Date.now();
+  const metadata = JSON.stringify({
+    name: nombre + '.jpg',
+    parents: [inspFolderId],
+    mimeType: mimeType || 'image/jpeg'
+  });
 
-    if (!uploadResp.ok) {
-      const err = await uploadResp.text();
-      throw new Error('Upload failed: ' + err.slice(0, 100));
+  // Construir multipart body
+  const body = '--' + boundary + '\r\n' +
+    'Content-Type: application/json\r\n\r\n' +
+    metadata + '\r\n' +
+    '--' + boundary + '\r\n' +
+    'Content-Type: ' + (mimeType || 'image/jpeg') + '\r\n' +
+    'Content-Transfer-Encoding: base64\r\n\r\n' +
+    base64Data + '\r\n' +
+    '--' + boundary + '--';
+
+  console.log('[subir] Subiendo archivo:', nombre + '.jpg', '| inspFolderId:', inspFolderId);
+
+  const uploadResp = await fetch(
+    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'multipart/related; boundary=' + boundary
+      },
+      body: body
     }
+  );
 
-    const file = await uploadResp.json();
-    
-    // 3. Hacer pública la foto
-    await fetch(
-      'https://www.googleapis.com/drive/v3/files/' + file.id + '/permissions',
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + token,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({role: 'reader', type: 'anyone'})
-      }
-    );
+  console.log('[subir] uploadResp.status:', uploadResp.status, '| ok:', uploadResp.ok);
 
-    return 'https://drive.google.com/thumbnail?id=' + file.id + '&sz=s1600';
-  } catch(e) {
-    console.error('Error subirFotoDriveDirecto:', e);
-    return null;
+  if (!uploadResp.ok) {
+    const err = await uploadResp.text();
+    console.error('[subir] ERROR upload completo:', err);
+    throw new Error('Upload failed: ' + err);
   }
+
+  const file = await uploadResp.json();
+  console.log('[subir] Archivo subido. file.id:', file.id);
+
+  // 3. Hacer pública la foto
+  const permResp = await fetch(
+    'https://www.googleapis.com/drive/v3/files/' + file.id + '/permissions',
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({role: 'reader', type: 'anyone'})
+    }
+  );
+  console.log('[subir] permResp.status:', permResp.status, '| ok:', permResp.ok);
+
+  const url = 'https://drive.google.com/thumbnail?id=' + file.id + '&sz=s1600';
+  console.log('[subir] URL final:', url);
+  return url;
 }
 
 const _carpetaCache = {};
 
 async function obtenerOCrearCarpeta(nombre, parentId, token) {
   const cacheKey = parentId + '/' + nombre;
-  if (_carpetaCache[cacheKey]) return _carpetaCache[cacheKey];
+  if (_carpetaCache[cacheKey]) {
+    console.log('[carpeta] CACHE HIT:', nombre, '→', _carpetaCache[cacheKey]);
+    return _carpetaCache[cacheKey];
+  }
 
-  // Buscar carpeta existente
+  // 1. Antes de buscar
+  console.log('[carpeta] BUSCANDO:', nombre, '| parentId:', parentId);
+
   const searchResp = await fetch(
     "https://www.googleapis.com/drive/v3/files?q=" +
     encodeURIComponent("name='" + nombre + "' and '" + parentId + "' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false") +
     "&fields=files(id,name)",
     { headers: { 'Authorization': 'Bearer ' + token } }
   );
+
+  // 2. Después de searchResp
+  console.log('[carpeta] searchResp.status:', searchResp.status, '| ok:', searchResp.ok);
+
+  if (!searchResp.ok) {
+    const errText = await searchResp.text();
+    console.error('[carpeta] ERROR en búsqueda:', searchResp.status, errText);
+    throw new Error('Error buscando carpeta ' + nombre + ': ' + errText.slice(0, 200));
+  }
+
   const searchData = await searchResp.json();
-  
+
+  // 3. Después de searchResp.json()
+  console.log('[carpeta] searchData:', JSON.stringify(searchData));
+
   if (searchData.files && searchData.files.length > 0) {
     _carpetaCache[cacheKey] = searchData.files[0].id;
+    // 7a. Antes de return (encontrada)
+    console.log('[carpeta] ENCONTRADA:', nombre, '→', searchData.files[0].id);
     return searchData.files[0].id;
   }
 
-  // Crear carpeta nueva
+  // 4. Antes de crear
+  console.log('[carpeta] NO EXISTE, CREANDO:', nombre, '| parentId:', parentId);
+
   const createResp = await fetch(
     'https://www.googleapis.com/drive/v3/files',
     {
@@ -1766,14 +1796,25 @@ async function obtenerOCrearCarpeta(nombre, parentId, token) {
       })
     }
   );
-  
+
+  // 5. Después de createResp
+  console.log('[carpeta] createResp.status:', createResp.status, '| ok:', createResp.ok);
+
   if (!createResp.ok) {
     const err = await createResp.text();
-    throw new Error('Error creando carpeta: ' + err.slice(0, 100));
+    console.error('[carpeta] ERROR al crear:', createResp.status, err);
+    throw new Error('Error creando carpeta: ' + err.slice(0, 200));
   }
-  
+
   const folder = await createResp.json();
+
+  // 6. Después de createResp.json()
+  console.log('[carpeta] createResp.json():', JSON.stringify(folder));
+
   _carpetaCache[cacheKey] = folder.id;
+
+  // 7b. Antes de return (creada)
+  console.log('[carpeta] CREADA:', nombre, '→', folder.id);
   return folder.id;
 }
 
@@ -2064,18 +2105,27 @@ function guardarSoloRegistro(code, insp, urls) {
     }
   };
 
-  fetch('/.netlify/functions/upload', {
+  const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
+  console.log('[guardar] URL:', SCRIPT_URL);
+  console.log('[guardar] payload:', JSON.stringify(payload));
+
+  fetch(SCRIPT_URL, {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(payload)
+    headers: {'Content-Type': 'text/plain;charset=utf-8'},
+    body: JSON.stringify(payload),
+    redirect: 'follow'
   })
-  .then(r => r.json())
+  .then(r => {
+    console.log('[guardar] respuesta status:', r.status, '| ok:', r.ok);
+    return r.json();
+  })
   .then(function(res) {
+    console.log('[guardar] respuesta JSON:', JSON.stringify(res));
     console.log('Registro guardado:', res.ok ? '✅' : '❌', res);
     mostrarModalInsp(insp);
   })
   .catch(function(e) {
-    console.warn('Error guardando registro:', e);
+    console.error('[guardar] ERROR completo:', e);
     mostrarModalInsp(insp);
   });
 }
