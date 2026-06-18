@@ -1719,6 +1719,14 @@ async function subirFotoDriveDirecto(codigoORM, nombre, base64Data, mimeType, to
   const file = await uploadResp.json();
   console.log('[subir] Archivo subido. file.id:', file.id);
 
+  // DIAGNÓSTICO: verificar parents reales del archivo subido
+  const fileVerifyResp = await fetch(
+    'https://www.googleapis.com/drive/v3/files/' + file.id + '?fields=id,name,parents,mimeType',
+    { headers: { 'Authorization': 'Bearer ' + token } }
+  );
+  const fileVerifyData = await fileVerifyResp.json();
+  console.log('[subir] VERIFY archivo:', JSON.stringify(fileVerifyData));
+
   // 3. Hacer pública la foto
   const permResp = await fetch(
     'https://www.googleapis.com/drive/v3/files/' + file.id + '/permissions',
@@ -1812,6 +1820,14 @@ async function obtenerOCrearCarpeta(nombre, parentId, token) {
 
   // 6. Después de createResp.json()
   console.log('[carpeta] createResp.json():', JSON.stringify(folder));
+
+  // DIAGNÓSTICO: verificar parents reales de la carpeta recién creada
+  const verifyResp = await fetch(
+    'https://www.googleapis.com/drive/v3/files/' + folder.id + '?fields=id,name,parents,mimeType',
+    { headers: { 'Authorization': 'Bearer ' + token } }
+  );
+  const verifyData = await verifyResp.json();
+  console.log('[carpeta] VERIFY GET:', JSON.stringify(verifyData));
 
   _carpetaCache[cacheKey] = folder.id;
 
