@@ -1356,11 +1356,14 @@ function _tipoBadge(tipo) {
 }
 
 async function cargarTrabajosDesdeSheet() {
+  console.log('[DEBUG] cargarTrabajosDesdeSheet iniciada');
   try {
     const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
     const resp = await fetch(SCRIPT_URL + '?action=obtenerTrabajos', { redirect: 'follow' });
     if (!resp.ok) return;
     const data = await resp.json();
+    console.log('[DEBUG] respuesta backend:', data);
+    console.log('[DEBUG] trabajos encontrados:', data.trabajos ? data.trabajos.length : 0);
     if (!data.trabajos || !data.trabajos.length) return;
     const yaExistentes = new Set(state.orms.map(o => o['Codigo de ORM']));
     data.trabajos.forEach(r => {
