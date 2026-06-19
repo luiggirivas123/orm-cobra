@@ -1050,6 +1050,37 @@ html {
   <div class="mb"><div class="mi">👍</div><div class="mt2">¡Trabajo finalizado!</div><div class="ms">ORM marcada como Ejecutada. Datos listos para subir a AppSheet de Plus.</div><button class="mbtn" style="background:var(--gr)" onclick="closeMo('mo-ejec');goTo('sc-home')">Volver al inicio</button></div>
 </div>
 
+
+<!-- ===== MAPA OPERATIVO ===== -->
+<div class="sc" id="sc-mapa">
+  <div class="sh">
+    <div style="display:flex;align-items:center;gap:10px;padding:16px;background:var(--wh);border-bottom:1px solid var(--g2)">
+      <button onclick="goTo('sc-home')" class="tb-back">←</button>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--or)" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      <span style="font-size:17px;font-weight:700;color:var(--g9)">Mapa Operativo</span>
+      <button onclick="initMapa()" style="margin-left:auto;background:var(--g1);border:1.5px solid var(--g3);border-radius:var(--rsm);padding:6px 12px;font-size:13px;color:var(--g7);cursor:pointer">↻ Actualizar</button>
+    </div>
+    <div id="mapa-filtros" style="display:flex;gap:6px;padding:10px 14px;overflow-x:auto;background:var(--wh);border-bottom:1px solid var(--g2)">
+      <button class="mf-btn active" onclick="filtrarMapa(this,'all')">Todos</button>
+      <button class="mf-btn" onclick="filtrarMapa(this,'ORM')">ORM</button>
+      <button class="mf-btn" onclick="filtrarMapa(this,'RETENIDA')">Retenidas</button>
+      <button class="mf-btn" onclick="filtrarMapa(this,'PROTECCION')">Protecciones</button>
+      <button class="mf-btn" onclick="filtrarMapa(this,'REUBICACION')">Reubicaciones</button>
+      <button class="mf-btn" onclick="filtrarMapa(this,'EJECUTADO')">Ejecutados</button>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;padding:8px 14px;background:var(--g1);font-size:11px;color:var(--g7)">
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f97316;margin-right:4px"></span>ORM</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#d97706;margin-right:4px"></span>Retenida</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#2563eb;margin-right:4px"></span>Protección</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#059669;margin-right:4px"></span>Reubicación</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#6b7280;margin-right:4px"></span>Ejecutado</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#dc2626;margin-right:4px"></span>Tú</span>
+    </div>
+  </div>
+  <div id="leaflet-map" style="flex:1;min-height:400px;z-index:1"></div>
+  <div style="height:70px"></div>
+</div>
+
 <script>
 // ===== DATA =====
 // POLES_DB: se carga desde Google Sheets via Apps Script
@@ -1177,6 +1208,334 @@ function tipoORM(o) {
 function save() {
   _store.setItem('inspected', JSON.stringify(state.inspected));
   _store.setItem('executed', JSON.stringify(state.executed));
+}
+
+
+async function cargarOrmsManual() {
+  try {
+    const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
+    const resp = await fetch(SCRIPT_URL + '?action=obtenerOrmsManual', { redirect: 'follow' });
+    if (!resp.ok) return;
+    const data = await resp.json();
+    if (!data.rows || !data.rows.length) return;
+    const yaExistentes = new Set(state.orms.map(o => o['Codigo de ORM']));
+    data.rows.forEach(r => {
+      if (!yaExistentes.has(r['Codigo de ORM'])) {
+        r['PetitorioCorto'] = (r['Petitorio'] || '').slice(0, 110);
+        if (!r['TIPO_TRABAJO']) r['TIPO_TRABAJO'] = 'ORM';
+        state.orms.push(r);
+      }
+    });
+    updateHome();
+    renderInspList('');
+    console.log('[orm-manual] cargadas:', data.rows.length);
+  } catch(e) {
+    console.warn('[orm-manual] no se pudo cargar:', e.message);
+  }
+}
+
+// ===== MULTI-ACTIVIDAD =====
+
+function _tipoBadge(tipo) {
+  if (!tipo || tipo === 'ORM') return '';
+  const cfg = {
+    'RETENIDA':   {color:'#92400e', bg:'#fef3c7', label:'RETENIDA'},
+    'PROTECCION': {color:'#1e40af', bg:'#dbeafe', label:'PROTECCIÓN'},
+    'REUBICACION':{color:'#065f46', bg:'#d1fae5', label:'REUBICACIÓN'}
+  };
+  const c = cfg[tipo] || {color:'#374151', bg:'#f3f4f6', label: tipo};
+  return `<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:${c.bg};color:${c.color};letter-spacing:.4px;flex-shrink:0;white-space:nowrap">${c.label}</span>`;
+}
+
+async function cargarTrabajosDesdeSheet() {
+  console.log('[DEBUG] cargarTrabajosDesdeSheet iniciada');
+  try {
+    const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
+    const resp = await fetch(SCRIPT_URL + '?action=obtenerTrabajos', { redirect: 'follow' });
+    if (!resp.ok) return;
+    const data = await resp.json();
+    console.log('[DEBUG] respuesta backend:', data);
+    console.log('[DEBUG] trabajos encontrados:', data.trabajos ? data.trabajos.length : 0);
+    if (!data.trabajos || !data.trabajos.length) return;
+    const yaExistentes = new Set(state.orms.map(o => o['Codigo de ORM']));
+    data.trabajos.forEach(r => {
+      if (!yaExistentes.has(r['Codigo de ORM'])) {
+        r['PetitorioCorto'] = (r['Petitorio'] || '').slice(0, 110);
+        state.orms.push(r);
+        yaExistentes.add(r['Codigo de ORM']);
+      }
+    });
+    updateHome();
+    renderInspList('');
+    console.log('[trabajos] cargados:', data.trabajos.length);
+  } catch(e) {
+    console.warn('[trabajos] no se pudo cargar:', e.message);
+  }
+}
+
+// ── Estado compartido entre preview y confirmación ──
+var _importRows = [], _importTipo = '', _importArchivo = '';
+
+function mostrarPreviewImport() {
+  // Solo abre el modal — NO consulta ninguna API
+  $('mo-import-preview').style.display = 'flex';
+  $('import-preview-body').innerHTML = '';
+  $('import-file-input').value = '';
+  const btn = $('btn-confirmar-import');
+  btn.disabled = true; btn.style.opacity = '.5'; btn.textContent = 'Aplicar importación';
+  _importRows = []; _importTipo = ''; _importArchivo = '';
+}
+
+async function ejecutarPreviewImport() {
+  const fileInput = $('import-file-input');
+  const tipo      = $('import-tipo-select').value;
+  const btn       = $('btn-confirmar-import');
+  const body      = $('import-preview-body');
+
+  if (!fileInput.files || !fileInput.files.length) {
+    body.innerHTML = '<span style="color:var(--rd)">⚠️ Selecciona un archivo Excel primero.</span>';
+    return;
+  }
+  if (typeof XLSX === 'undefined') {
+    body.innerHTML = '<span style="color:var(--rd)">⚠️ Librería Excel no disponible. Verifica conexión a internet.</span>';
+    return;
+  }
+
+  body.innerHTML = '⏳ Leyendo archivo…';
+  btn.disabled = true; btn.style.opacity = '.5';
+
+  try {
+    const file = fileInput.files[0];
+    const ab   = await file.arrayBuffer();
+    const wb   = XLSX.read(ab, { type: 'array' });
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+    console.log('COLUMNAS EXCEL:', Object.keys(rows[0] || {}));
+    console.log('PRIMERA FILA:', rows[0]);
+
+    _importRows   = rows;
+    _importTipo   = tipo;
+    _importArchivo = file.name;
+
+    const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
+    body.innerHTML = '⏳ Consultando backend…';
+    const resp = await fetch(SCRIPT_URL, {
+      method:  'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body:    JSON.stringify({ action: 'previewTrabajos', tipo: tipo, archivoOrigen: file.name, data: JSON.stringify(rows) }),
+      redirect: 'follow'
+    });
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error);
+
+    const { preview = [], total = 0 } = data;
+    const nExcel  = preview.filter(function(r){ return r.ESTADO_COORD === 'EXCEL';    }).length;
+    const nPoste  = preview.filter(function(r){ return r.ESTADO_COORD === 'POSTE';    }).length;
+    const nSin    = preview.filter(function(r){ return r.ESTADO_COORD === 'SIN_COORD';}).length;
+
+    const colorCoord = function(v) {
+      return v === 'EXCEL' ? '#065f46' : v === 'POSTE' ? '#1e40af' : '#b91c1c';
+    };
+
+    body.innerHTML =
+      '<div style="background:var(--g1);border-radius:8px;padding:10px;font-size:13px;line-height:2;margin-bottom:12px">' +
+        '<div>📄 <strong>Tipo:</strong> ' + tipo + '</div>' +
+        '<div>📂 <strong>Archivo:</strong> ' + file.name + '</div>' +
+        '<div>📊 <strong>Filas leídas:</strong> ' + rows.length + ' &nbsp;|&nbsp; <strong>Válidas:</strong> ' + total + '</div>' +
+        '<div>🟢 <strong>Coord Excel:</strong> ' + nExcel + ' &nbsp;·&nbsp; 📍 <strong>BD Postes:</strong> ' + nPoste + ' &nbsp;·&nbsp; ⚠️ <strong>Sin coord:</strong> ' + nSin + '</div>' +
+      '</div>' +
+      (preview.length ? (
+        '<div style="font-size:11px;color:var(--g6);margin-bottom:4px">Primeras ' + preview.length + ' filas:</div>' +
+        '<div style="overflow-x:auto;max-height:180px;overflow-y:auto;border:1px solid var(--g2);border-radius:6px">' +
+          '<table style="width:100%;border-collapse:collapse;font-size:11px">' +
+            '<tr style="background:var(--g1);font-weight:600;position:sticky;top:0">' +
+              '<th style="padding:5px 7px;text-align:left">IDENTIFICADOR</th>' +
+              '<th style="padding:5px 7px;text-align:left">POSTE</th>' +
+              '<th style="padding:5px 7px;text-align:left">DISTRITO</th>' +
+              '<th style="padding:5px 7px;text-align:center">COORD</th>' +
+            '</tr>' +
+            preview.map(function(r) {
+              return '<tr style="border-bottom:1px solid var(--g2)">' +
+                '<td style="padding:4px 7px">' + (r.IDENTIFICADOR||'') + '</td>' +
+                '<td style="padding:4px 7px">' + (r.POSTE||'') + '</td>' +
+                '<td style="padding:4px 7px">' + (r.DISTRITO||'') + '</td>' +
+                '<td style="padding:4px 7px;text-align:center;font-size:10px;font-weight:700;color:' + colorCoord(r.ESTADO_COORD) + '">' + (r.ESTADO_COORD||'') + '</td>' +
+              '</tr>';
+            }).join('') +
+          '</table>' +
+        '</div>'
+      ) : '');
+
+    btn.disabled    = (total === 0);
+    btn.style.opacity = total === 0 ? '.5' : '1';
+
+  } catch(err) {
+    body.innerHTML = '<span style="color:var(--rd)">❌ Error: ' + err.message + '</span>';
+    btn.disabled = true; btn.style.opacity = '.5';
+  }
+}
+
+async function confirmarImportacion() {
+  const btn = $('btn-confirmar-import');
+  btn.disabled = true; btn.textContent = '⏳ Importando…';
+  try {
+    if (!_importRows.length) throw new Error('Sin datos. Ejecuta el preview primero.');
+    const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
+    const resp = await fetch(SCRIPT_URL, {
+      method:  'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body:    JSON.stringify({
+        action:        'importarTrabajos',
+        tipo:          _importTipo,
+        archivoOrigen: _importArchivo,
+        data:          JSON.stringify(_importRows)
+      }),
+      redirect: 'follow'
+    });
+    const data = await resp.json();
+    if (!data.ok) throw new Error(data.error || 'Error al importar');
+    $('mo-import-preview').style.display = 'none';
+    _importRows = []; _importTipo = ''; _importArchivo = '';
+    mostrarToast('✅ ' + data.nuevos + ' nuevos importados. ' + data.duplicados + ' ya existían.', 'var(--gr)');
+    await cargarTrabajosDesdeSheet();
+  } catch(err) {
+    mostrarToast('❌ Error: ' + err.message, 'var(--rd)');
+    btn.disabled = false; btn.textContent = 'Aplicar importación';
+  }
+}
+
+// ===== MAPA OPERATIVO =====
+let _mapaInstance = null;
+let _mapaMarkers  = [];
+let _mapaFiltroActivo = 'all';
+let _mapaUserMarker   = null;
+
+function initMapa() {
+  const contenedor = document.getElementById('leaflet-map');
+  if (!contenedor) return;
+  if (!_mapaInstance) {
+    _mapaInstance = L.map('leaflet-map', { zoomControl: true }).setView([-12.046, -77.0428], 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors', maxZoom: 19
+    }).addTo(_mapaInstance);
+  }
+  renderMapaMarkers(_mapaFiltroActivo);
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(function(pos) {
+      const lat = pos.coords.latitude, lng = pos.coords.longitude;
+      if (_mapaUserMarker) _mapaInstance.removeLayer(_mapaUserMarker);
+      _mapaUserMarker = L.circleMarker([lat, lng], {
+        radius:10, fillColor:'#dc2626', color:'#fff', weight:3, opacity:1, fillOpacity:0.9
+      }).addTo(_mapaInstance).bindPopup('<b>📍 Tu ubicación actual</b>');
+      _mapaInstance.setView([lat, lng], 13);
+    }, function(){}, { enableHighAccuracy: true });
+  }
+  setTimeout(function(){ _mapaInstance.invalidateSize(); }, 200);
+}
+
+function renderMapaMarkers(filtro) {
+  if (!_mapaInstance) return;
+  _mapaFiltroActivo = filtro;
+  _mapaMarkers.forEach(function(m){ _mapaInstance.removeLayer(m); });
+  _mapaMarkers = [];
+  const colores = {
+    'ORM':'#f97316', 'RETENIDA':'#d97706',
+    'PROTECCION':'#2563eb', 'REUBICACION':'#059669', 'EJECUTADO':'#6b7280'
+  };
+  const ejecutadosCodes = new Set(state.executed.map(e => e.code));
+  state.orms.forEach(function(o) {
+    const tipo = o['TIPO_TRABAJO'] || 'ORM';
+    const esEjec = ejecutadosCodes.has(o['Codigo de ORM'] || '') ||
+                   ejecutadosCodes.has(o['IDENTIFICADOR'] || '');
+    const tipoDisplay = esEjec ? 'EJECUTADO' : tipo;
+    if (filtro !== 'all' && tipoDisplay !== filtro) return;
+    const coordStr = o['COORD_PROGRAMADA'] || o['Coordenadas'] || '';
+    if (!coordStr) return;
+    const partes = coordStr.split(',').map(function(x){ return parseFloat(x.trim()); });
+    if (partes.length < 2 || isNaN(partes[0]) || isNaN(partes[1])) return;
+    const color = colores[tipoDisplay] || '#374151';
+    const displayCode = o['IDENTIFICADOR'] || o['Codigo de ORM'] || '—';
+    const mapsUrl = `https://www.google.com/maps?q=${partes[0]},${partes[1]}`;
+    const marker = L.circleMarker([partes[0], partes[1]], {
+      radius:8, fillColor:color, color:'#fff', weight:2, opacity:1, fillOpacity:0.85
+    }).addTo(_mapaInstance);
+    marker.bindPopup(`
+      <div style="font-size:13px;min-width:180px">
+        <div style="font-weight:700;margin-bottom:4px">${displayCode}</div>
+        <div style="margin-bottom:4px">${_tipoBadge(tipo)}</div>
+        <div style="color:#555;margin-bottom:2px">📍 ${o['Distrito']||o['DISTRITO']||'—'}</div>
+        <div style="color:#555;margin-bottom:2px">🛠 ${o['TIPO_TRABAJO']||'ORM'}</div>
+        <div style="color:#555;margin-bottom:8px">Estado: ${o['Estado inspección']||o['ESTADO']||'—'}</div>
+        <a href="${mapsUrl}" target="_blank"
+          style="display:block;text-align:center;background:#1d4ed8;color:white;padding:6px 10px;border-radius:6px;text-decoration:none;font-weight:600;font-size:12px">
+          🗺️ Abrir en Google Maps
+        </a>
+      </div>`);
+    _mapaMarkers.push(marker);
+  });
+}
+
+function filtrarMapa(btn, tipo) {
+  document.querySelectorAll('.mf-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  renderMapaMarkers(tipo);
+}
+
+function abrirNuevaOrm() {
+  ['nw-code','nw-sumi','nw-dist','nw-pet','nw-mot'].forEach(id => $(id).value = '');
+  $('mo-nueva-orm').classList.add('on');
+}
+
+async function guardarNuevaOrm() {
+  const code     = ($('nw-code').value || '').trim().toUpperCase();
+  const distrito = ($('nw-dist').value || '').trim();
+  const petitorio= ($('nw-pet').value  || '').trim();
+
+  if (!code)      { mostrarToast('⚠️ El Código ORM es obligatorio', 'var(--rd)'); return; }
+  if (!distrito)  { mostrarToast('⚠️ El Distrito es obligatorio',   'var(--rd)'); return; }
+  if (!petitorio) { mostrarToast('⚠️ El Petitorio es obligatorio',  'var(--rd)'); return; }
+
+  if (state.orms.find(o => (o['Codigo de ORM']||'').trim().toUpperCase() === code)) {
+    mostrarToast('⚠️ Ya existe una ORM con ese código', 'var(--rd)'); return;
+  }
+
+  const btn = $('btn-guardar-orm');
+  btn.disabled = true;
+  btn.textContent = 'Guardando…';
+
+  const nuevaOrm = {
+    'Codigo de ORM':     code,
+    'Suministro':        ($('nw-sumi').value || '').trim(),
+    'Distrito':          distrito.toUpperCase(),
+    'Petitorio':         petitorio,
+    'PetitorioCorto':    petitorio.slice(0, 110),
+    'Motivo':            ($('nw-mot').value  || '').trim(),
+    'Estado inspección': 'Asignado',
+    'Origen':            'MANUAL',
+    'Fecha registro':    today()
+  };
+
+  try {
+    const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
+    const resp = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      redirect: 'follow',
+      body: JSON.stringify({ action: 'guardarOrmManual', data: nuevaOrm })
+    });
+    const txt = await resp.text();
+    console.log('[orm-manual] respuesta Apps Script:', txt);
+  } catch(e) {
+    console.warn('[orm-manual] error al guardar en Sheets:', e.message);
+    mostrarToast('⚠️ ORM creada localmente, sin sincronizar', 'var(--yw)');
+  }
+
+  state.orms.push(nuevaOrm);
+  closeMo('mo-nueva-orm');
+  updateHome();
+  renderInspList('');
+  mostrarToast('✓ ORM ' + code + ' creada — aparece en Pendientes', 'var(--gr)');
+  btn.disabled = false;
+  btn.textContent = 'Guardar ORM';
 }
 
 // ===== NAVEGACIÓN =====

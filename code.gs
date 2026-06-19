@@ -531,12 +531,38 @@ var TRABAJOS_HEADERS = [
 // ── 1: Obtener lista completa de trabajos ─────────────────────────
 function obtenerTrabajosHandler_(e) {
   try {
-    var ss = getSheet();
-    var sh = ss.getSheetByName('TRABAJOS');
-    if (!sh || sh.getLastRow() < 2) return { trabajos: [] };
-    var ncols   = sh.getLastColumn();
+    var ss   = getSheet();
+    var ssId = SHEET_ID;
+    var ssName = ss.getName();
+    var sh   = ss.getSheetByName('TRABAJOS');
+
+    var hojaExiste  = !!sh;
+    var lastRow     = sh ? sh.getLastRow()    : 0;
+    var lastCol     = sh ? sh.getLastColumn() : 0;
+
+    Logger.log('obtenerTrabajos DEBUG: ssId='   + ssId);
+    Logger.log('obtenerTrabajos DEBUG: ssName=' + ssName);
+    Logger.log('obtenerTrabajos DEBUG: hojaExiste=' + hojaExiste);
+    Logger.log('obtenerTrabajos DEBUG: lastRow='    + lastRow);
+    Logger.log('obtenerTrabajos DEBUG: lastCol='    + lastCol);
+
+    var debug = {
+      spreadsheetId:   ssId,
+      spreadsheetName: ssName,
+      hojaExiste:      hojaExiste,
+      lastRow:         lastRow,
+      lastColumn:      lastCol,
+      filasLeidas:     0,
+      filasRetornadas: 0
+    };
+
+    if (!sh || lastRow < 2) return { trabajos: [], debug: debug };
+
+    var ncols   = lastCol;
     var headers = sh.getRange(1, 1, 1, ncols).getValues()[0];
-    var data    = sh.getRange(2, 1, sh.getLastRow() - 1, ncols).getValues();
+    var data    = sh.getRange(2, 1, lastRow - 1, ncols).getValues();
+    debug.filasLeidas = data.length;
+
     var trabajos = [];
     data.forEach(function(row) {
       if (!row[0]) return;
@@ -544,7 +570,12 @@ function obtenerTrabajosHandler_(e) {
       headers.forEach(function(h, i) { obj[h] = String(row[i] || ''); });
       trabajos.push(obj);
     });
-    return { trabajos: trabajos };
+    debug.filasRetornadas = trabajos.length;
+
+    Logger.log('obtenerTrabajos DEBUG: filasLeidas='     + debug.filasLeidas);
+    Logger.log('obtenerTrabajos DEBUG: filasRetornadas=' + debug.filasRetornadas);
+
+    return { trabajos: trabajos, debug: debug };
   } catch(err) {
     Logger.log('obtenerTrabajosHandler_ error: ' + err.toString());
     return { error: err.toString() };
