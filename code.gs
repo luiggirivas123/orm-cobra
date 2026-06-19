@@ -387,6 +387,21 @@ function getInspeccionPorORM(codigoORM) {
   }
 }
 
+// ── Test directo de Spreadsheet (FASE 1 diagnóstico) ──
+function testSheetDirecto() {
+  try {
+    var ss = SpreadsheetApp.openById('1jYHm5nx6MzXzVppG-drTGZdTD7S8UIrC7Vl2iTjmlVQ');
+    Logger.log('ABIERTO');
+    Logger.log('ID=' + ss.getId());
+    Logger.log('NOMBRE=' + ss.getName());
+    Logger.log('HOJAS=' + ss.getSheets().map(function(s){ return s.getName(); }).join(','));
+    return 'OK';
+  } catch(err) {
+    Logger.log('ERROR=' + err.toString());
+    throw err;
+  }
+}
+
 // ── Test de conexión ──
 function testConexion() {
   Logger.log('=== TEST CONEXIÓN ===');
@@ -530,21 +545,19 @@ var TRABAJOS_HEADERS = [
 
 // ── 1: Obtener lista completa de trabajos ─────────────────────────
 function obtenerTrabajosHandler_(e) {
+  Logger.log('DEBUG_ENTRO_OBTENER_TRABAJOS');
   try {
     var ss   = getSheet();
+    Logger.log('DEBUG_SS_OK');
     var ssId = SHEET_ID;
+    Logger.log('DEBUG_ANTES_GETNAME');
     var ssName = ss.getName();
+    Logger.log('DEBUG_DESPUES_GETNAME');
     var sh   = ss.getSheetByName('TRABAJOS');
 
     var hojaExiste  = !!sh;
     var lastRow     = sh ? sh.getLastRow()    : 0;
     var lastCol     = sh ? sh.getLastColumn() : 0;
-
-    Logger.log('obtenerTrabajos DEBUG: ssId='   + ssId);
-    Logger.log('obtenerTrabajos DEBUG: ssName=' + ssName);
-    Logger.log('obtenerTrabajos DEBUG: hojaExiste=' + hojaExiste);
-    Logger.log('obtenerTrabajos DEBUG: lastRow='    + lastRow);
-    Logger.log('obtenerTrabajos DEBUG: lastCol='    + lastCol);
 
     var debug = {
       spreadsheetId:   ssId,
@@ -571,9 +584,6 @@ function obtenerTrabajosHandler_(e) {
       trabajos.push(obj);
     });
     debug.filasRetornadas = trabajos.length;
-
-    Logger.log('obtenerTrabajos DEBUG: filasLeidas='     + debug.filasLeidas);
-    Logger.log('obtenerTrabajos DEBUG: filasRetornadas=' + debug.filasRetornadas);
 
     return { trabajos: trabajos, debug: debug };
   } catch(err) {
