@@ -2045,7 +2045,7 @@ async function subirFotoDriveAPI(codigoORM, nombreFoto, base64Data, mimeType) {
   }
 }
 
-code, insp, urls) {
+function guardarSoloRegistro(code, insp, urls) {
   const orm = state.currentOrm || {};
   const str = v => (v !== null && v !== undefined) ? String(v) : '';
 
