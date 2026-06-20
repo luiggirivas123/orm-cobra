@@ -3029,6 +3029,17 @@ function sincronizarDesdeSheet() {
         }
         
         let cambios = false;
+        const sheetInspCodes = new Set(
+  (data.inspecciones || [])
+    .map(x => x['Codigo ORM'])
+    .filter(Boolean)
+);
+
+const sheetEjecCodes = new Set(
+  (data.ejecuciones || [])
+    .map(x => x['Codigo ORM'])
+    .filter(Boolean)
+);
         
         // Sincronizar inspecciones — reemplazar completamente si hay datos en Sheet
         (data.inspecciones || []).forEach(function(insp) {
@@ -3085,6 +3096,15 @@ function sincronizarDesdeSheet() {
             }
           }
         });
+        const antesInsp = state.inspected.length;
+
+state.inspected = state.inspected.filter(function(i){
+  return !i._fromSheet || sheetInspCodes.has(i.code);
+});
+
+if (state.inspected.length !== antesInsp) {
+  cambios = true;
+}
 
         // Sincronizar ejecuciones
         (data.ejecuciones || []).forEach(function(ejec) {
@@ -3111,6 +3131,15 @@ function sincronizarDesdeSheet() {
             cambios = true;
           }
         });
+                const antesEjec = state.executed.length;
+
+        state.executed = state.executed.filter(function(e){
+          return !e._fromSheet || sheetEjecCodes.has(e.code);
+        });
+
+        if (state.executed.length !== antesEjec) {
+          cambios = true;
+        }
 
         if (cambios) {
           save();
