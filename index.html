@@ -2045,7 +2045,7 @@ async function subirFotoDriveAPI(codigoORM, nombreFoto, base64Data, mimeType) {
   }
 }
 
-code, insp, urls) {
+function guardarSoloRegistro(code, insp, urls) {
   const orm = state.currentOrm || {};
   const str = v => (v !== null && v !== undefined) ? String(v) : '';
 
@@ -2055,7 +2055,9 @@ code, insp, urls) {
     data: {
       code: str(code), suministro: str(orm['Suministro']), distrito: str(orm['Distrito']),
       petitorio: str(orm['Petitorio']), motivo: str(orm['Motivo']),
-      inspector: str(insp.inspector), fecfunction guardarSoloRegistro(ha: str(insp.fecha), hora: str(insp.hora),
+      inspector: str(insp.inspector),
+fecha: str(insp.fecha),
+hora: str(insp.hora),
       fechaRep: str(insp.fechaRep), lcl: str(insp.lcl), apoyo: str(insp.apoyo),
       coords: str(insp.coords), incl: str(insp.incl), angulo: str(insp.angulo),
       dms: str(insp.dms), grua: str(insp.grua), acm: str(insp.acm),
