@@ -263,7 +263,7 @@ function guardarRegistro(registro) {
         sheetInsp.getRange(1,1,1,31).setBackground('#E8600A').setFontColor('white').setFontWeight('bold');
       }
       var d = registro.data;
-      sheetInsp.appendRow([
+      var nuevaFilaInsp = [
         d.code||'', d.suministro||'', d.distrito||'', d.petitorio||'', d.motivo||'',
         d.inspector||'', d.fecha||'', d.hora||'', d.fechaRep||'',
         d.lcl||'', d.apoyo||'', d.coords||'', d.incl||'', d.angulo||'',
@@ -278,8 +278,24 @@ function guardarRegistro(registro) {
         d.fotos ? (d.fotos['Croquis']||'') : '',
         d.fotos ? (d.fotos['Conformidad_cliente']||'') : '',
         'Inspeccionado', new Date()
-      ]);
-      Logger.log('Inspección guardada: ' + d.code);
+      ];
+      var filaExistenteInsp = -1;
+      if (sheetInsp.getLastRow() > 1) {
+        var codigosInsp = sheetInsp.getRange(2, 1, sheetInsp.getLastRow() - 1, 1).getValues();
+        for (var i = 0; i < codigosInsp.length; i++) {
+          if (String(codigosInsp[i][0]).trim() === String(d.code||'').trim()) {
+            filaExistenteInsp = i + 2;
+            break;
+          }
+        }
+      }
+      if (filaExistenteInsp > 0) {
+        sheetInsp.getRange(filaExistenteInsp, 1, 1, 31).setValues([nuevaFilaInsp]);
+        Logger.log('UPSERT UPDATE inspección fila ' + filaExistenteInsp + ': ' + d.code);
+      } else {
+        sheetInsp.appendRow(nuevaFilaInsp);
+        Logger.log('UPSERT INSERT inspección nueva: ' + d.code);
+      }
     }
 
     if (registro.tipo === 'ejecucion') {
@@ -293,7 +309,7 @@ function guardarRegistro(registro) {
         sheetEjec.getRange(1,1,1,12).setBackground('#1A7A4A').setFontColor('white').setFontWeight('bold');
       }
       var e2 = registro.data;
-      sheetEjec.appendRow([
+      var nuevaFila = [
         e2.code||'', e2.tecnico||'', e2.fecha||'', e2.fechaRep||'',
         e2.tipo||'', e2.det||'',
         e2.fotos ? (e2.fotos['Foto_despues1']||'') : '',
@@ -301,8 +317,24 @@ function guardarRegistro(registro) {
         e2.fotos ? (e2.fotos['Foto_despues3']||'') : '',
         e2.fotos ? (e2.fotos['Foto_despues4']||'') : '',
         'Ejecutado', new Date()
-      ]);
-      Logger.log('Ejecución guardada: ' + e2.code);
+      ];
+      var filaExistente = -1;
+      if (sheetEjec.getLastRow() > 1) {
+        var codigos = sheetEjec.getRange(2, 1, sheetEjec.getLastRow() - 1, 1).getValues();
+        for (var i = 0; i < codigos.length; i++) {
+          if (String(codigos[i][0]).trim() === String(e2.code||'').trim()) {
+            filaExistente = i + 2;
+            break;
+          }
+        }
+      }
+      if (filaExistente > 0) {
+        sheetEjec.getRange(filaExistente, 1, 1, 12).setValues([nuevaFila]);
+        Logger.log('Ejecución actualizada fila ' + filaExistente + ': ' + e2.code);
+      } else {
+        sheetEjec.appendRow(nuevaFila);
+        Logger.log('Ejecución nueva: ' + e2.code);
+      }
     }
 
     return {ok: true};
