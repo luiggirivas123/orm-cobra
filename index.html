@@ -7,9 +7,6 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>ORM Cobra</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <style>
 :root{--or:#E8600A;--orl:#FFF3EB;--orm:#F5A36B;--gr:#1A7A4A;--grl:#E6F5ED;--grm:#4CAF7D;--bl:#1565C0;--bll:#E3F0FF;--rd:#C62828;--rdl:#FDECEA;--pu:#6A1B9A;--pul:#F3E5F5;--g0:#F8F9FA;--g1:#F1F3F4;--g2:#E8EAED;--g3:#DADCE0;--g4:#BDC1C6;--g6:#80868B;--g7:#5F6368;--g9:#202124;--wh:#FFFFFF;--rsm:8px;--rmd:12px;--rlg:18px}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -57,11 +54,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
 /* BOTTOM NAV */
 .bn{background:var(--wh);border-top:1px solid var(--g2);display:flex;position:fixed;bottom:0;left:0;right:0;z-index:100;height:68px}
-.ni{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:11px;font-weight:600;color:var(--g4);cursor:pointer;border:none;background:none;padding:0}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px;font-weight:600;color:var(--g4);cursor:pointer;border:none;background:none;padding:0}
 .ni.on{color:var(--or)}
-/* MAPA OPERATIVO */
-.mf-btn{flex-shrink:0;padding:6px 12px;border:1.5px solid var(--g3);border-radius:20px;background:var(--wh);font-size:12px;font-weight:600;color:var(--g7);cursor:pointer;white-space:nowrap}
-.mf-btn.active{background:var(--or);color:white;border-color:var(--or)}
 .ni svg{width:26px;height:26px}
 .nbadge{position:absolute;top:2px;background:var(--or);color:white;border-radius:10px;font-size:10px;font-weight:700;padding:2px 6px;min-width:18px;text-align:center}
 .niw{position:relative}
@@ -279,13 +273,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 /* ELIMINAR INSPECCIÓN */
 .btn-eliminar{background:var(--rdl);color:var(--rd);border:2px solid var(--rd);border-radius:var(--rsm);padding:12px 16px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;margin-top:10px;width:100%}
 .btn-eliminar:active{background:var(--rd);color:white}
-.btn-corregir{background:var(--bll);color:var(--bl);border:2px solid var(--bl);border-radius:var(--rsm);padding:12px 16px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;margin-top:10px;width:100%}
-.btn-corregir:active{background:var(--bl);color:white}
-.foto-edit-actions{display:flex;gap:4px;padding:4px 6px;background:var(--wh);border-top:1px solid var(--g2)}
-.foto-edit-actions button{flex:1;padding:4px 2px;font-size:10px;font-weight:700;border:none;border-radius:4px;cursor:pointer}
-.fea-ver{background:var(--bll);color:var(--bl)}
-.fea-rep{background:#fff3e0;color:var(--or)}
-.fea-quit{background:var(--rdl);color:var(--rd)}
 /* MODAL CONFIRMACIÓN */
 .mo-confirm{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;padding:20px}
 .mo-confirm.on{display:flex}
@@ -506,25 +493,25 @@ html {
     <div class="hh-s" id="h-fecha-hoy">Domingo, 14 de junio 2026</div>
   </div>
   <div class="stats">
-    <div class="sc-card or" onclick="irAFiltro('insp')">
+    <div class="sc-card or" onclick="goTo('sc-insp')">
       <div class="sc-lbl">Pend. Inspección</div>
       <div class="sc-num" id="cnt-insp">—</div>
       <div class="sc-sub">Tap para ver →</div>
     </div>
-    <div class="sc-card bl" onclick="irAFiltro('ejec')">
+    <div class="sc-card bl" onclick="goTo('sc-ejec')">
       <div class="sc-lbl">Pend. Ejecución</div>
       <div class="sc-num" id="cnt-ejec">—</div>
       <div class="sc-sub">Tap para ver →</div>
     </div>
-    <div class="sc-card pu" onclick="irAFiltro('sin')">
+    <div class="sc-card pu">
       <div class="sc-lbl">Sin acceso</div>
       <div class="sc-num" id="cnt-sin">—</div>
-      <div class="sc-sub">Tap para ver →</div>
+      <div class="sc-sub">Fibra de vidrio</div>
     </div>
-    <div class="sc-card gr" onclick="irAFiltro('ejecutado')">
+    <div class="sc-card gr">
       <div class="sc-lbl">Ejecutados</div>
       <div class="sc-num" id="cnt-done">—</div>
-      <div class="sc-sub">Tap para ver →</div>
+      <div class="sc-sub">Total registrados</div>
     </div>
   </div>
 
@@ -556,38 +543,6 @@ html {
       </div>
     </div>
   </div>
-  <!-- Admin: importar trabajos multi-actividad -->
-  <div id="admin-import-section" style="display:none;padding:0 16px;margin-bottom:10px">
-    <button onclick="mostrarPreviewImport()" style="width:100%;background:#7c3aed;border:none;border-radius:var(--rmd);padding:14px;font-size:15px;font-weight:600;color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
-      📥 Importar Trabajos (RETENIDAS · PROTECCIONES · REUBICACIONES)
-    </button>
-  </div>
-
-  <!-- Modal preview importación -->
-  <div id="mo-import-preview" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;overflow-y:auto;padding:20px">
-    <div style="background:var(--wh);border-radius:var(--rmd);margin:0 auto;max-width:520px;padding:20px">
-      <div style="font-size:17px;font-weight:700;margin-bottom:16px">📥 Importar Trabajos</div>
-      <div style="margin-bottom:12px">
-        <label style="font-size:12px;font-weight:600;color:var(--g6);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px">Tipo de actividad</label>
-        <select id="import-tipo-select" style="width:100%;padding:10px;border:1.5px solid var(--g3);border-radius:var(--rsm);font-size:14px;background:var(--wh);color:var(--g9)">
-          <option value="RETENIDA">RETENIDAS</option>
-          <option value="PROTECCION">PROTECCIONES</option>
-          <option value="REUBICACION">REUBICACIONES</option>
-        </select>
-      </div>
-      <div style="margin-bottom:14px">
-        <label style="font-size:12px;font-weight:600;color:var(--g6);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px">Archivo Excel (.xlsx)</label>
-        <input type="file" id="import-file-input" accept=".xlsx,.xls" style="width:100%;font-size:13px;padding:6px 0;color:var(--g9)">
-      </div>
-      <button onclick="ejecutarPreviewImport()" style="width:100%;padding:11px;background:var(--g1);border:1.5px solid var(--g3);border-radius:var(--rsm);font-size:14px;font-weight:600;cursor:pointer;margin-bottom:14px;color:var(--g9)">🔍 Ver preview</button>
-      <div id="import-preview-body" style="font-size:13px;color:var(--g7);min-height:0"></div>
-      <div style="display:flex;gap:10px;margin-top:16px">
-        <button onclick="$('mo-import-preview').style.display='none'" style="flex:1;padding:12px;border:1.5px solid var(--g3);border-radius:var(--rsm);background:var(--wh);font-size:14px;cursor:pointer">Cancelar</button>
-        <button id="btn-confirmar-import" onclick="confirmarImportacion()" disabled style="flex:2;padding:12px;background:#7c3aed;color:white;border:none;border-radius:var(--rsm);font-size:14px;font-weight:700;cursor:pointer;opacity:.5">Aplicar importación</button>
-      </div>
-    </div>
-  </div>
-
   <!-- Google Auth Bar - visible para inspector y técnico también -->
   <div id="google-auth-bar" class="google-auth-bar" style="display:none">
     <div class="google-auth-info">
@@ -631,38 +586,12 @@ html {
 
   <div class="sec-title">Últimas ORMs cargadas</div>
   <div class="lc" id="home-list"></div>
-  <div id="btn-nueva-orm-wrap" style="display:none;padding:0 16px 16px">
-    <button onclick="abrirNuevaOrm()" style="width:100%;padding:12px;background:var(--or);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer">➕ Nueva ORM manual</button>
-  </div>
-</div>
-
-<div class="mo" id="mo-nueva-orm">
-  <div class="mo-box">
-    <div class="mo-title">Nueva ORM Manual</div>
-    <div class="mo-body">
-      <label class="flbl">Código ORM *</label>
-      <input class="finp" id="nw-code" placeholder="Ej: 2041858100" type="text">
-      <label class="flbl">Suministro</label>
-      <input class="finp" id="nw-sumi" placeholder="Ej: 12345678" type="text">
-      <label class="flbl">Distrito *</label>
-      <input class="finp" id="nw-dist" placeholder="Ej: Miraflores" type="text">
-      <label class="flbl">Petitorio *</label>
-      <input class="finp" id="nw-pet" placeholder="Descripción del trabajo" type="text">
-      <label class="flbl">Motivo</label>
-      <input class="finp" id="nw-mot" placeholder="Motivo de la ORM" type="text">
-    </div>
-    <div class="mo-btns">
-      <button class="mbtn" style="background:var(--g3);color:var(--g7)" onclick="closeMo('mo-nueva-orm')">Cancelar</button>
-      <button class="mbtn" style="background:var(--or)" id="btn-guardar-orm" onclick="guardarNuevaOrm()">Guardar ORM</button>
-    </div>
-  </div>
 </div>
 <div class="bn">
   <button class="ni on" onclick="goTo('sc-home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>Inicio</button>
   <button class="ni" onclick="goTo('sc-insp')" id="bn-insp"><div class="niw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><span class="nbadge" id="bn-insp-cnt">—</span></div>Inspección</button>
   <button class="ni" onclick="goTo('sc-ejec')" id="bn-ejec"><div class="niw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg><span class="nbadge" style="background:var(--bl)" id="bn-ejec-cnt">—</span></div>Ejecución</button>
   <button class="ni" id="bn-dash" onclick="goTo('sc-dash')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg>Dashboard</button>
-  <button class="ni" id="bn-mapa" onclick="goTo('sc-mapa');initMapa()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Mapa</button>
 </div>
 </div>
 
@@ -721,15 +650,6 @@ html {
     <div class="ir"><span class="ik">Fecha registro</span><span class="iv" id="fd-freg">—</span></div>
     <div class="ir"><span class="ik">Nombre</span><span class="iv" id="fd-nombre">—</span></div>
     <div class="ir"><span class="ik">Domicilio</span><span class="iv" id="fd-dom">—</span></div>
-    <div class="ir" id="fd-coord-prog-wrap">
-      <span class="ik">Coord. Programada</span>
-      <span class="iv" id="fd-coord-prog" style="font-size:12px;color:var(--g7)">—</span>
-    </div>
-    <button class="maps-btn" id="fd-ir-poste" style="display:none;margin:2px 0 8px"
-      onclick="openMaps(document.getElementById('fd-coord-prog').textContent)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-      📍 Ir al poste
-    </button>
   </div>
   <div class="fs">
     <div class="fst">📅 Fecha y hora</div>
@@ -744,7 +664,7 @@ html {
     </div>
   </div>
   <div class="fs">
-    <div class="fst">🔍 Buscar número de poste <span id="poles-count-badge" style="font-size:10px;background:var(--bll);color:var(--bl);padding:2px 8px;border-radius:20px;font-weight:600;text-transform:none;letter-spacing:0">consulta en línea</span></div>
+    <div class="fst">🔍 Buscar número de poste <span id="poles-count-badge" style="font-size:10px;background:var(--bll);color:var(--bl);padding:2px 8px;border-radius:20px;font-weight:600;text-transform:none;letter-spacing:0">cargando...</span></div>
     <div class="fi">
       <div class="fl">N° de poste (busca en base de datos)</div>
       <div class="poste-input-wrap" style="margin-bottom:0">
@@ -762,10 +682,10 @@ html {
       <div class="fi"><div class="fl"><span class="rd-dot"></span>Cód. Apoyo</div><input type="number" id="f-apoyo" placeholder="0"></div>
     </div>
     <div class="fi">
-      <div class="fl"><span class="rd-dot"></span>Coordenada Real (Campo)</div>
+      <div class="fl"><span class="rd-dot"></span>Coordenadas GPS</div>
       <div class="gw">
         <input type="text" id="f-coords" placeholder="-11.920144, -77.085095">
-        <button class="gb2" onclick="getGPS()">📍 Obtener ubicación actual</button>
+        <button class="gb2" onclick="getGPS()">📍 GPS</button>
       </div>
     </div>
     <div class="fi">
@@ -926,15 +846,11 @@ html {
       <div class="ps" onclick="tp('pe-2')" id="se-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M3 9a2 2 0 012-2h1l2-3h4l2 3h1a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg><div class="pn">Foto después 2</div></div>
       <div class="ps" onclick="tp('pe-3')" id="se-3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M3 9a2 2 0 012-2h1l2-3h4l2 3h1a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg><div class="pn">Foto después 3</div></div>
       <div class="ps" onclick="tp('pe-4')" id="se-4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M3 9a2 2 0 012-2h1l2-3h4l2 3h1a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg><div class="pn">Foto después 4</div></div>
-      <div class="ps" onclick="tp('pe-5')" id="se-5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M3 9a2 2 0 012-2h1l2-3h4l2 3h1a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg><div class="pn">Foto Plano</div></div>
-      <div class="ps" onclick="tp('pe-6')" id="se-6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M3 9a2 2 0 012-2h1l2-3h4l2 3h1a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg><div class="pn">Foto Boleta</div></div>
     </div>
     <input type="file" accept="image/*"  class="pfi" id="pe-1" onchange="hp(this,'se-1')">
     <input type="file" accept="image/*"  class="pfi" id="pe-2" onchange="hp(this,'se-2')">
     <input type="file" accept="image/*"  class="pfi" id="pe-3" onchange="hp(this,'se-3')">
     <input type="file" accept="image/*"  class="pfi" id="pe-4" onchange="hp(this,'se-4')">
-    <input type="file" accept="image/*"  class="pfi" id="pe-5" onchange="hp(this,'se-5')">
-    <input type="file" accept="image/*"  class="pfi" id="pe-6" onchange="hp(this,'se-6')">
   </div>
   <div style="height:90px"></div>
 </div>
@@ -1127,17 +1043,6 @@ html {
     </div>
   </div>
 </div>
-<div class="mo-confirm" id="mo-quitar-foto">
-  <div class="mo-confirm-box">
-    <div class="mo-confirm-icon">🖼️</div>
-    <div class="mo-confirm-title">¿Quitar esta foto?</div>
-    <div class="mo-confirm-sub">¿Deseas quitar esta foto del registro?<br>El archivo en Google Drive no se borrará.</div>
-    <div class="mo-confirm-btns">
-      <button class="btn-cancel-del" onclick="cancelarQuitarFoto()">Cancelar</button>
-      <button class="btn-confirm-del" onclick="confirmarQuitarFoto()">Quitar</button>
-    </div>
-  </div>
-</div>
 <div class="mo" id="mo-insp">
   <div class="mb"><div class="mi">✅</div><div class="mt2">¡Inspección guardada!</div><div class="ms" id="mo-insp-msg">ORM pasó a Pendiente ejecución.</div><button class="mbtn" onclick="closeMo('mo-insp');goTo('sc-ejec')">Ver pendientes de ejecución</button></div>
 </div>
@@ -1145,82 +1050,37 @@ html {
   <div class="mb"><div class="mi">👍</div><div class="mt2">¡Trabajo finalizado!</div><div class="ms">ORM marcada como Ejecutada. Datos listos para subir a AppSheet de Plus.</div><button class="mbtn" style="background:var(--gr)" onclick="closeMo('mo-ejec');goTo('sc-home')">Volver al inicio</button></div>
 </div>
 
-<!-- ===== MAPA OPERATIVO ===== -->
-<div class="sc" id="sc-mapa">
-  <div class="sh">
-    <div style="display:flex;align-items:center;gap:10px;padding:16px;background:var(--wh);border-bottom:1px solid var(--g2)">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--or)" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-      <span style="font-size:17px;font-weight:700;color:var(--g9)">Mapa Operativo</span>
-      <button onclick="initMapa()" style="margin-left:auto;background:var(--g1);border:1.5px solid var(--g3);border-radius:var(--rsm);padding:6px 12px;font-size:13px;color:var(--g7);cursor:pointer">↻ Actualizar</button>
-    </div>
-    <div id="mapa-filtros" style="display:flex;gap:6px;padding:10px 14px;overflow-x:auto;background:var(--wh);border-bottom:1px solid var(--g2)">
-      <button class="mf-btn active" onclick="filtrarMapa(this,'all')">Todos</button>
-      <button class="mf-btn" onclick="filtrarMapa(this,'ORM')">ORM</button>
-      <button class="mf-btn" onclick="filtrarMapa(this,'RETENIDA')">Retenidas</button>
-      <button class="mf-btn" onclick="filtrarMapa(this,'PROTECCION')">Protecciones</button>
-      <button class="mf-btn" onclick="filtrarMapa(this,'REUBICACION')">Reubicaciones</button>
-      <button class="mf-btn" onclick="filtrarMapa(this,'EJECUTADO')">Ejecutados</button>
-    </div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;padding:8px 14px;background:var(--g1);font-size:11px;color:var(--g7)">
-      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f97316;margin-right:4px"></span>ORM</span>
-      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#d97706;margin-right:4px"></span>Retenida</span>
-      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#2563eb;margin-right:4px"></span>Protección</span>
-      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#059669;margin-right:4px"></span>Reubicación</span>
-      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#6b7280;margin-right:4px"></span>Ejecutado</span>
-      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#dc2626;margin-right:4px"></span>Tú</span>
-    </div>
-  </div>
-  <div id="leaflet-map" style="flex:1;min-height:400px;z-index:1"></div>
-  <div style="height:70px"></div>
-</div>
-
 <script>
 // ===== DATA =====
-// POLES_DB: ya NO se carga completa al inicio.
-// Todas las búsquedas de postes van directamente a Apps Script (acción buscarPoste).
-let POLES_DB = {};   // mantenido por compatibilidad, siempre vacío
+// POLES_DB: se carga desde Google Sheets via Apps Script
+// Mientras carga, usa el fallback con los postes ya conocidos
+let POLES_DB = {};
 let polesLoaded = false;
 
-// Consulta puntual a Apps Script: recibe un query (número completo o prefijo)
-// Apps Script lee la hoja BD POSTES y devuelve solo las filas que coinciden.
-// callback(results) donde results = [{poste, coords, distrito, alim, ...}] o []
-let _posteScriptTimer = null;
-function buscarPosteViaScript(q, callback) {
-  const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
-  if (!SCRIPT_URL) { callback([]); return; }
-  fetch(SCRIPT_URL + '?action=buscarPoste&q=' + encodeURIComponent((q||'').trim()), { redirect: 'follow' })
-    .then(function(r) { return r.json(); })
-    .then(function(data) { callback(data && data.results ? data.results : []); })
-    .catch(function() { callback([]); });
-}
-
-// Versión debounced para inputs de texto (evita spam a Apps Script)
-function buscarPosteViaScriptDebounced(q, callback, delay) {
-  clearTimeout(_posteScriptTimer);
-  _posteScriptTimer = setTimeout(function() { buscarPosteViaScript(q, callback); }, delay || 450);
-}
-
 function loadPolesFromSheet() {
-  // Función retenida por compatibilidad — ya no carga nada.
-  console.log('[postes] carga masiva deshabilitada. Usa obtenerCoordenadasPoste() para búsquedas puntuales.');
-}
-
-// ── Función reutilizable para los 4 tipos de trabajo ──────────────────────────
-// obtenerCoordenadasPoste(poste, callback)
-//   poste    → número de poste exacto (string o number)
-//   callback → fn({ poste, coords }) con coords ya limpias (sin º)
-//              o null si no se encontró
-function obtenerCoordenadasPoste(poste, callback) {
-  poste = String(poste || '').trim();
-  if (!poste) { callback(null); return; }
-  buscarPosteViaScript(poste, function(results) {
-    // Busca coincidencia exacta; si no, acepta prefijo
-    var exact = null;
-    for (var i = 0; i < results.length; i++) {
-      if (results[i].poste === poste) { exact = results[i]; break; }
-    }
-    callback(exact || results[0] || null);
-  });
+  const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
+  if (!SCRIPT_URL) {
+    polesLoaded = true;
+    return;
+  }
+  
+  fetch(SCRIPT_URL + '?action=postes', {redirect: 'follow'})
+    .then(r => r.text())
+    .then(function(text) {
+      try {
+        const data = JSON.parse(text);
+        if (data && !data.error) {
+          POLES_DB = data;
+          polesLoaded = true;
+          const badge = document.getElementById('poles-count-badge');
+          if (badge) badge.textContent = Object.keys(POLES_DB).length + ' postes';
+          console.log('Postes cargados via Apps Script:', Object.keys(POLES_DB).length);
+        }
+      } catch(e) {
+        console.warn('Error parseando postes:', e);
+      }
+    })
+    .catch(e => console.warn('Error cargando postes:', e));
 }
 
 
@@ -1279,7 +1139,7 @@ let state = {
   executed: JSON.parse(_store.getItem('executed')||'[]'),
   currentOrm: null,
   togIncl: 'N', togDms: 'N', gruaVal: 'Si', cntAcm: 0,
-  ejecFilter: 'all', dashPeriod: 'dia', _editMode: null, _editCode: null, _fotosQuitadas: new Set()
+  ejecFilter: 'all', dashPeriod: 'dia'
 };
 
 // ===== HELPERS =====
@@ -1317,331 +1177,6 @@ function tipoORM(o) {
 function save() {
   _store.setItem('inspected', JSON.stringify(state.inspected));
   _store.setItem('executed', JSON.stringify(state.executed));
-}
-
-async function cargarOrmsManual() {
-  try {
-    const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
-    const resp = await fetch(SCRIPT_URL + '?action=obtenerOrmsManual', { redirect: 'follow' });
-    if (!resp.ok) return;
-    const data = await resp.json();
-    if (!data.rows || !data.rows.length) return;
-    const yaExistentes = new Set(state.orms.map(o => o['Codigo de ORM']));
-    data.rows.forEach(r => {
-      if (!yaExistentes.has(r['Codigo de ORM'])) {
-        r['PetitorioCorto'] = (r['Petitorio'] || '').slice(0, 110);
-        if (!r['TIPO_TRABAJO']) r['TIPO_TRABAJO'] = 'ORM';
-        state.orms.push(r);
-      }
-    });
-    updateHome();
-    renderInspList('');
-    console.log('[orm-manual] cargadas:', data.rows.length);
-  } catch(e) {
-    console.warn('[orm-manual] no se pudo cargar:', e.message);
-  }
-}
-
-// ===== MULTI-ACTIVIDAD =====
-
-function _tipoBadge(tipo) {
-  if (!tipo || tipo === 'ORM') return '';
-  const cfg = {
-    'RETENIDA':   {color:'#92400e', bg:'#fef3c7', label:'RETENIDA'},
-    'PROTECCION': {color:'#1e40af', bg:'#dbeafe', label:'PROTECCIÓN'},
-    'REUBICACION':{color:'#065f46', bg:'#d1fae5', label:'REUBICACIÓN'}
-  };
-  const c = cfg[tipo] || {color:'#374151', bg:'#f3f4f6', label: tipo};
-  return `<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:${c.bg};color:${c.color};letter-spacing:.4px;flex-shrink:0;white-space:nowrap">${c.label}</span>`;
-}
-
-async function cargarTrabajosDesdeSheet() {
-  console.log('[DEBUG] cargarTrabajosDesdeSheet iniciada');
-  try {
-    const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
-    const resp = await fetch(SCRIPT_URL + '?action=obtenerTrabajos', { redirect: 'follow' });
-    if (!resp.ok) return;
-    const data = await resp.json();
-    console.log('[DEBUG] respuesta backend:', data);
-    console.log('[DEBUG] trabajos encontrados:', data.trabajos ? data.trabajos.length : 0);
-    if (!data.trabajos || !data.trabajos.length) return;
-    const yaExistentes = new Set(state.orms.map(o => o['Codigo de ORM']));
-    data.trabajos.forEach(r => {
-      if (!yaExistentes.has(r['Codigo de ORM'])) {
-        r['PetitorioCorto'] = (r['Petitorio'] || '').slice(0, 110);
-        state.orms.push(r);
-        yaExistentes.add(r['Codigo de ORM']);
-      }
-    });
-    updateHome();
-    renderInspList('');
-    console.log('[trabajos] cargados:', data.trabajos.length);
-  } catch(e) {
-    console.warn('[trabajos] no se pudo cargar:', e.message);
-  }
-}
-
-// ── Estado compartido entre preview y confirmación ──
-var _importRows = [], _importTipo = '', _importArchivo = '';
-
-function mostrarPreviewImport() {
-  // Solo abre el modal — NO consulta ninguna API
-  $('mo-import-preview').style.display = 'flex';
-  $('import-preview-body').innerHTML = '';
-  $('import-file-input').value = '';
-  const btn = $('btn-confirmar-import');
-  btn.disabled = true; btn.style.opacity = '.5'; btn.textContent = 'Aplicar importación';
-  _importRows = []; _importTipo = ''; _importArchivo = '';
-}
-
-async function ejecutarPreviewImport() {
-  const fileInput = $('import-file-input');
-  const tipo      = $('import-tipo-select').value;
-  const btn       = $('btn-confirmar-import');
-  const body      = $('import-preview-body');
-
-  if (!fileInput.files || !fileInput.files.length) {
-    body.innerHTML = '<span style="color:var(--rd)">⚠️ Selecciona un archivo Excel primero.</span>';
-    return;
-  }
-  if (typeof XLSX === 'undefined') {
-    body.innerHTML = '<span style="color:var(--rd)">⚠️ Librería Excel no disponible. Verifica conexión a internet.</span>';
-    return;
-  }
-
-  body.innerHTML = '⏳ Leyendo archivo…';
-  btn.disabled = true; btn.style.opacity = '.5';
-
-  try {
-    const file = fileInput.files[0];
-    const ab   = await file.arrayBuffer();
-    const wb   = XLSX.read(ab, { type: 'array' });
-    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
-    console.log('COLUMNAS EXCEL:', Object.keys(rows[0] || {}));
-    console.log('PRIMERA FILA:', rows[0]);
-
-    _importRows   = rows;
-    _importTipo   = tipo;
-    _importArchivo = file.name;
-
-    const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
-    body.innerHTML = '⏳ Consultando backend…';
-    const resp = await fetch(SCRIPT_URL, {
-      method:  'POST',
-      headers: {'Content-Type': 'text/plain;charset=utf-8'},
-      body:    JSON.stringify({ action: 'previewTrabajos', tipo: tipo, archivoOrigen: file.name, data: JSON.stringify(rows) }),
-      redirect: 'follow'
-    });
-    const data = await resp.json();
-    if (data.error) throw new Error(data.error);
-
-    const { preview = [], total = 0 } = data;
-    const nExcel  = preview.filter(function(r){ return r.ESTADO_COORD === 'EXCEL';    }).length;
-    const nPoste  = preview.filter(function(r){ return r.ESTADO_COORD === 'POSTE';    }).length;
-    const nSin    = preview.filter(function(r){ return r.ESTADO_COORD === 'SIN_COORD';}).length;
-
-    const colorCoord = function(v) {
-      return v === 'EXCEL' ? '#065f46' : v === 'POSTE' ? '#1e40af' : '#b91c1c';
-    };
-
-    body.innerHTML =
-      '<div style="background:var(--g1);border-radius:8px;padding:10px;font-size:13px;line-height:2;margin-bottom:12px">' +
-        '<div>📄 <strong>Tipo:</strong> ' + tipo + '</div>' +
-        '<div>📂 <strong>Archivo:</strong> ' + file.name + '</div>' +
-        '<div>📊 <strong>Filas leídas:</strong> ' + rows.length + ' &nbsp;|&nbsp; <strong>Válidas:</strong> ' + total + '</div>' +
-        '<div>🟢 <strong>Coord Excel:</strong> ' + nExcel + ' &nbsp;·&nbsp; 📍 <strong>BD Postes:</strong> ' + nPoste + ' &nbsp;·&nbsp; ⚠️ <strong>Sin coord:</strong> ' + nSin + '</div>' +
-      '</div>' +
-      (preview.length ? (
-        '<div style="font-size:11px;color:var(--g6);margin-bottom:4px">Primeras ' + preview.length + ' filas:</div>' +
-        '<div style="overflow-x:auto;max-height:180px;overflow-y:auto;border:1px solid var(--g2);border-radius:6px">' +
-          '<table style="width:100%;border-collapse:collapse;font-size:11px">' +
-            '<tr style="background:var(--g1);font-weight:600;position:sticky;top:0">' +
-              '<th style="padding:5px 7px;text-align:left">IDENTIFICADOR</th>' +
-              '<th style="padding:5px 7px;text-align:left">POSTE</th>' +
-              '<th style="padding:5px 7px;text-align:left">DISTRITO</th>' +
-              '<th style="padding:5px 7px;text-align:center">COORD</th>' +
-            '</tr>' +
-            preview.map(function(r) {
-              return '<tr style="border-bottom:1px solid var(--g2)">' +
-                '<td style="padding:4px 7px">' + (r.IDENTIFICADOR||'') + '</td>' +
-                '<td style="padding:4px 7px">' + (r.POSTE||'') + '</td>' +
-                '<td style="padding:4px 7px">' + (r.DISTRITO||'') + '</td>' +
-                '<td style="padding:4px 7px;text-align:center;font-size:10px;font-weight:700;color:' + colorCoord(r.ESTADO_COORD) + '">' + (r.ESTADO_COORD||'') + '</td>' +
-              '</tr>';
-            }).join('') +
-          '</table>' +
-        '</div>'
-      ) : '');
-
-    btn.disabled    = (total === 0);
-    btn.style.opacity = total === 0 ? '.5' : '1';
-
-  } catch(err) {
-    body.innerHTML = '<span style="color:var(--rd)">❌ Error: ' + err.message + '</span>';
-    btn.disabled = true; btn.style.opacity = '.5';
-  }
-}
-
-async function confirmarImportacion() {
-  const btn = $('btn-confirmar-import');
-  btn.disabled = true; btn.textContent = '⏳ Importando…';
-  try {
-    if (!_importRows.length) throw new Error('Sin datos. Ejecuta el preview primero.');
-    const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
-    const resp = await fetch(SCRIPT_URL, {
-      method:  'POST',
-      headers: {'Content-Type': 'text/plain;charset=utf-8'},
-      body:    JSON.stringify({
-        action:        'importarTrabajos',
-        tipo:          _importTipo,
-        archivoOrigen: _importArchivo,
-        data:          JSON.stringify(_importRows)
-      }),
-      redirect: 'follow'
-    });
-    const data = await resp.json();
-    if (!data.ok) throw new Error(data.error || 'Error al importar');
-    $('mo-import-preview').style.display = 'none';
-    _importRows = []; _importTipo = ''; _importArchivo = '';
-    mostrarToast('✅ ' + data.nuevos + ' nuevos importados. ' + data.duplicados + ' ya existían.', 'var(--gr)');
-    await cargarTrabajosDesdeSheet();
-  } catch(err) {
-    mostrarToast('❌ Error: ' + err.message, 'var(--rd)');
-    btn.disabled = false; btn.textContent = 'Aplicar importación';
-  }
-}
-
-// ===== MAPA OPERATIVO =====
-let _mapaInstance = null;
-let _mapaMarkers  = [];
-let _mapaFiltroActivo = 'all';
-let _mapaUserMarker   = null;
-
-function initMapa() {
-  const contenedor = document.getElementById('leaflet-map');
-  if (!contenedor) return;
-  if (!_mapaInstance) {
-    _mapaInstance = L.map('leaflet-map', { zoomControl: true }).setView([-12.046, -77.0428], 11);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors', maxZoom: 19
-    }).addTo(_mapaInstance);
-  }
-  renderMapaMarkers(_mapaFiltroActivo);
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(function(pos) {
-      const lat = pos.coords.latitude, lng = pos.coords.longitude;
-      if (_mapaUserMarker) _mapaInstance.removeLayer(_mapaUserMarker);
-      _mapaUserMarker = L.circleMarker([lat, lng], {
-        radius:10, fillColor:'#dc2626', color:'#fff', weight:3, opacity:1, fillOpacity:0.9
-      }).addTo(_mapaInstance).bindPopup('<b>📍 Tu ubicación actual</b>');
-      _mapaInstance.setView([lat, lng], 13);
-    }, function(){}, { enableHighAccuracy: true });
-  }
-  setTimeout(function(){ _mapaInstance.invalidateSize(); }, 200);
-}
-
-function renderMapaMarkers(filtro) {
-  if (!_mapaInstance) return;
-  _mapaFiltroActivo = filtro;
-  _mapaMarkers.forEach(function(m){ _mapaInstance.removeLayer(m); });
-  _mapaMarkers = [];
-  const colores = {
-    'ORM':'#f97316', 'RETENIDA':'#d97706',
-    'PROTECCION':'#2563eb', 'REUBICACION':'#059669', 'EJECUTADO':'#6b7280'
-  };
-  const ejecutadosCodes = new Set(state.executed.map(e => e.code));
-  state.orms.forEach(function(o) {
-    const tipo = o['TIPO_TRABAJO'] || 'ORM';
-    const esEjec = ejecutadosCodes.has(o['Codigo de ORM']);
-    const tipoDisplay = esEjec ? 'EJECUTADO' : tipo;
-    if (filtro !== 'all' && tipoDisplay !== filtro) return;
-    const coordStr = o['COORD_PROGRAMADA'] || o['Coordenadas'] || '';
-    if (!coordStr) return;
-    const partes = coordStr.split(',').map(function(x){ return parseFloat(x.trim()); });
-    if (partes.length < 2 || isNaN(partes[0]) || isNaN(partes[1])) return;
-    const color = colores[tipoDisplay] || '#374151';
-    const displayCode = o['IDENTIFICADOR'] || o['Codigo de ORM'] || '—';
-    const mapsUrl = `https://www.google.com/maps?q=${partes[0]},${partes[1]}`;
-    const marker = L.circleMarker([partes[0], partes[1]], {
-      radius:8, fillColor:color, color:'#fff', weight:2, opacity:1, fillOpacity:0.85
-    }).addTo(_mapaInstance);
-    marker.bindPopup(`
-      <div style="font-size:13px;min-width:180px">
-        <div style="font-weight:700;margin-bottom:4px">${displayCode}</div>
-        <div style="margin-bottom:4px">${_tipoBadge(tipo)}</div>
-        <div style="color:#555;margin-bottom:2px">📍 ${o['Distrito']||'—'}</div>
-        <div style="color:#555;margin-bottom:8px">Estado: ${o['Estado inspección']||'—'}</div>
-        <a href="${mapsUrl}" target="_blank"
-          style="display:block;text-align:center;background:#1d4ed8;color:white;padding:6px 10px;border-radius:6px;text-decoration:none;font-weight:600;font-size:12px">
-          🗺️ Abrir en Google Maps
-        </a>
-      </div>`);
-    _mapaMarkers.push(marker);
-  });
-}
-
-function filtrarMapa(btn, tipo) {
-  document.querySelectorAll('.mf-btn').forEach(function(b){ b.classList.remove('active'); });
-  btn.classList.add('active');
-  renderMapaMarkers(tipo);
-}
-
-function abrirNuevaOrm() {
-  ['nw-code','nw-sumi','nw-dist','nw-pet','nw-mot'].forEach(id => $(id).value = '');
-  $('mo-nueva-orm').classList.add('on');
-}
-
-async function guardarNuevaOrm() {
-  const code     = ($('nw-code').value || '').trim().toUpperCase();
-  const distrito = ($('nw-dist').value || '').trim();
-  const petitorio= ($('nw-pet').value  || '').trim();
-
-  if (!code)      { mostrarToast('⚠️ El Código ORM es obligatorio', 'var(--rd)'); return; }
-  if (!distrito)  { mostrarToast('⚠️ El Distrito es obligatorio',   'var(--rd)'); return; }
-  if (!petitorio) { mostrarToast('⚠️ El Petitorio es obligatorio',  'var(--rd)'); return; }
-
-  if (state.orms.find(o => (o['Codigo de ORM']||'').trim().toUpperCase() === code)) {
-    mostrarToast('⚠️ Ya existe una ORM con ese código', 'var(--rd)'); return;
-  }
-
-  const btn = $('btn-guardar-orm');
-  btn.disabled = true;
-  btn.textContent = 'Guardando…';
-
-  const nuevaOrm = {
-    'Codigo de ORM':     code,
-    'Suministro':        ($('nw-sumi').value || '').trim(),
-    'Distrito':          distrito.toUpperCase(),
-    'Petitorio':         petitorio,
-    'PetitorioCorto':    petitorio.slice(0, 110),
-    'Motivo':            ($('nw-mot').value  || '').trim(),
-    'Estado inspección': 'Asignado',
-    'Origen':            'MANUAL',
-    'Fecha registro':    today()
-  };
-
-  try {
-    const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
-    const resp = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      redirect: 'follow',
-      body: JSON.stringify({ action: 'guardarOrmManual', data: nuevaOrm })
-    });
-    const txt = await resp.text();
-    console.log('[orm-manual] respuesta Apps Script:', txt);
-  } catch(e) {
-    console.warn('[orm-manual] error al guardar en Sheets:', e.message);
-    mostrarToast('⚠️ ORM creada localmente, sin sincronizar', 'var(--yw)');
-  }
-
-  state.orms.push(nuevaOrm);
-  closeMo('mo-nueva-orm');
-  updateHome();
-  renderInspList('');
-  mostrarToast('✓ ORM ' + code + ' creada — aparece en Pendientes', 'var(--gr)');
-  btn.disabled = false;
-  btn.textContent = 'Guardar ORM';
 }
 
 // ===== NAVEGACIÓN =====
@@ -1701,9 +1236,7 @@ function enterApp() {
   // Mostrar/ocultar secciones por rol
   $('admin-csv-section').style.display = state.role==='admin'?'block':'none';
   $('admin-pin-btn').style.display = state.role==='admin'?'block':'none';
-  $('admin-import-section').style.display = state.role==='admin'?'block':'none';
   $('bn-dash').style.display = state.role==='admin'?'flex':'none'; $('bn-dash').style.flexDirection='column';
-  $('btn-nueva-orm-wrap').style.display = (state.role==='admin'||state.role==='inspector')?'block':'none';
   // Inspector: ve inspección y ejecución para ver sus inspeccionadas
   // Técnico: ve solo ejecución (ejecutados)
   if(state.role==='tecnico') {
@@ -1713,9 +1246,7 @@ function enterApp() {
   }
   updateHome();
   goTo('sc-home');
-  cargarOrmsManual();
-  cargarTrabajosDesdeSheet();
-  // Postes: NO se precargan. Se consultan al vuelo via Apps Script (buscarPoste)
+  loadPolesFromSheet();
   // Sincronizar inmediatamente desde el Sheet
   sincronizarDesdeSheet();
   // Re-sincronizar después de 3 segundos por si la primera falla
@@ -1745,14 +1276,11 @@ function updateHome() {
     const o=state.orms.find(x=>x['Codigo de ORM']===i.code)||{};
     const done=state.executed.find(e=>e.code===i.code);
     const puedeEliminar = (state.role==='admin'||state.role==='inspector') && !done;
-    const displayCode = o['IDENTIFICADOR'] || i.code;
     hl.innerHTML+=`<div class="oc ${done?'ejec':tipoORM(o)}" onclick="abrirDetalle('${i.code}')">
-      <div class="oh"><div class="ocode">${displayCode}</div>${_tipoBadge(o['TIPO_TRABAJO'])}<span class="obadge ${done?'b-ejec':'b-eje2'}">${done?'Ejecutado':'Inspeccionado'}</span></div>
+      <div class="oh"><div class="ocode">${i.code}</div><span class="obadge ${done?'b-ejec':'b-eje2'}">${done?'Ejecutado':'Inspeccionado'}</span></div>
       <div class="osumi">Suministro: ${o['Suministro']||'—'}</div>
       <div class="opet">${(o['PetitorioCorto']||'—')}</div>
       <div class="ometa"><div class="odist">${o['Distrito']||'—'}</div><div class="ofecha">${i.fechaRep||i.fecha||'—'}</div></div>
-      <button class="btn-corregir" onclick="event.stopPropagation();editarInsp('${i.code}')">✏️ Corregir inspección</button>
-      ${done?`<button class="btn-corregir" onclick="event.stopPropagation();editarEjec('${i.code}')">✏️ Corregir ejecución</button>`:''}
       ${puedeEliminar?`<button class="btn-eliminar" onclick="event.stopPropagation();pedirEliminar('${i.code}')">🗑️ Eliminar inspección</button>`:''}
     </div>`;
   });
@@ -1839,9 +1367,8 @@ function renderInspList(q) {
       onclick="event.stopPropagation();toggleSync('${o['Codigo de ORM']}')" title="${syncStateInsp==='subido'?'Subido a AppSheet — clic para desmarcar':'Pendiente de subir a AppSheet — clic para marcar'}">
       ${syncStateInsp==='subido'?'✅ Subido a Plus':'⏳ Pendiente subir a Plus'}
     </button>`;
-    const displayCode = o['IDENTIFICADOR'] || o['Codigo de ORM'] || '—';
     list.innerHTML+=`<div class="oc ${urg}" onclick="openForm('${o['Codigo de ORM']}')">
-      <div class="oh"><div class="ocode">${displayCode}</div>${_tipoBadge(o['TIPO_TRABAJO'])}${dias!==null?`<span class="obadge ${dias>180?'b-urg':'b-pend'}">${o['Estado inspección']}</span>`:`<span class="obadge b-pend">${o['Estado inspección']}</span>`}</div>
+      <div class="oh"><div class="ocode">${o['Codigo de ORM']||'—'}</div>${dias!==null?`<span class="obadge ${dias>180?'b-urg':'b-pend'}">${o['Estado inspección']}</span>`:`<span class="obadge b-pend">${o['Estado inspección']}</span>`}</div>
       <div class="osumi">Suministro: ${o['Suministro']||'—'} · Reg: ${fmtDate(o['Fecha registro'])} ${antiguedadBadge(o['Fecha registro'])}</div>
       <div class="opet">${o['PetitorioCorto']||'—'}</div>
       <div class="ometa"><div class="odist">${o['Distrito']||'—'}</div><div class="ofecha">Vence: ${fmtDate(o['Fecha vencimiento'])}</div></div>
@@ -1854,7 +1381,7 @@ function renderInspList(q) {
 function openForm(code) {
   const o=state.orms.find(x=>x['Codigo de ORM']===code); if(!o) return;
   state.currentOrm=o;
-  $('fd-code').textContent=o['IDENTIFICADOR'] || o['Codigo de ORM'];
+  $('fd-code').textContent=o['Codigo de ORM'];
   $('fd-dist').textContent=o['Distrito']||'—';
   $('fd-pet').textContent=o['Petitorio']||'—';
   $('fd-sumi').textContent=o['Suministro']||'—';
@@ -1864,22 +1391,6 @@ function openForm(code) {
   $('fd-freg').textContent=o['Fecha registro']||'—';
   $('fd-nombre').textContent=o['Nombre']||'—';
   $('fd-dom').textContent=o['Domicilio']||'—';
-  // Coord. Programada: del Excel/ORM o lookup por poste
-  var coordProg = o['COORD_PROGRAMADA'] || o['Coordenadas'] || '';
-  $('fd-coord-prog').textContent = coordProg || '—';
-  $('fd-ir-poste').style.display = coordProg ? 'flex' : 'none';
-  if (!coordProg && o['POSTE']) {
-    $('fd-coord-prog').textContent = '⏳ Buscando...';
-    obtenerCoordenadasPoste(o['POSTE'], function(result) {
-      if (result && result.coords) {
-        o['COORD_PROGRAMADA'] = result.coords;
-        $('fd-coord-prog').textContent = result.coords;
-        $('fd-ir-poste').style.display = 'flex';
-      } else {
-        $('fd-coord-prog').textContent = '⚠ Sin coordenadas';
-      }
-    });
-  }
   $('form-code-badge').textContent=o['Codigo de ORM'];
   // Reset fields
   const t=today(); $('f-fecha').value=t; $('f-hora').value=new Date().toTimeString().slice(0,5); $('f-fecha-rep').value=t;
@@ -1908,12 +1419,9 @@ function setTog(k,v) {
 function setGrua(v){state.gruaVal=v;['si','no','dms'].forEach(id=>$('gr-'+id).classList.remove('on'));const m={Si:'si',No:'no',DMS:'dms'};$('gr-'+m[v]).classList.add('on');}
 function changeC(d){state.cntAcm=Math.max(0,state.cntAcm+d);$('cnt-acm').textContent=state.cntAcm;}
 function getGPS(){
-  const btn=document.querySelector('.gb2');btn.textContent='⏳ Localizando...';
-  if(navigator.geolocation){navigator.geolocation.getCurrentPosition(p=>{
-    $('f-coords').value=p.coords.latitude.toFixed(6)+', '+p.coords.longitude.toFixed(6);
-    btn.textContent='📍 Obtener ubicación actual';
-  },()=>{btn.textContent='📍 Obtener ubicación actual';});}
-  else{btn.textContent='📍 Obtener ubicación actual';}
+  const btn=document.querySelector('.gb2');btn.textContent='...';
+  if(navigator.geolocation){navigator.geolocation.getCurrentPosition(p=>{$('f-coords').value=p.coords.latitude.toFixed(6)+', '+p.coords.longitude.toFixed(6);btn.textContent='📍 GPS';},()=>{btn.textContent='📍 GPS';});}
+  else{btn.textContent='📍 GPS';}
 }
 function tp(inputId) {
   // Mostrar selector: Cámara o Galería
@@ -2009,7 +1517,6 @@ function guardar() {
     lcl: $('f-lcl').value,
     apoyo: $('f-apoyo').value,
     coords: $('f-coords').value,
-    coordProg: state.currentOrm ? (state.currentOrm['COORD_PROGRAMADA'] || state.currentOrm['Coordenadas'] || '') : '',
     incl: state.togIncl,
     angulo: $('f-angulo').value,
     dms: state.togDms,
@@ -2037,20 +1544,8 @@ function guardar() {
     {inputId:'pi-8', nombre:'Conformidad_cliente'}
   ];
 
-  // Preservar fotos existentes si estamos editando
-  let fotosExistentes = state._editMode === 'insp'
-    ? Object.assign({}, (state.inspected.find(i => i.code === code) || {}).fotoUrls || {})
-    : {};
-  if (state._editMode === 'insp') state._fotosQuitadas.forEach(k => delete fotosExistentes[k]);
-
   // Guardar en estado local
-  if (state._editMode === 'insp') {
-    const idx = state.inspected.findIndex(i => i.code === code);
-    if (idx >= 0) state.inspected[idx] = insp; else state.inspected.push(insp);
-  } else {
-    state.inspected.push(insp);
-  }
-  save();
+  state.inspected.push(insp); save();
 
   // Leer cada foto con FileReader y convertir a base64
   const fotosParaSubir = [];
@@ -2064,8 +1559,8 @@ function guardar() {
   });
 
   if (pendientes === 0) {
-    // Sin fotos nuevas: conservar URLs anteriores si estamos editando
-    guardarSoloRegistro(code, insp, fotosExistentes);
+    // Sin fotos, guardar solo registro
+    guardarSoloRegistro(code, insp, {});
     return;
   }
 
@@ -2085,23 +1580,22 @@ function guardar() {
       leidas++;
       if (leidas === pendientes) {
         // Todas leídas, comenzar subida
-        subirFotosUnaAUna(code, insp, fotosParaSubir, btnSave, fotosExistentes);
+        subirFotosUnaAUna(code, insp, fotosParaSubir, btnSave);
       }
     };
     reader.onerror = function() {
       leidas++;
       if (leidas === pendientes) {
-        subirFotosUnaAUna(code, insp, fotosParaSubir, btnSave, fotosExistentes);
+        subirFotosUnaAUna(code, insp, fotosParaSubir, btnSave);
       }
     };
     reader.readAsDataURL(inp.files[0]);
   });
 }
 
-function subirFotosUnaAUna(code, insp, fotos, btnSave, fotosExistentes) {
-  fotosExistentes = fotosExistentes || {};
+function subirFotosUnaAUna(code, insp, fotos, btnSave) {
   if (!fotos || fotos.length === 0) {
-    guardarSoloRegistro(code, insp, fotosExistentes);
+    guardarSoloRegistro(code, insp, {});
     if (btnSave) { btnSave.disabled=false; btnSave.textContent='💾 Guardar inspección'; }
     return;
   }
@@ -2118,17 +1612,17 @@ function subirFotosUnaAUna(code, insp, fotos, btnSave, fotosExistentes) {
           _store.setItem('google_access_token', response.access_token);
           _store.setItem('google_token_expires', String(Date.now() + (response.expires_in * 1000)));
           actualizarEstadoGoogleAuth();
-          subirFotosUnaAUna(code, insp, fotos, btnSave, fotosExistentes);
+          subirFotosUnaAUna(code, insp, fotos, btnSave);
         } else {
-          // Sin token: conservar fotos existentes
-          guardarSoloRegistro(code, insp, fotosExistentes);
+          // Sin token: guardar sin fotos
+          guardarSoloRegistro(code, insp, {});
           if (btnSave) { btnSave.disabled=false; btnSave.textContent='💾 Guardar inspección'; }
           mostrarToast('⚠️ Conecta Google Drive para subir fotos', 'var(--or)');
         }
       };
       googleTokenClient.requestAccessToken({prompt: ''});
     } else {
-      guardarSoloRegistro(code, insp, fotosExistentes);
+      guardarSoloRegistro(code, insp, {});
       if (btnSave) { btnSave.disabled=false; btnSave.textContent='💾 Guardar inspección'; }
     }
     return;
@@ -2141,11 +1635,9 @@ function subirFotosUnaAUna(code, insp, fotos, btnSave, fotosExistentes) {
 
   function siguiente() {
     if (idx >= fotos.length) {
-      // Merge: fotos nuevas sobreescriben solo las subidas, conservan el resto
-      const urlsFinales = Object.assign({}, fotosExistentes, urlsAcum);
       const iIdx = state.inspected.findIndex(i => i.code === code);
-      if (iIdx >= 0) { state.inspected[iIdx].fotoUrls = urlsFinales; save(); }
-      guardarSoloRegistro(code, insp, urlsFinales);
+      if (iIdx >= 0) { state.inspected[iIdx].fotoUrls = urlsAcum; save(); }
+      guardarSoloRegistro(code, insp, urlsAcum);
       if (btnSave) { btnSave.disabled=false; btnSave.textContent='💾 Guardar inspección'; }
       return;
     }
@@ -2172,141 +1664,93 @@ function subirFotosUnaAUna(code, insp, fotos, btnSave, fotosExistentes) {
   siguiente();
 }
 
-async function subirFotoDriveDirecto(codigoORM, nombre, base64Data, mimeType, token, rootFolderId, subCarpeta) {
-  subCarpeta = subCarpeta || 'Inspeccion';
-  console.log('[subir] INICIO:', codigoORM, nombre, '| rootFolderId:', rootFolderId, '| subCarpeta:', subCarpeta);
+async function subirFotoDriveDirecto(codigoORM, nombre, base64Data, mimeType, token, rootFolderId) {
+  try {
+    // 1. Obtener/crear carpeta de la ORM
+    const ormFolderId = await obtenerOCrearCarpeta(codigoORM, rootFolderId, token);
+    if (!ormFolderId) throw new Error('No se pudo crear carpeta ORM');
+    
+    const inspFolderId = await obtenerOCrearCarpeta('Inspeccion', ormFolderId, token);
+    if (!inspFolderId) throw new Error('No se pudo crear carpeta Inspeccion');
 
-  // 1. Obtener/crear carpeta de la ORM
-  const ormFolderId = await obtenerOCrearCarpeta(codigoORM, rootFolderId, token);
-  console.log('[subir] ormFolderId:', ormFolderId);
-  if (!ormFolderId) throw new Error('No se pudo crear carpeta ORM');
+    // 2. Subir archivo via multipart
+    const boundary = 'orm_cobra_' + Date.now();
+    const metadata = JSON.stringify({
+      name: nombre + '.jpg',
+      parents: [inspFolderId],
+      mimeType: mimeType || 'image/jpeg'
+    });
 
-  const inspFolderId = await obtenerOCrearCarpeta(subCarpeta, ormFolderId, token);
-  console.log('[subir] inspFolderId (' + subCarpeta + '):', inspFolderId);
-  if (!inspFolderId) throw new Error('No se pudo crear carpeta ' + subCarpeta);
+    // Construir multipart body
+    const body = '--' + boundary + '\r\n' +
+      'Content-Type: application/json\r\n\r\n' +
+      metadata + '\r\n' +
+      '--' + boundary + '\r\n' +
+      'Content-Type: ' + (mimeType || 'image/jpeg') + '\r\n' +
+      'Content-Transfer-Encoding: base64\r\n\r\n' +
+      base64Data + '\r\n' +
+      '--' + boundary + '--';
 
-  // 2. Subir archivo via multipart
-  const boundary = 'orm_cobra_' + Date.now();
-  const metadata = JSON.stringify({
-    name: nombre + '.jpg',
-    parents: [inspFolderId],
-    mimeType: mimeType || 'image/jpeg'
-  });
+    const uploadResp = await fetch(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'multipart/related; boundary=' + boundary
+        },
+        body: body
+      }
+    );
 
-  // Convertir base64 a bytes binarios
-  const byteChars = atob(base64Data);
-  const byteArr = new Uint8Array(byteChars.length);
-  for (let i = 0; i < byteChars.length; i++) byteArr[i] = byteChars.charCodeAt(i);
-  const blob = new Blob([byteArr], {type: mimeType || 'image/jpeg'});
-
-  // Construir multipart body con Blob (sin Content-Transfer-Encoding)
-  const body = new Blob([
-    '--' + boundary + '\r\n',
-    'Content-Type: application/json\r\n\r\n',
-    metadata + '\r\n',
-    '--' + boundary + '\r\n',
-    'Content-Type: ' + (mimeType || 'image/jpeg') + '\r\n\r\n',
-    blob,
-    '\r\n--' + boundary + '--'
-  ], {type: 'multipart/related; boundary=' + boundary});
-
-  console.log('[subir] Subiendo archivo:', nombre + '.jpg', '| inspFolderId:', inspFolderId);
-
-  const uploadResp = await fetch(
-    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + token,
-        'Content-Type': 'multipart/related; boundary=' + boundary
-      },
-      body: body
+    if (!uploadResp.ok) {
+      const err = await uploadResp.text();
+      throw new Error('Upload failed: ' + err.slice(0, 100));
     }
-  );
 
-  console.log('[subir] uploadResp.status:', uploadResp.status, '| ok:', uploadResp.ok);
+    const file = await uploadResp.json();
+    
+    // 3. Hacer pública la foto
+    await fetch(
+      'https://www.googleapis.com/drive/v3/files/' + file.id + '/permissions',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({role: 'reader', type: 'anyone'})
+      }
+    );
 
-  if (!uploadResp.ok) {
-    const err = await uploadResp.text();
-    console.error('[subir] ERROR upload completo:', err);
-    throw new Error('Upload failed: ' + err);
+    return 'https://drive.google.com/thumbnail?id=' + file.id + '&sz=s1600';
+  } catch(e) {
+    console.error('Error subirFotoDriveDirecto:', e);
+    return null;
   }
-
-  const file = await uploadResp.json();
-  console.log('[subir] Archivo subido. file.id:', file.id);
-
-  // DIAGNÓSTICO: verificar parents reales del archivo subido
-  const fileVerifyResp = await fetch(
-    'https://www.googleapis.com/drive/v3/files/' + file.id + '?fields=id,name,parents,mimeType',
-    { headers: { 'Authorization': 'Bearer ' + token } }
-  );
-  const fileVerifyData = await fileVerifyResp.json();
-  console.log('[subir] VERIFY archivo:', JSON.stringify(fileVerifyData));
-
-  // 3. Hacer pública la foto
-  const permResp = await fetch(
-    'https://www.googleapis.com/drive/v3/files/' + file.id + '/permissions',
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + token,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({role: 'reader', type: 'anyone'})
-    }
-  );
-  console.log('[subir] permResp.status:', permResp.status, '| ok:', permResp.ok);
-
-  const url = 'https://drive.google.com/thumbnail?id=' + file.id + '&sz=s1600';
-  console.log('[subir] URL final:', url);
-  return url;
 }
 
 const _carpetaCache = {};
 
 async function obtenerOCrearCarpeta(nombre, parentId, token) {
   const cacheKey = parentId + '/' + nombre;
-  if (_carpetaCache[cacheKey]) {
-    console.log('[carpeta] CACHE HIT:', nombre, '→', _carpetaCache[cacheKey]);
-    return _carpetaCache[cacheKey];
-  }
+  if (_carpetaCache[cacheKey]) return _carpetaCache[cacheKey];
 
-  // 1. Antes de buscar
-  console.log('[carpeta] BUSCANDO:', nombre, '| parentId:', parentId);
-
-
+  // Buscar carpeta existente
   const searchResp = await fetch(
     "https://www.googleapis.com/drive/v3/files?q=" +
     encodeURIComponent("name='" + nombre + "' and '" + parentId + "' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false") +
     "&fields=files(id,name)",
     { headers: { 'Authorization': 'Bearer ' + token } }
   );
-
-  // 2. Después de searchResp
-  console.log('[carpeta] searchResp.status:', searchResp.status, '| ok:', searchResp.ok);
-
-  if (!searchResp.ok) {
-    const errText = await searchResp.text();
-    console.error('[carpeta] ERROR en búsqueda:', searchResp.status, errText);
-    throw new Error('Error buscando carpeta ' + nombre + ': ' + errText.slice(0, 200));
-  }
-
   const searchData = await searchResp.json();
-
-  // 3. Después de searchResp.json()
-  console.log('[carpeta] searchData:', JSON.stringify(searchData));
-
+  
   if (searchData.files && searchData.files.length > 0) {
     _carpetaCache[cacheKey] = searchData.files[0].id;
-    // 7a. Antes de return (encontrada)
-    console.log('[carpeta] ENCONTRADA:', nombre, '→', searchData.files[0].id);
     return searchData.files[0].id;
   }
 
-  // 4. Antes de crear
-  console.log('[carpeta] NO EXISTE, CREANDO:', nombre, '| parentId:', parentId);
-
-
+  // Crear carpeta nueva
   const createResp = await fetch(
     'https://www.googleapis.com/drive/v3/files',
     {
@@ -2322,33 +1766,14 @@ async function obtenerOCrearCarpeta(nombre, parentId, token) {
       })
     }
   );
-
-  // 5. Después de createResp
-  console.log('[carpeta] createResp.status:', createResp.status, '| ok:', createResp.ok);
-
+  
   if (!createResp.ok) {
     const err = await createResp.text();
-    console.error('[carpeta] ERROR al crear:', createResp.status, err);
-    throw new Error('Error creando carpeta: ' + err.slice(0, 200));
+    throw new Error('Error creando carpeta: ' + err.slice(0, 100));
   }
-
+  
   const folder = await createResp.json();
-
-  // 6. Después de createResp.json()
-  console.log('[carpeta] createResp.json():', JSON.stringify(folder));
-
-  // DIAGNÓSTICO: verificar parents reales de la carpeta recién creada
-  const verifyResp = await fetch(
-    'https://www.googleapis.com/drive/v3/files/' + folder.id + '?fields=id,name,parents,mimeType',
-    { headers: { 'Authorization': 'Bearer ' + token } }
-  );
-  const verifyData = await verifyResp.json();
-  console.log('[carpeta] VERIFY GET:', JSON.stringify(verifyData));
-
   _carpetaCache[cacheKey] = folder.id;
-
-  // 7b. Antes de return (creada)
-  console.log('[carpeta] CREADA:', nombre, '→', folder.id);
   return folder.id;
 }
 
@@ -2620,275 +2045,37 @@ async function subirFotoDriveAPI(codigoORM, nombreFoto, base64Data, mimeType) {
   }
 }
 
-const _camposInspEdit = [
-  {num:1, storeKey:'Foto_Perfil',         label:'Perfil'},
-  {num:2, storeKey:'Foto_Vista_defrente', label:'Vista defrente'},
-  {num:3, storeKey:'Foto_Panoramica',     label:'Panorámica'},
-  {num:4, storeKey:'Foto_deficiencia',    label:'Deficiencia'},
-  {num:5, storeKey:'Foto_Insp1',          label:'Insp. 1'},
-  {num:6, storeKey:'Foto_Insp2',          label:'Insp. 2'},
-  {num:7, storeKey:'Croquis',             label:'Croquis'},
-  {num:8, storeKey:'Conformidad_cliente', label:'Conformidad'}
-];
-const _camposEjecEdit = [
-  {num:1, storeKey:'Foto_despues1', label:'Foto después 1'},
-  {num:2, storeKey:'Foto_despues2', label:'Foto después 2'},
-  {num:3, storeKey:'Foto_despues3', label:'Foto después 3'},
-  {num:4, storeKey:'Foto_despues4', label:'Foto después 4'},
-  {num:5, storeKey:'Foto_Plano',    label:'Foto Plano'},
-  {num:6, storeKey:'Foto_Boleta',   label:'Foto Boleta'}
-];
-
-function renderFotosEditables(containerId, fotoUrls, campos, inputPrefix) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  container.innerHTML = '';
-  campos.forEach(function(f) {
-    const url = (fotoUrls || {})[f.storeKey] || '';
-    const inputId = inputPrefix + f.num;
-    const wrapperId = 'foto-edit-wrap-' + f.storeKey;
-    const wrapper = document.createElement('div');
-    wrapper.id = wrapperId;
-    wrapper.style.cssText = 'border-radius:10px;overflow:hidden;background:var(--g1);border:1.5px solid var(--g2)';
-
-    if (url && url.trim() !== '' && !state._fotosQuitadas.has(f.storeKey)) {
-      const fileId = url.includes('id=') ? url.split('id=')[1].split('&')[0]
-                   : url.includes('/d/') ? url.split('/d/')[1].split('/')[0] : '';
-      const thumbUrl = fileId ? 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=s800' : url;
-      const fullUrl  = fileId ? 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=s1600' : url;
-      const dlUrl    = fileId ? 'https://drive.google.com/uc?export=download&id=' + fileId : url;
-      const viewUrl  = fileId ? 'https://drive.google.com/file/d/' + fileId + '/view' : url;
-      wrapper.innerHTML =
-        '<img src="' + thumbUrl + '" referrerpolicy="no-referrer" style="width:100%;height:100px;object-fit:cover;display:block" onerror="this.style.display=\'none\'">' +
-        '<div style="padding:3px 6px;font-size:10px;font-weight:700;color:var(--g7);background:var(--wh)">' + f.label + '</div>' +
-        '<div class="foto-edit-actions">' +
-          '<button class="fea-ver" onclick="abrirVisorFoto(\'' + fullUrl + '\',\'' + f.label + '\',\'' + dlUrl + '\',\'' + viewUrl + '\')">👁 Ver</button>' +
-          '<button class="fea-rep" onclick="document.getElementById(\'' + inputId + '\').click()">🔄 Reemplazar</button>' +
-          '<button class="fea-quit" onclick="pedirQuitarFoto(\'' + f.storeKey + '\',\'' + wrapperId + '\',\'' + f.label + '\',\'' + inputId + '\')">🗑 Quitar</button>' +
-        '</div>';
-    } else {
-      wrapper.innerHTML =
-        '<div onclick="document.getElementById(\'' + inputId + '\').click()" style="height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:4px">' +
-          '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--g5)" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M3 9a2 2 0 012-2h1l2-3h4l2 3h1a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg>' +
-          '<div style="font-size:11px;font-weight:700;color:var(--g6)">' + f.label + '</div>' +
-          '<div style="font-size:10px;color:var(--g5)">Toca para agregar</div>' +
-        '</div>';
-    }
-    container.appendChild(wrapper);
-  });
-}
-
-function pedirQuitarFoto(storeKey, wrapperId, label, inputId) {
-  _quitarFotoKey       = storeKey;
-  _quitarFotoWrapperId = wrapperId;
-  _quitarFotoLabel     = label;
-  _quitarFotoInputId   = inputId;
-  $('mo-quitar-foto').classList.add('on');
-}
-
-function cancelarQuitarFoto() {
-  closeMo('mo-quitar-foto');
-  _quitarFotoKey       = null;
-  _quitarFotoWrapperId = null;
-  _quitarFotoLabel     = null;
-  _quitarFotoInputId   = null;
-}
-
-function confirmarQuitarFoto() {
-  closeMo('mo-quitar-foto');
-  if (!_quitarFotoKey) return;
-  quitarFotoEdicion(_quitarFotoKey, _quitarFotoWrapperId, _quitarFotoLabel, _quitarFotoInputId);
-  _quitarFotoKey       = null;
-  _quitarFotoWrapperId = null;
-  _quitarFotoLabel     = null;
-  _quitarFotoInputId   = null;
-}
-
-function quitarFotoEdicion(storeKey, wrapperId, label, inputId) {
-  state._fotosQuitadas.add(storeKey);
-  const wrap = document.getElementById(wrapperId);
-  if (wrap) {
-    wrap.innerHTML =
-      '<div onclick="document.getElementById(\'' + (inputId||'') + '\').click()" style="height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:4px">' +
-        '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--g5)" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M3 9a2 2 0 012-2h1l2-3h4l2 3h1a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg>' +
-        '<div style="font-size:11px;font-weight:700;color:var(--g6)">' + label + '</div>' +
-        '<div style="font-size:10px;color:var(--g5)">Toca para agregar</div>' +
-      '</div>';
-  }
-  mostrarToast('Foto quitada — se eliminará del registro al guardar', 'var(--or)');
-}
-
-function editarInsp(code) {
-  const insp = state.inspected.find(i => i.code === code);
-  const o    = state.orms.find(x => x['Codigo de ORM'] === code);
-  if (!insp || !o) { mostrarToast('No se encontró la inspección', 'var(--rd)'); return; }
-
-  state._editMode = 'insp';
-  state._editCode = code;
-  state.currentOrm = o;
-
-  $('fd-code').textContent    = o['Codigo de ORM'];
-  $('fd-dist').textContent    = o['Distrito']||'—';
-  $('fd-pet').textContent     = o['Petitorio']||'—';
-  $('fd-sumi').textContent    = o['Suministro']||'—';
-  $('fd-sed').textContent     = o['SED 01']||'—';
-  $('fd-alim').textContent    = o['ALIM 01']||'—';
-  $('fd-motivo').textContent  = o['Motivo']||'—';
-  $('fd-freg').textContent    = o['Fecha registro']||'—';
-  $('fd-nombre').textContent  = o['Nombre']||'—';
-  $('fd-dom').textContent     = o['Domicilio']||'—';
-  $('form-code-badge').textContent = o['Codigo de ORM'];
-
-  $('f-fecha').value     = insp.fecha     || today();
-  $('f-hora').value      = insp.hora      || '';
-  $('f-fecha-rep').value = insp.fechaRep  || today();
-  $('f-lcl').value       = insp.lcl       || code;
-  $('f-apoyo').value     = insp.apoyo     || '';
-  $('f-coords').value    = insp.coords    || '';
-  $('f-dhlp').value      = insp.dhlp      || '';
-  $('f-dhlc').value      = insp.dhlc      || '';
-  $('f-dvlp').value      = insp.dvlp      || '';
-  $('f-det').value       = insp.det       || '';
-  state.cntAcm = insp.acm || 0;
-  $('cnt-acm').textContent = state.cntAcm;
-  setTog('incl', insp.incl || 'N');
-  setTog('dms',  insp.dms  || 'N');
-  setGrua(insp.grua || 'Si');
-
-  state._fotosQuitadas = new Set();
-  for(let i=1;i<=8;i++) $('pi-'+i).value='';
-
-  // Mostrar fotos editables encima de los slots originales
-  const fotoGrid = document.querySelector('#sc-form .pg');
-  if (fotoGrid) {
-    let editGrid = document.getElementById('edit-fotos-insp-grid');
-    if (!editGrid) {
-      editGrid = document.createElement('div');
-      editGrid.id = 'edit-fotos-insp-grid';
-      editGrid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px';
-      fotoGrid.parentNode.insertBefore(editGrid, fotoGrid);
-      fotoGrid.style.display = 'none';
-    }
-    renderFotosEditables('edit-fotos-insp-grid', insp.fotoUrls || {}, _camposInspEdit, 'pi-');
-  }
-
-  const btnSave = document.querySelector('#sc-form .bsv');
-  if (btnSave) btnSave.textContent = '💾 Actualizar inspección';
-
-  goTo('sc-form');
-}
-
-function editarEjec(code) {
-  const ejec = state.executed.find(e => e.code === code);
-  const insp  = state.inspected.find(i => i.code === code)||{};
-  const o     = state.orms.find(x => x['Codigo de ORM'] === code)||{};
-  if (!ejec) { mostrarToast('No se encontró la ejecución', 'var(--rd)'); return; }
-
-  state._editMode = 'ejec';
-  state._editCode = code;
-  state.currentOrm = o;
-  state.currentOrm._code = code;
-
-  $('ef-code').textContent       = code;
-  $('ef-code-badge').textContent = code;
-  $('ef-dist').textContent       = o['Distrito']||'—';
-  $('ef-det-prog').textContent   = insp.det||o['Petitorio']||'—';
-  $('ef-grua').textContent       = insp.grua||'—';
-  $('ef-dms').textContent        = insp.dms==='Y'?'Sí':'No';
-  $('ef-acm').textContent        = insp.acm||0;
-  $('ef-inspector').textContent  = insp.inspector||'—';
-  $('ef-fecha-insp').textContent = insp.fecha||'—';
-  $('ef-detalle-insp').textContent = insp.det||'—';
-  const ec_val = insp.coords||o['Coordenadas']||'';
-  $('ef-coords').textContent = ec_val||'—';
-  $('ef-maps-btn').style.display = ec_val?'flex':'none';
-
-  $('ef-fecha').value     = ejec.fecha    || today();
-  $('ef-fecha-rep').value = ejec.fechaRep || today();
-  $('ef-tipo').value      = ejec.tipo     || '';
-  $('ef-detalle').value   = ejec.det      || '';
-
-  state._fotosQuitadas = new Set();
-  for(let i=1;i<=4;i++) $('pe-'+i).value='';
-
-  // Mostrar fotos de ejecución editables encima de los slots originales
-  const ejecFotoGrid = document.querySelector('#sc-ejec-form .pg');
-  if (ejecFotoGrid) {
-    let editGridEjec = document.getElementById('edit-fotos-ejec-grid');
-    if (!editGridEjec) {
-      editGridEjec = document.createElement('div');
-      editGridEjec.id = 'edit-fotos-ejec-grid';
-      editGridEjec.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px';
-      ejecFotoGrid.parentNode.insertBefore(editGridEjec, ejecFotoGrid);
-      ejecFotoGrid.style.display = 'none';
-    }
-    renderFotosEditables('edit-fotos-ejec-grid', ejec.fotoUrls || {}, _camposEjecEdit, 'pe-');
-  }
-
-  $('ef-fotos-insp-grid').innerHTML = '<div style="text-align:center;color:var(--g6);font-size:12px;padding:12px;grid-column:1/-1">⏳ Cargando fotos del inspector...</div>';
-
-  const btnFin = document.querySelector('.bsv.gr-btn');
-  if (btnFin) btnFin.textContent = '💾 Actualizar ejecución';
-
-  goTo('sc-ejec-form');
-  cargarInspeccionDesdeSheet(code);
-}
-
-function guardarSoloRegistro(code, insp, urls) {
+code, insp, urls) {
   const orm = state.currentOrm || {};
   const str = v => (v !== null && v !== undefined) ? String(v) : '';
 
   const payload = {
-    action: state._editMode === 'insp' ? 'actualizarInspeccion' : 'guardarInspeccion',
+    action: 'guardarInspeccion',
     tipo: 'inspeccion',
     data: {
       code: str(code), suministro: str(orm['Suministro']), distrito: str(orm['Distrito']),
       petitorio: str(orm['Petitorio']), motivo: str(orm['Motivo']),
-      tipoTrabajo: str(orm['TIPO_TRABAJO'] || 'ORM'),
-      poste: str(orm['POSTE'] || ''),
-      ot: str(orm['OT'] || ''),
-      idTrabajo: str(orm['Codigo de ORM'] || ''),
-      inspector: str(insp.inspector), fecha: str(insp.fecha), hora: str(insp.hora),
+      inspector: str(insp.inspector), fecfunction guardarSoloRegistro(ha: str(insp.fecha), hora: str(insp.hora),
       fechaRep: str(insp.fechaRep), lcl: str(insp.lcl), apoyo: str(insp.apoyo),
       coords: str(insp.coords), incl: str(insp.incl), angulo: str(insp.angulo),
       dms: str(insp.dms), grua: str(insp.grua), acm: str(insp.acm),
       dhlp: str(insp.dhlp), dhlc: str(insp.dhlc), dvlp: str(insp.dvlp),
-      det: str(insp.det), fotos: urls || {},
-      coordProg: str(insp.coordProg)
+      det: str(insp.det), fotos: urls || {}
     }
   };
 
-  const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
-  console.log('[guardar] URL:', SCRIPT_URL);
-  console.log('[guardar] payload:', JSON.stringify(payload));
-
-  fetch(SCRIPT_URL, {
+  fetch('/.netlify/functions/upload', {
     method: 'POST',
-    headers: {'Content-Type': 'text/plain;charset=utf-8'},
-    body: JSON.stringify(payload),
-    redirect: 'follow'
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
   })
-  .then(r => {
-    console.log('[guardar] respuesta status:', r.status, '| ok:', r.ok);
-    return r.json();
-  })
+  .then(r => r.json())
   .then(function(res) {
-    console.log('[guardar] respuesta JSON:', JSON.stringify(res));
     console.log('Registro guardado:', res.ok ? '✅' : '❌', res);
-    state._editMode = null; state._editCode = null; state._fotosQuitadas = new Set();
-    const eg = document.getElementById('edit-fotos-insp-grid');
-    if (eg) { eg.remove(); const pg = document.querySelector('#sc-form .pg'); if(pg) pg.style.display=''; }
-    const btnSave = document.querySelector('#sc-form .bsv');
-    if (btnSave) { btnSave.disabled=false; btnSave.textContent='💾 Guardar inspección'; }
     mostrarModalInsp(insp);
   })
   .catch(function(e) {
-    console.error('[guardar] ERROR completo:', e);
-    state._editMode = null; state._editCode = null; state._fotosQuitadas = new Set();
-    const eg = document.getElementById('edit-fotos-insp-grid');
-    if (eg) { eg.remove(); const pg = document.querySelector('#sc-form .pg'); if(pg) pg.style.display=''; }
-    const btnSave = document.querySelector('#sc-form .bsv');
-    if (btnSave) { btnSave.disabled=false; btnSave.textContent='💾 Guardar inspección'; }
+    console.warn('Error guardando registro:', e);
     mostrarModalInsp(insp);
   });
 }
@@ -2902,21 +2089,6 @@ function mostrarModalInsp(insp) {
 // ===== LISTA EJECUCIÓN =====
 let ejecFilter='all';
 function setEjecFilter(f){ejecFilter=f;renderEjecList('');}
-
-function irAFiltro(filtro) {
-  if (filtro === 'insp') {
-    goTo('sc-insp');
-  } else if (filtro === 'ejec') {
-    setEjecFilter('all');
-    goTo('sc-ejec');
-  } else if (filtro === 'sin') {
-    setEjecFilter('sin');
-    goTo('sc-ejec');
-  } else if (filtro === 'ejecutado') {
-    setEjecFilter('ejecutado');
-    goTo('sc-ejec');
-  }
-}
 function renderEjecList(q) {
   const list=$('ejec-list'); list.innerHTML='';
   // Para técnico: ve ORMs ejecutadas (Ejecutado en AppSheet)
@@ -2936,11 +2108,6 @@ function renderEjecList(q) {
   if(ejecFilter==='dms') items=items.filter(x=>x.insp.grua==='DMS'||x.insp.dms==='Y');
   if(ejecFilter==='pendiente_sync') items=items.filter(x=>getSyncState(x.code)!=='subido');
   if(ejecFilter==='subido_sync') items=items.filter(x=>getSyncState(x.code)==='subido');
-  if(ejecFilter==='ejecutado') items=state.executed.map(e=>({
-    code: e.code,
-    insp: state.inspected.find(i=>i.code===e.code) || {grua:'Si',dms:'N',acm:0,coords:'',det:''},
-    orm:  state.orms.find(o=>o['Codigo de ORM']===e.code) || {}
-  }));
   if(items.length===0){list.innerHTML='<div class="empty"><p>No hay ORMs en esta categoría</p></div>';return;}
   items.forEach(({code,insp,orm})=>{
     const tipo=insp.grua==='No'?'sin-acc':insp.grua==='DMS'?'dms-t':'grua';
@@ -2949,23 +2116,18 @@ function renderEjecList(q) {
     const coords_e = insp.coords || orm['Coordenadas'] || '';
     const mapsBtn = coords_e ? `<button class="maps-btn" onclick="event.stopPropagation();openMaps('${coords_e}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Abrir en Google Maps</button>` : '';
     const delBtnEjec = (state.role==='admin'||state.role==='inspector') ? `<button class="btn-eliminar" onclick="event.stopPropagation();pedirEliminar('${code}')">🗑️ Eliminar inspección</button>` : '';
-    const editBtnInsp = `<button class="btn-corregir" onclick="event.stopPropagation();editarInsp('${code}')">✏️ Corregir inspección</button>`;
-    const editBtnEjec = state.executed.find(e=>e.code===code) ? `<button class="btn-corregir" onclick="event.stopPropagation();editarEjec('${code}')">✏️ Corregir ejecución</button>` : '';
     const syncState = getSyncState(code);
     const syncBtn = `<button class="sync-badge ${syncState==='subido'?'sync-subido':'sync-pendiente'}" 
       onclick="event.stopPropagation();toggleSync('${code}')" title="${syncState==='subido'?'Subido a AppSheet de Plus — clic para desmarcar':'Pendiente de subir a AppSheet de Plus — clic para marcar como subido'}">
       ${syncState==='subido'?'✅ Subido a Plus':'⏳ Pendiente subir a Plus'}
     </button>`;
-    const displayCodeEjec = orm['IDENTIFICADOR'] || code;
     list.innerHTML+=`<div class="oc ${tipo}" onclick="openEjecForm('${code}')">
-      <div class="oh"><div class="ocode">${displayCodeEjec}</div>${_tipoBadge(orm['TIPO_TRABAJO'])}<span class="obadge ${tipoBadge}" style="${insp.grua==='DMS'?'background:var(--pul);color:var(--pu)':''}">${tipoLabel}</span></div>
+      <div class="oh"><div class="ocode">${code}</div><span class="obadge ${tipoBadge}" style="${insp.grua==='DMS'?'background:var(--pul);color:var(--pu)':''}">${tipoLabel}</span></div>
       <div class="osumi">Suministro: ${orm['Suministro']||'—'} · Inspector: ${insp.inspector||'—'}</div>
       <div class="opet">${orm['PetitorioCorto']||orm['Petitorio']?.slice(0,110)||'—'}</div>
-      <div class="ometa"><div class="odist">${orm['Distrito']||'—'}</div><div class="ofecha">Insp: ${insp.fecha || orm['FECHA_INSPECCION'] || '—'}</div></div>
+      <div class="ometa"><div class="odist">${orm['Distrito']||'—'}</div><div class="ofecha">Insp: ${insp.fecha||'—'}</div></div>
       ${syncBtn}
       ${mapsBtn}
-      ${editBtnInsp}
-      ${editBtnEjec}
       ${delBtnEjec}
     </div>`;
   });
@@ -3214,8 +2376,7 @@ function finalizarEjec() {
   // Recopilar fotos de ejecución
   const fotosEjec = [];
   [{slotId:'se-1',nombre:'Foto_despues1'},{slotId:'se-2',nombre:'Foto_despues2'},
-   {slotId:'se-3',nombre:'Foto_despues3'},{slotId:'se-4',nombre:'Foto_despues4'},
-   {slotId:'se-5',nombre:'Foto_Plano'},{slotId:'se-6',nombre:'Foto_Boleta'}
+   {slotId:'se-3',nombre:'Foto_despues3'},{slotId:'se-4',nombre:'Foto_despues4'}
   ].forEach(f => {
     const slot = document.getElementById(f.slotId);
     if (!slot) return;
@@ -3225,101 +2386,38 @@ function finalizarEjec() {
       fotosEjec.push({ nombre: f.nombre, base64: b64, mime });
     }
   });
-  console.log('[ejec] Fotos a subir:', fotosEjec.length);
+  console.log('Fotos ejecución a subir:', fotosEjec.length);
 
-  // Preservar fotos existentes si estamos editando
-  let fotosEjecExistentes = state._editMode === 'ejec'
-    ? Object.assign({}, (state.executed.find(e => e.code === code) || {}).fotoUrls || {})
-    : {};
-  if (state._editMode === 'ejec') state._fotosQuitadas.forEach(k => delete fotosEjecExistentes[k]);
-
-  if (state._editMode === 'ejec') {
-    const idx = state.executed.findIndex(e => e.code === code);
-    if (idx >= 0) state.executed[idx] = ejec; else state.executed.push(ejec);
-  } else {
-    state.executed.push(ejec);
-  }
-  save();
+  state.executed.push(ejec); save();
 
   const btnFin = document.querySelector('.bsv.gr-btn');
   if (btnFin) { btnFin.disabled = true; btnFin.textContent = '⏳ Finalizando...'; }
 
-  function guardarEjecucionFetch(urlsEjec) {
-    const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
-    const payload = {
-      action: state._editMode === 'ejec' ? 'actualizarEjecucion' : 'guardarRegistro',
-      tipo: 'ejecucion',
-      data: {
-        code,
-        tecnico: ejec.tecnico,
-        tipoTrabajo: ((state.currentOrm||{})['TIPO_TRABAJO'] || 'ORM'),
-        fecha: ejec.fecha,
-        fechaRep: ejec.fechaRep,
-        tipo: ejec.tipo,
-        det: ejec.det,
-        fotos: urlsEjec || {}
-      }
-    };
-    console.log('[ejec] URL:', SCRIPT_URL);
-    console.log('[ejec] payload:', JSON.stringify(payload));
-
-    fetch(SCRIPT_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'text/plain;charset=utf-8'},
-      body: JSON.stringify(payload),
-      redirect: 'follow'
-    })
-    .then(r => {
-      console.log('[ejec] response.status:', r.status, '| ok:', r.ok);
-      return r.json();
-    })
-    .then(function(res) {
-      console.log('[ejec] respuesta JSON:', JSON.stringify(res));
-      state._editMode = null; state._editCode = null; state._fotosQuitadas = new Set();
-      const ege = document.getElementById('edit-fotos-ejec-grid');
-      if (ege) { ege.remove(); const pge = document.querySelector('#sc-ejec-form .pg'); if(pge) pge.style.display=''; }
-      if (btnFin) { btnFin.disabled=false; btnFin.textContent='👍 Finalizar ejecución'; }
-      $('mo-ejec').classList.add('on'); updateHome();
-    })
-    .catch(function(e) {
-      console.error('[ejec] ERROR:', e);
-      state._editMode = null; state._editCode = null; state._fotosQuitadas = new Set();
-      const ege = document.getElementById('edit-fotos-ejec-grid');
-      if (ege) { ege.remove(); const pge = document.querySelector('#sc-ejec-form .pg'); if(pge) pge.style.display=''; }
-      if (btnFin) { btnFin.disabled=false; btnFin.textContent='👍 Finalizar ejecución'; }
-      $('mo-ejec').classList.add('on'); updateHome();
-    });
-  }
-
-  if (fotosEjec.length === 0) {
-    guardarEjecucionFetch(fotosEjecExistentes);
-    return;
+  if (typeof google === 'undefined' || !google.script || !google.script.run || fotosEjec.length === 0) {
+    if (typeof google !== 'undefined' && google.script && google.script.run) {
+      google.script.run.guardarRegistro({ tipo:'ejecucion', data:{ code, tecnico:ejec.tecnico, fecha:ejec.fecha, fechaRep:ejec.fechaRep, tipo:ejec.tipo, det:ejec.det, fotos:{} }});
+    }
+    if (btnFin) { btnFin.disabled=false; btnFin.textContent='👍 Finalizar ejecución'; }
+    $('mo-ejec').classList.add('on'); updateHome(); return;
   }
 
   const urlsEjec = {}; let eIdx = 0;
   function subirSiguienteEjec() {
     if (eIdx >= fotosEjec.length) {
-      const urlsEjecFinales = Object.assign({}, fotosEjecExistentes, urlsEjec);
       const eI = state.executed.findIndex(e => e.code === code);
-      if (eI >= 0) { state.executed[eI].fotoUrls = urlsEjecFinales; save(); }
-      guardarEjecucionFetch(urlsEjecFinales);
+      if (eI >= 0) { state.executed[eI].fotoUrls = urlsEjec; save(); }
+      google.script.run
+        .withSuccessHandler(function() { if(btnFin){btnFin.disabled=false;btnFin.textContent='👍 Finalizar ejecución';} $('mo-ejec').classList.add('on'); updateHome(); })
+        .withFailureHandler(function() { if(btnFin){btnFin.disabled=false;btnFin.textContent='👍 Finalizar ejecución';} $('mo-ejec').classList.add('on'); updateHome(); })
+        .guardarRegistro({ tipo:'ejecucion', data:{ code, tecnico:ejec.tecnico, fecha:ejec.fecha, fechaRep:ejec.fechaRep, tipo:ejec.tipo, det:ejec.det, fotos:urlsEjec }});
       return;
     }
     const foto = fotosEjec[eIdx];
     if (btnFin) btnFin.textContent = `⏳ Subiendo foto ${eIdx+1}/${fotosEjec.length}...`;
-    comprimirFoto(foto.base64, foto.mime, function(b64comp) {
-      subirFotoDriveDirecto(code, foto.nombre, b64comp, foto.mime,
-        _store.getItem('google_access_token'), '1z5BGDGFAh7PwLHRmE73WWCDDZ-l0m9AT', 'Ejecucion')
-        .then(function(url) {
-          if (url) { urlsEjec[foto.nombre] = url; console.log('[ejec] ✅ Foto subida:', foto.nombre); }
-          else { console.warn('[ejec] ❌ Foto no subida:', foto.nombre); }
-          eIdx++; subirSiguienteEjec();
-        })
-        .catch(function(e) {
-          console.error('[ejec] ❌ Error foto:', foto.nombre, e);
-          eIdx++; subirSiguienteEjec();
-        });
-    });
+    google.script.run
+      .withSuccessHandler(function(r) { if(r&&r.url) urlsEjec[foto.nombre]=r.url; eIdx++; subirSiguienteEjec(); })
+      .withFailureHandler(function() { eIdx++; subirSiguienteEjec(); })
+      .subirUnaFoto(code, 'Ejecucion', foto.nombre, foto.base64, foto.mime);
   }
   subirSiguienteEjec();
 }
@@ -3372,51 +2470,54 @@ function closeMo(id){$(id).classList.remove('on');}
 
 
 
-// ===== BUSCADOR DE POSTE EN FORMULARIO (consulta Apps Script, sin carga masiva) =====
+// ===== BUSCADOR DE POSTE EN FORMULARIO (usa POLES_DB de Google Sheets) =====
 function buscarPosteForm(q) {
   const res = document.getElementById('form-poste-results');
   q = (q || '').trim();
   if (q.length < 3) { res.innerHTML = ''; return; }
 
-  res.innerHTML = '<div style="font-size:12px;color:var(--g6);padding:6px 0">🔍 Buscando poste <strong>' + q + '</strong>...</div>';
+  if (!polesLoaded || Object.keys(POLES_DB).length === 0) {
+    res.innerHTML = '<div style="font-size:12px;color:var(--g6);padding:6px 0">⏳ Cargando base de datos de postes...</div>';
+    loadPolesFromSheet();
+    return;
+  }
+  // Busca por número de poste exacto o que empiece con el valor ingresado
+  const found = Object.entries(POLES_DB)
+    .filter(([id]) => id.startsWith(q) || id === q)
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .slice(0, 8);
 
-  buscarPosteViaScriptDebounced(q, function(results) {
-    if (results.length === 0) {
-      res.innerHTML = '<div style="font-size:12px;color:var(--g6);padding:6px 0">⚠️ Poste <strong>' + q + '</strong> no encontrado en la base de datos</div>';
-      return;
-    }
-    res.innerHTML = '';
-    results.forEach(function(p) {
-      const div = document.createElement('div');
-      div.style.cssText = 'background:var(--bll);border:1.5px solid var(--bl);border-radius:var(--rsm);padding:10px 12px;margin-bottom:6px';
-      const extras = [p.distrito, p.alim].filter(Boolean).join(' · ');
-      div.innerHTML =
-        '<div style="font-size:14px;font-weight:700;color:var(--bl)">Poste N° ' + p.poste + '</div>' +
-        (extras ? '<div style="font-size:11px;color:var(--g7);margin-top:2px">' + extras + '</div>' : '') +
-        '<div style="font-size:11px;color:var(--g7);margin-top:2px">📍 ' + p.coords + '</div>' +
-        '<div style="display:flex;gap:6px;margin-top:8px">' +
-          '<button onclick="usarCoordsPoste(\'' + p.coords + '\',\'' + p.poste + '\')" style="background:var(--gr);color:white;border:none;border-radius:var(--rsm);padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer">📍 Coord. Programada</button>' +
-          '<button onclick="openMaps(\'' + p.coords + '\')" style="background:var(--bl);color:white;border:none;border-radius:var(--rsm);padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer">🗺️ Maps</button>' +
-        '</div>';
-      res.appendChild(div);
-    });
+  if (found.length === 0) {
+    res.innerHTML = '<div style="font-size:12px;color:var(--g6);padding:6px 0">⚠️ Poste <strong>' + q + '</strong> no encontrado en la base de datos (' + Object.keys(POLES_DB).length + ' postes cargados)</div>';
+    return;
+  }
+
+  res.innerHTML = '';
+  found.forEach(([id, coords]) => {
+    const div = document.createElement('div');
+    div.style.cssText = 'background:var(--bll);border:1.5px solid var(--bl);border-radius:var(--rsm);padding:10px 12px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:8px';
+    div.innerHTML = `
+      <div>
+        <div style="font-size:14px;font-weight:700;color:var(--bl)">Poste N° ${id}</div>
+        <div style="font-size:11px;color:var(--g7);margin-top:2px">📍 ${coords}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button onclick="openMaps('${coords}')" style="background:var(--bl);color:white;border:none;border-radius:var(--rsm);padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer">🗺️ Maps</button>
+      </div>`;
+    res.appendChild(div);
   });
 }
 
-function usarCoordsPoste(coords, poste) {
-  // Guarda como COORD_PROGRAMADA en el objeto actual y actualiza la UI
-  if (state.currentOrm) state.currentOrm['COORD_PROGRAMADA'] = coords;
-  var display = document.getElementById('fd-coord-prog');
-  var btn     = document.getElementById('fd-ir-poste');
-  if (display) {
-    display.textContent = coords;
-    display.style.color = 'var(--gr)';
-    setTimeout(function() { display.style.color = ''; }, 1500);
-  }
-  if (btn) btn.style.display = 'flex';
-  // Guarda el número de poste en el campo buscador si fue seleccionado
-  if (poste) document.getElementById('form-poste-input').value = poste;
+function usarCoordsPoste(coords) {
+  document.getElementById('f-coords').value = coords;
+  // Clear search
+  document.getElementById('form-poste-input').value = '';
   document.getElementById('form-poste-results').innerHTML = '';
+  // Flash confirmation
+  const coordsInput = document.getElementById('f-coords');
+  coordsInput.style.borderColor = 'var(--gr)';
+  coordsInput.style.boxShadow = '0 0 0 3px rgba(26,122,74,0.2)';
+  setTimeout(() => { coordsInput.style.borderColor = ''; coordsInput.style.boxShadow = ''; }, 1500);
 }
 
 
@@ -3778,10 +2879,6 @@ function mostrarToast(msg, color) {
 
 // ===== ELIMINAR INSPECCIÓN =====
 let _delCode = null;
-let _quitarFotoKey = null;
-let _quitarFotoWrapperId = null;
-let _quitarFotoLabel = null;
-let _quitarFotoInputId = null;
 
 function pedirEliminar(code) {
   _delCode = code;
@@ -3809,28 +2906,25 @@ function confirmarEliminar() {
   mostrarToast('✓ Inspección eliminada — ORM vuelve a pendiente', 'var(--gr)');
 }
 
-function eliminarDelSheet(code) {
-  const SCRIPT_URL = _store.getItem('apps_script_url') || APPS_SCRIPT_URL;
-  const payload = { action: 'eliminarRegistro', code: code };
-  console.log('[eliminar] URL:', SCRIPT_URL);
-  console.log('[eliminar] payload:', JSON.stringify(payload));
-
-  fetch(SCRIPT_URL, {
-    method: 'POST',
-    headers: {'Content-Type': 'text/plain;charset=utf-8'},
-    body: JSON.stringify(payload),
-    redirect: 'follow'
-  })
-  .then(r => {
-    console.log('[eliminar] response.status:', r.status, '| ok:', r.ok);
-    return r.json();
-  })
-  .then(function(res) {
-    console.log('[eliminar] respuesta JSON:', JSON.stringify(res));
-  })
-  .catch(function(e) {
-    console.error('[eliminar] ERROR:', e);
-  });
+async function eliminarDelSheet(code) {
+  // Buscar y eliminar fila en Inspecciones
+  try {
+    const url = 'https://sheets.googleapis.com/v4/spreadsheets/1jYHm5nx6MzXzVppG-drTGZdTD7S8UIrC7Vl2iTjmlVQ/values/Inspecciones!A:A?key=AIzaSyCSOb4VzWkwke0QimyQK3XsW7I5b_igkRI';
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!data.values) return;
+    
+    // Encontrar la fila
+    const rowIdx = data.values.findIndex(r => r[0] === code);
+    if (rowIdx < 0) return;
+    
+    // Limpiar la fila (no podemos eliminar filas con API key sola, necesita OAuth)
+    // En su lugar, marcamos como eliminada
+    const clearUrl = 'https://sheets.googleapis.com/v4/spreadsheets/1jYHm5nx6MzXzVppG-drTGZdTD7S8UIrC7Vl2iTjmlVQ/values/Inspecciones!A' + (rowIdx+1) + ':AE' + (rowIdx+1) + ':clear?key=AIzaSyCSOb4VzWkwke0QimyQK3XsW7I5b_igkRI';
+    await fetch(clearUrl, { method: 'POST', headers: {'Content-Type':'application/json'} });
+  } catch(e) {
+    console.warn('Error eliminando del Sheet:', e);
+  }
 }
 
 
@@ -3999,65 +3093,55 @@ function togglePoste2() {
   if(open) setTimeout(()=>document.getElementById('poste2-input').focus(),100);
 }
 function buscarPoste2(q) {
-  const res = document.getElementById('poste2-results');
-  q = (q || '').trim();
-  if (q.length < 3) { res.innerHTML = '<div class="pr-empty">Ingresa al menos 3 caracteres</div>'; return; }
-
-  res.innerHTML = '<div class="pr-empty">🔍 Buscando poste <strong>' + q + '</strong>...</div>';
-
-  buscarPosteViaScriptDebounced(q, function(results) {
-    res.innerHTML = '';
-
-    // Resultados de postes desde Apps Script
-    if (results.length > 0) {
-      results.forEach(function(p) {
+  const res=document.getElementById('poste2-results');
+  q=(q||'').trim();
+  if(q.length<3){res.innerHTML='<div class="pr-empty">Ingresa al menos 3 caracteres</div>';return;}
+  // Buscar primero en POLES_DB
+  if (Object.keys(POLES_DB).length > 0) {
+    const poleMatches = Object.entries(POLES_DB)
+      .filter(([id]) => id.startsWith(q) || id === q)
+      .slice(0, 4);
+    if (poleMatches.length > 0) {
+      res.innerHTML = '';
+      poleMatches.forEach(([id, coords]) => {
         const d = document.createElement('div');
         d.className = 'poste-result-card';
         d.style.borderLeftColor = 'var(--bl)';
-        const extras = [p.distrito, p.alim].filter(Boolean).join(' · ');
-        d.innerHTML =
-          '<div class="pr-code" style="color:var(--bl)">Poste N° ' + p.poste + '</div>' +
-          (extras ? '<div style="font-size:11px;color:var(--g6);margin-bottom:4px">' + extras + '</div>' : '') +
-          '<div style="font-size:11px;color:var(--g6);margin-bottom:8px">📍 ' + p.coords + '</div>' +
-          '<div class="pr-actions"><button class="pr-btn-map" onclick="openMaps(\'' + p.coords + '\')">🗺️ Abrir en Maps</button></div>';
+        d.innerHTML = `<div class="pr-code" style="color:var(--bl)">Poste N° ${id}</div>
+          <div style="font-size:11px;color:var(--g6);margin-bottom:8px">📍 ${coords}</div>
+          <div class="pr-actions"><button class="pr-btn-map" onclick="openMaps('${coords}')">🗺️ Abrir en Maps</button></div>`;
         res.appendChild(d);
       });
-    }
-
-    // Fallback: buscar en state.orms (texto libre sobre código, suministro, petitorio)
-    const found = state.orms.filter(function(o) {
-      const pet  = (o['Petitorio']    || '').toLowerCase();
-      const sumi = (o['Suministro']   || '').toLowerCase();
-      const cod  = (o['Codigo de ORM']|| '').toLowerCase();
-      return pet.includes(q.toLowerCase()) || sumi.includes(q) || cod.includes(q);
-    }).slice(0, 8);
-
-    if (found.length === 0 && results.length === 0) {
-      res.innerHTML = '<div class="pr-empty">No encontrado</div>';
       return;
     }
-
-    found.forEach(function(o) {
-      const insp = state.inspected.find(function(i) { return i.code === o['Codigo de ORM']; });
-      const coords = insp ? insp.coords : (o['Coordenadas'] || '');
-      const hasCoords = coords && coords.trim() !== '';
-      const ql = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const pet = (o['PetitorioCorto'] || '').replace(new RegExp(ql, 'gi'), function(m) { return '<span class="poste-highlight">' + m + '</span>'; });
-      const estado = o['Estado inspección'] || '';
-      const yaInsp = !!insp;
-      const div = document.createElement('div');
-      div.className = 'poste-result-card';
-      div.innerHTML =
-        '<div class="pr-code">' + (o['Codigo de ORM'] || '—') + '</div>' +
-        '<div><span class="pr-dist">' + (o['Distrito'] || '—') + '</span> <span style="font-size:11px;color:var(--g6)">' + estado + (yaInsp ? ' · ✓ Inspeccionado' : '') + '</span></div>' +
-        '<div class="pr-pet">' + pet + '</div>' +
-        (hasCoords ? '<div style="font-size:11px;color:var(--g6);margin-bottom:6px">📍 ' + coords + '</div>' : '') +
-        '<div class="pr-actions">' +
-          (hasCoords ? '<button class="pr-btn-map" onclick="openMaps(\'' + coords + '\')">🗺️ Abrir en Maps</button>' : '') +
-          (!yaInsp && ['Asignado', 'En ejecución'].includes(estado) ? '<button class="pr-btn-insp" onclick="openForm(\'' + o['Codigo de ORM'] + '\');togglePoste2()">📋 Inspeccionar</button>' : '') +
-        '</div>';
-      res.appendChild(div);
-    });
+  }
+  const found=state.orms.filter(o=>{
+    const pet=(o['Petitorio']||'').toLowerCase();
+    const sumi=(o['Suministro']||'').toLowerCase();
+    const cod=(o['Codigo de ORM']||'').toLowerCase();
+    return pet.includes(q.toLowerCase())||sumi.includes(q)||cod.includes(q);
+  }).slice(0,8);
+  if(found.length===0){res.innerHTML='<div class="pr-empty">No encontrado</div>';return;}
+  res.innerHTML='';
+  found.forEach(o=>{
+    const insp=state.inspected.find(i=>i.code===o['Codigo de ORM']);
+    const coords=insp?insp.coords:(o['Coordenadas']||'');
+    const hasCoords=coords&&coords.trim()!=='';
+    const pet=(o['PetitorioCorto']||'').replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'),m=>`<span class="poste-highlight">${m}</span>`);
+    const estado=o['Estado inspección']||'';
+    const yaInsp=!!insp;
+    const div=document.createElement('div');
+    div.className='poste-result-card';
+    div.innerHTML=`
+      <div class="pr-code">${o['Codigo de ORM']||'—'}</div>
+      <div><span class="pr-dist">${o['Distrito']||'—'}</span> <span style="font-size:11px;color:var(--g6)">${estado}${yaInsp?' · ✓ Inspeccionado':''}</span></div>
+      <div class="pr-pet">${pet}</div>
+      ${hasCoords?`<div style="font-size:11px;color:var(--g6);margin-bottom:6px">📍 ${coords}</div>`:''}
+      <div class="pr-actions">
+        ${hasCoords?`<button class="pr-btn-map" onclick="openMaps('${coords}')">🗺️ Abrir en Maps</button>`:''}
+        ${!yaInsp&&['Asignado','En ejecución'].includes(estado)?`<button class="pr-btn-insp" onclick="openForm('${o['Codigo de ORM']}');togglePoste2()">📋 Inspeccionar</button>`:''}
+      </div>`;
+    res.appendChild(div);
   });
 }
 
@@ -4073,68 +3157,58 @@ function buscarPoste(q) {
   const res = document.getElementById('poste-results');
   q = (q || '').trim();
   if (q.length < 3) { res.innerHTML = '<div class="pr-empty">Ingresa al menos 3 caracteres</div>'; return; }
-
-  res.innerHTML = '<div class="pr-empty">🔍 Buscando poste <strong>' + q + '</strong>...</div>';
-
-  buscarPosteViaScriptDebounced(q, function(results) {
-    res.innerHTML = '';
-
-    // Resultados de postes desde Apps Script
-    if (results.length > 0) {
-      const hdr = document.createElement('div');
-      hdr.style.cssText = 'font-size:11px;font-weight:700;color:var(--g6);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px';
-      hdr.textContent = 'Postes encontrados';
-      res.appendChild(hdr);
-      results.forEach(function(p) {
+  // Buscar primero en POLES_DB (número de poste exacto)
+  if (Object.keys(POLES_DB).length > 0) {
+    const poleMatches = Object.entries(POLES_DB)
+      .filter(([id]) => id.startsWith(q) || id === q)
+      .slice(0, 4);
+    if (poleMatches.length > 0) {
+      res.innerHTML = '<div style="font-size:11px;font-weight:700;color:var(--g6);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Postes encontrados</div>';
+      poleMatches.forEach(([id, coords]) => {
         const d = document.createElement('div');
         d.className = 'poste-result-card';
         d.style.borderLeftColor = 'var(--bl)';
-        const extras = [p.distrito, p.alim].filter(Boolean).join(' · ');
-        d.innerHTML =
-          '<div class="pr-code" style="color:var(--bl)">Poste N° ' + p.poste + '</div>' +
-          (extras ? '<div style="font-size:11px;color:var(--g6);margin-bottom:4px">' + extras + '</div>' : '') +
-          '<div style="font-size:11px;color:var(--g6);margin-bottom:8px">📍 ' + p.coords + '</div>' +
-          '<div class="pr-actions"><button class="pr-btn-map" onclick="openMaps(\'' + p.coords + '\')">🗺️ Abrir en Maps</button></div>';
+        d.innerHTML = `<div class="pr-code" style="color:var(--bl)">Poste N° ${id}</div>
+          <div style="font-size:11px;color:var(--g6);margin-bottom:8px">📍 ${coords}</div>
+          <div class="pr-actions"><button class="pr-btn-map" onclick="openMaps('${coords}')">🗺️ Abrir en Maps</button></div>`;
         res.appendChild(d);
       });
-    }
-
-    // Fallback: buscar en state.orms (código, suministro, petitorio)
-    const found = state.orms.filter(function(o) {
-      const pet  = (o['Petitorio']    || '').toLowerCase();
-      const sumi = (o['Suministro']   || '').toLowerCase();
-      const cod  = (o['Codigo de ORM']|| '').toLowerCase();
-      return pet.includes(q.toLowerCase()) || sumi.includes(q) || cod.includes(q);
-    }).slice(0, 8);
-
-    if (found.length === 0 && results.length === 0) {
-      res.innerHTML = '<div class="pr-empty">No se encontraron resultados para <strong>' + q + '</strong></div>';
       return;
     }
-
-    found.forEach(function(o) {
-      const insp = state.inspected.find(function(i) { return i.code === o['Codigo de ORM']; });
-      const coords = insp ? insp.coords : (o['Coordenadas'] || '');
-      const hasCoords = coords && coords.trim() !== '';
-      const ql = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const pet = (o['PetitorioCorto'] || o['Petitorio'] || '').replace(
-        new RegExp(ql, 'gi'), function(m) { return '<span class="poste-highlight">' + m + '</span>'; }
-      );
-      const estado = o['Estado inspección'] || '';
-      const yaInsp = !!insp;
-      const div = document.createElement('div');
-      div.className = 'poste-result-card';
-      div.innerHTML =
-        '<div class="pr-code">' + (o['Codigo de ORM'] || '—') + '</div>' +
-        '<div><span class="pr-dist">' + (o['Distrito'] || '—') + '</span> <span style="font-size:11px;color:var(--g6)">' + estado + (yaInsp ? ' · ✓ Inspeccionado' : '') + '</span></div>' +
-        '<div class="pr-pet">' + pet + '</div>' +
-        (hasCoords ? '<div style="font-size:11px;color:var(--g6);margin-bottom:6px">📍 ' + coords + '</div>' : '') +
-        '<div class="pr-actions">' +
-          (hasCoords ? '<button class="pr-btn-map" onclick="openMaps(\'' + coords + '\')">🗺️ Abrir en Maps</button>' : '') +
-          (!yaInsp && ['Asignado', 'En ejecución'].includes(estado) ? '<button class="pr-btn-insp" onclick="openForm(\'' + o['Codigo de ORM'] + '\');togglePoste()">📋 Inspeccionar</button>' : '') +
-        '</div>';
-      res.appendChild(div);
-    });
+  }
+  // Si no hay postes, buscar en ORMs
+  const found = state.orms.filter(o => {
+    const pet = (o['Petitorio'] || '').toLowerCase();
+    const sumi = (o['Suministro'] || '').toLowerCase();
+    const cod = (o['Codigo de ORM'] || '').toLowerCase();
+    return pet.includes(q.toLowerCase()) || sumi.includes(q) || cod.includes(q);
+  }).slice(0, 8);
+  if (found.length === 0) { res.innerHTML = '<div class="pr-empty">No se encontraron ORMs con ese número de poste</div>'; return; }
+  res.innerHTML = '';
+  found.forEach(o => {
+    const insp = state.inspected.find(i => i.code === o['Codigo de ORM']);
+    const coords = insp ? insp.coords : (o['Coordenadas'] || '');
+    const hasCoords = coords && coords.trim() !== '';
+    // Highlight el término buscado en el petitorio
+    const pet = (o['PetitorioCorto'] || o['Petitorio'] || '').replace(
+      new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'),
+      m => `<span class="poste-highlight">${m}</span>`
+    );
+    const estado = o['Estado inspección'] || '';
+    const yaInsp = !!insp;
+    const div = document.createElement('div');
+    div.className = 'poste-result-card';
+    div.innerHTML = `
+      <div class="pr-code">${o['Codigo de ORM'] || '—'}</div>
+      <div><span class="pr-dist">${o['Distrito'] || '—'}</span> <span style="font-size:11px;color:var(--g6)">${estado}${yaInsp?' · ✓ Inspeccionado':''}</span></div>
+      <div class="pr-pet">${pet}</div>
+      ${hasCoords ? `<div style="font-size:11px;color:var(--g6);margin-bottom:6px">📍 ${coords}</div>` : ''}
+      <div class="pr-actions">
+        ${hasCoords ? `<button class="pr-btn-map" onclick="openMaps('${coords}')">🗺️ Abrir en Maps</button>` : ''}
+        ${!yaInsp && ['Asignado','En ejecución'].includes(estado) ? `<button class="pr-btn-insp" onclick="openForm('${o['Codigo de ORM']}');togglePoste()">📋 Inspeccionar</button>` : ''}
+      </div>
+    `;
+    res.appendChild(div);
   });
 }
 
@@ -4239,8 +3313,7 @@ function saltarGoogleAuth() {
 }
 
 // ===== GOOGLE OAUTH PARA DRIVE =====
-const GOOGLE_CLIENT_ID =
-'647651141639-61ap81bb5hdgjjb9c93untquqi5m4va1.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID ='647651141639-61ap81bb5hdgjjb9c93untquqi5m4va1.apps.googleusercontent.com';
 const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
 let googleTokenClient = null;
@@ -4309,15 +3382,14 @@ function actualizarEstadoGoogleAuth() {
   const expires = parseInt(_store.getItem('google_token_expires') || '0');
   const isValid = token && expires > Date.now();
 
+  bar.style.display = 'flex';
   if (isValid) {
-    bar.style.display = 'none';
     bar.classList.add('connected');
     status.textContent = '✅ Google Drive conectado';
     btn.textContent = 'Desconectar';
     btn.className = 'btn-google btn-google-disconnect';
     btn.onclick = desconectarGoogle;
   } else {
-    bar.style.display = 'flex';
     bar.classList.remove('connected');
     status.textContent = '📷 Conecta Google para subir fotos a Drive';
     btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg> Conectar con Google';
